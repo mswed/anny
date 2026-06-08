@@ -1,0 +1,12 @@
+package: Anny
+author: Moshe Swed
+version: 1.0
+rv: 4.0
+requires: ''
+
+modes:
+  - file: anny
+    load: immediate
+
+description: |
+  <p>A better annotation tools for RV</p> 
