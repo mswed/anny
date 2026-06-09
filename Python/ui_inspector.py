@@ -34,31 +34,37 @@ class Ui_Inspector(object):
         self.gridLayout.setObjectName(u"gridLayout")
         self.textBtn = QToolButton(self.verticalLayoutWidget)
         self.textBtn.setObjectName(u"textBtn")
+        self.textBtn.setCheckable(True)
 
         self.gridLayout.addWidget(self.textBtn, 0, 2, 1, 1)
 
         self.selectBtn = QToolButton(self.verticalLayoutWidget)
         self.selectBtn.setObjectName(u"selectBtn")
+        self.selectBtn.setCheckable(True)
 
         self.gridLayout.addWidget(self.selectBtn, 0, 0, 1, 1)
 
         self.circleBtn = QToolButton(self.verticalLayoutWidget)
         self.circleBtn.setObjectName(u"circleBtn")
+        self.circleBtn.setCheckable(True)
 
         self.gridLayout.addWidget(self.circleBtn, 0, 3, 1, 1)
 
         self.lineBtn = QToolButton(self.verticalLayoutWidget)
         self.lineBtn.setObjectName(u"lineBtn")
+        self.lineBtn.setCheckable(True)
 
         self.gridLayout.addWidget(self.lineBtn, 0, 1, 1, 1)
 
         self.freeBtn = QToolButton(self.verticalLayoutWidget)
         self.freeBtn.setObjectName(u"freeBtn")
+        self.freeBtn.setCheckable(True)
 
         self.gridLayout.addWidget(self.freeBtn, 0, 4, 1, 1)
 
         self.smoothLineBtn = QToolButton(self.verticalLayoutWidget)
         self.smoothLineBtn.setObjectName(u"smoothLineBtn")
+        self.smoothLineBtn.setCheckable(True)
 
         self.gridLayout.addWidget(self.smoothLineBtn, 0, 5, 1, 1)
 
