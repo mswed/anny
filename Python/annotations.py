@@ -34,28 +34,50 @@ class AnnotationLayer:
 
 
 class Stroke:
-    def __init__(self, start, end, source, color=(1, 0, 0, 1)) -> None:
+    def __init__(self, start, end, source, width=1.0, color=(1, 0, 0, 1)) -> None:
         self.start = start
         self.end = end
         self.source = source
+        self.width = width
         self.color = color
+
+    @property
+    def screen_start(self):
+        # Convert the starting point back to event space
+        return crv.imageToEventSpace(self.source, self.start)
+
+    @property
+    def screen_end(self):
+        # Convert the end point back to event space
+        return crv.imageToEventSpace(self.source, self.end)
 
     def render(self):
         pass
 
 
 class LineStroke(Stroke):
-    def __init__(self, start, end, source, color=(1, 0, 0, 1)) -> None:
-        super().__init__(start, end, source, color)
+    def __init__(self, start, end, source, width=5.0, color=(1, 0, 0, 1)) -> None:
+        super().__init__(start, end, source, width, color)
 
     def render(self):
 
-        # We need to convert back to event space
-        screen_start = crv.imageToEventSpace(self.source, self.start)
-        screen_end = crv.imageToEventSpace(self.source, self.end)
+        # Antialiasing
+        GL.glEnable(GL.GL_LINE_SMOOTH)
+        GL.glEnable(GL.GL_BLEND)
+        GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
+        GL.glHint(GL.GL_LINE_SMOOTH_HINT, GL.GL_NICEST)
 
+        # Line width
+        GL.glLineWidth(self.width)
+
+        # Draw
         GL.glColor4f(*self.color)
         GL.glBegin(GL.GL_LINES)
-        GL.glVertex2f(*screen_start)
-        GL.glVertex2f(*screen_end)
+        GL.glVertex2f(*self.screen_start)
+        GL.glVertex2f(*self.screen_end)
         GL.glEnd()
+
+        # Cleanup - so we don't confuse RV
+        GL.glDisable(GL.GL_LINE_SMOOTH)
+        GL.glDisable(GL.GL_BLEND)
+        GL.glLineWidth(1.0)
