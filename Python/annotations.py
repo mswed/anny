@@ -34,9 +34,10 @@ class AnnotationLayer:
 
 
 class Stroke:
-    def __init__(self, start, end, color=(1, 0, 0, 1)) -> None:
+    def __init__(self, start, end, source, color=(1, 0, 0, 1)) -> None:
         self.start = start
         self.end = end
+        self.source = source
         self.color = color
 
     def render(self):
@@ -44,12 +45,17 @@ class Stroke:
 
 
 class LineStroke(Stroke):
-    def __init__(self, start, end, color=(1, 0, 0, 1)) -> None:
-        super().__init__(start, end, color)
+    def __init__(self, start, end, source, color=(1, 0, 0, 1)) -> None:
+        super().__init__(start, end, source, color)
 
     def render(self):
+
+        # We need to convert back to event space
+        screen_start = crv.imageToEventSpace(self.source, self.start)
+        screen_end = crv.imageToEventSpace(self.source, self.end)
+
         GL.glColor4f(*self.color)
         GL.glBegin(GL.GL_LINES)
-        GL.glVertex2f(*self.start)
-        GL.glVertex2f(*self.end)
+        GL.glVertex2f(*screen_start)
+        GL.glVertex2f(*screen_end)
         GL.glEnd()
