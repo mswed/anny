@@ -41,25 +41,34 @@ class AnnyMode(MinorMode):
         self.active_stroke_type = self.stroke_types.get(tool_id, LineStroke)
 
     def draw_start(self, event):
-        print("entering draw start")
-        # Get frame
-        frame = crv.frame()
-        x, y = event.pointer()
 
-        print("current storke is", self.current_stroke)
+        # Get frame (we store the annotation against the frame)
+        frame = crv.frame()
+
+        # We need to get the source to convert the mouse position to image space
+        source = crv.sourceAtPixel(event.pointer())
+        if not source:
+            return
+
+        source_name = source[0]["name"]
+
+        # Image space position
+        image_pos = crv.eventToImageSpace(source_name, event.pointer())
+
         if not self.current_stroke:
-            self.current_stroke = self.active_stroke_type(start=(x, y), end=(x, y))
+            self.current_stroke = self.active_stroke_type(
+                start=image_pos, end=image_pos, source=source_name
+            )
             self.annotations.strokes[frame].append(self.current_stroke)
 
     def draw_update(self, event):
-        x, y = event.pointer()
-        self.current_stroke.end = (x, y)
+        if self.current_stroke:
+            self.current_stroke.end = crv.eventToImageSpace(
+                self.current_stroke.source, event.pointer()
+            )
 
     def draw_end(self, event):
-        x, y = event.pointer()
-        self.current_stroke.end = (x, y)
         self.current_stroke = None
-        print("at end current stroke is", self.current_stroke)
 
     def render(self, event):
         self.annotations.render(event)
