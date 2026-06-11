@@ -34,12 +34,15 @@ class AnnotationLayer:
 
 
 class Stroke:
-    def __init__(self, start, end, source, width=1.0, color=(1, 0, 0, 1)) -> None:
+    def __init__(
+        self, start, end, source, width=1.0, color=(1, 0, 0, 1), opacity=1.0
+    ) -> None:
         self.start = start
         self.end = end
         self.source = source
         self.width = width
         self.color = color
+        self.opacity = opacity
 
     @property
     def screen_start(self):
@@ -56,8 +59,10 @@ class Stroke:
 
 
 class LineStroke(Stroke):
-    def __init__(self, start, end, source, width=5.0, color=(1, 0, 0, 1)) -> None:
-        super().__init__(start, end, source, width, color)
+    def __init__(
+        self, start, end, source, width=1.0, color=(1, 0, 0, 1), opacity=1.0
+    ) -> None:
+        super().__init__(start, end, source, width, color, opacity)
 
     def render(self):
 
@@ -71,7 +76,7 @@ class LineStroke(Stroke):
         GL.glLineWidth(self.width)
 
         # Draw
-        GL.glColor4f(*self.color)
+        GL.glColor4f(self.color[0], self.color[1], self.color[2], self.opacity)
         GL.glBegin(GL.GL_LINES)
         GL.glVertex2f(*self.screen_start)
         GL.glVertex2f(*self.screen_end)

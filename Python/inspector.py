@@ -3,6 +3,8 @@ import rv.commands as crv
 from pprint import pprint
 
 from ui_inspector import Ui_Inspector
+from style import ANNY_STYLESHEET
+from color_picker import ColorPickerDrowpdown
 
 
 class Inspector(QtWidgets.QDialog):
@@ -10,14 +12,16 @@ class Inspector(QtWidgets.QDialog):
         super().__init__(parent)
         self.mode = mode
         self.ui = Ui_Inspector()
+        self.current_stroke_color = (1.0, 0.0, 0.0, 1.0)
 
         self.ui.setupUi(self)
+        self.setStyleSheet(ANNY_STYLESHEET)
 
         # Tool button group
         self.tool_group = QtWidgets.QButtonGroup(self)
         self.tool_group.setExclusive(True)
 
-        # Add the actuall buttons from the UI file
+        # Add the actual buttons from the UI file
         self.tool_group.addButton(self.ui.selectBtn, 0)
         self.tool_group.addButton(self.ui.lineBtn, 1)
         self.tool_group.addButton(self.ui.textBtn, 2)
@@ -25,7 +29,8 @@ class Inspector(QtWidgets.QDialog):
         self.tool_group.addButton(self.ui.freeBtn, 4)
         self.tool_group.addButton(self.ui.smoothLineBtn, 5)
 
-        self.tool_group.idClicked.connect(self.on_tool_changed)
+        # Connections
+        self.setup_connections()
 
         # Default to the select tool
         self.ui.selectBtn.setChecked(True)
@@ -33,43 +38,34 @@ class Inspector(QtWidgets.QDialog):
     def on_tool_changed(self, tool_id):
         self.mode.set_active_tool(tool_id)
 
-    def selection_tool(self):
-        print("selection tool enabled")
+    def setup_connections(self):
+        self.tool_group.idClicked.connect(self.on_tool_changed)
+        self.ui.strokeOpacityField.valueChanged.connect(self.mode.update_opacity)
+        self.ui.strokeWidthField.valueChanged.connect(self.mode.update_width)
+        self.ui.strokeColorBtn.clicked.connect(self.show_color_picker)
 
-    def line_tool(self):
-        print("line tool enabled")
-
-        # We first change the event binding so RV knows what to do
-        crv.bind(
-            "py-anny-mode", "global", "pointer-1--push", self.draw_start, "Mouse down"
-        )
-        crv.bind(
-            "py-anny-mode", "global", "pointer-1--drag", self.draw_update, "Mouse drag"
-        )
-        crv.bind(
-            "py-anny-mode", "global", "pointer-1--release", self.draw_end, "Mouse up"
+    def show_color_picker(self):
+        menu = ColorPickerDrowpdown()
+        menu.colorSelected.connect(self.on_color_changed)
+        menu.exec(
+            self.ui.strokeColorBtn.mapToGlobal(
+                self.ui.strokeColorBtn.rect().bottomLeft()
+            )
         )
 
-    def text_tool(self):
-        print("text tool enabled")
+    def on_color_changed(self, color):
+        r, g, b, a = color
+        # Update swatch
+        self.ui.strokeColorBtn.setStyleSheet(
+            f"background-color: rgba({int(r * 255)}, {int(g * 255)}, {int(b * 255)}, {int(a * 255)}); border: none;"
+        )
+        # Set the current storke color
+        if self.mode.current_stroke:
+            self.mode.current_stroke.color = (
+                r,
+                g,
+                b,
+                self.ui.strokeOpacityField.value(),
+            )
 
-    def circle_tool(self):
-        print("circle tool enabled")
-
-    def draw_tool(self):
-        print("draw tool enabled")
-
-    def smooth_draw_tool(self):
-        print("smooth draw tool enabled")
-
-    def draw_start(self, event):
-        print("starting draw")
-        print("pointer", event.pointer())
-        print("domain", event.domain())
-        print("subdomain", event.subDomain())
-
-    def draw_update(self, event):
-        print("updating draw")
-
-    def draw_end(self, event):
-        print("ended draw")
+        self.current_stroke_color = (r, g, b, a)
