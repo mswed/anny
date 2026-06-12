@@ -12,6 +12,7 @@ class AnnyMode(MinorMode):
         self.inspector = Inspector(mode=self)
         self.annotations = AnnotationLayer()
         self.current_stroke = None
+        self.drag_start_pos = None
 
         self.init(
             "py-anny-mode",
@@ -68,6 +69,12 @@ class AnnyMode(MinorMode):
         """
         Set the tool type we're using and bind it to mouse events
         """
+        # Clear the current stroke
+        if self.current_stroke:
+            self.current_stroke.selected = False
+            self.current_stroke = None
+            self.drag_start_pos = None
+
         if tool_id == 0:
             # We are selecting
             self.bind_select_tool()
@@ -76,13 +83,62 @@ class AnnyMode(MinorMode):
             self.bind_draw_tool()
 
     def select_start(self, event):
-        print("select start")
+        # Get frame (we store the annotation against the frame)
+        frame = crv.frame()
+
+        source_name = self.get_source_name(event)
+        if not source_name:
+            return
+
+        # Image space position
+        image_pos = crv.eventToImageSpace(source_name, event.pointer())
+
+        # Find closest stoke to threshold
+        THRESHOLD = 0.01
+
+        # Deselect current stroke if needed
+        if self.current_stroke:
+            self.current_stroke.selected = False
+            self.current_stroke = None
+            self.drag_start_pos = None
+
+        for stroke in self.annotations.strokes[frame]:
+            dist = stroke.point_to_stroke_distance(image_pos)
+            if dist < THRESHOLD:
+                self.current_stroke = stroke
+                self.current_stroke.selected = True
+                self.drag_start_pos = image_pos
+
+                break
 
     def select_update(self, event):
-        print("moving")
+        if not self.current_stroke or not self.drag_start_pos:
+            # We have nothing selected
+            return
+        source_name = self.get_source_name(event)
+
+        if not source_name:
+            # We have no source
+            return
+
+        # Starting position
+        x1, y1 = self.drag_start_pos
+
+        # Current position
+        x2, y2 = crv.eventToImageSpace(source_name, event.pointer())
+
+        # Calculate delta between start and current
+        dx = x2 - x1
+        dy = y2 - y1
+
+        # Move to new location
+        self.current_stroke.move(dx, dy)
+
+        # Update our start position so the next move works
+        self.drag_start_pos = (x2, y2)
 
     def select_end(self, event):
-        print("select ended")
+        self.drag_start_pos = None
 
     def draw_start(self, event):
 
