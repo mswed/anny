@@ -44,9 +44,6 @@ class ColorPickerDrowpdown(QtWidgets.QMenu):
         self.addAction(action)
 
     def _on_color_clicked(self, hex_color):
-        print("recieved hex color is", hex_color)
         c = QColor(hex_color)
-        print("selected color is", c)
-        print("converted color is", c.redF(), c.greenF(), c.blueF(), 1.0)
         self.colorSelected.emit((c.redF(), c.greenF(), c.blueF(), 1.0))
         self.close()
