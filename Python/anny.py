@@ -101,14 +101,23 @@ class AnnyMode(MinorMode):
             self.current_stroke.selected = False
             self.current_stroke = None
             self.drag_start_pos = None
+            self.drag_type = None
 
         for stroke in self.annotations.strokes[frame]:
-            dist = stroke.point_to_stroke_distance(image_pos)
-            if dist < THRESHOLD:
+            if stroke.point_inside_handle(image_pos, "start"):
+                self.drag_type = "start"
+            elif stroke.point_inside_handle(image_pos, "end"):
+                self.drag_type = "end"
+            else:
+                # Check if we clicked the stroke
+                dist = stroke.point_to_stroke_distance(image_pos)
+                if dist < THRESHOLD:
+                    self.drag_type = "stroke"
+
+            if self.drag_type is not None:
                 self.current_stroke = stroke
                 self.current_stroke.selected = True
                 self.drag_start_pos = image_pos
-
                 break
 
     def select_update(self, event):
@@ -132,7 +141,7 @@ class AnnyMode(MinorMode):
         dy = y2 - y1
 
         # Move to new location
-        self.current_stroke.move(dx, dy)
+        self.current_stroke.move(dx, dy, move_type=self.drag_type)
 
         # Update our start position so the next move works
         self.drag_start_pos = (x2, y2)

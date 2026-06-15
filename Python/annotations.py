@@ -3,6 +3,10 @@ import math
 from OpenGL import GL
 import rv.commands as crv
 
+SquareVerts = namedtuple(
+    "SquareVerts", ["bottom_left", "bottom_right", "top_right", "top_left"]
+)
+
 
 class AnnotationLayer:
     """
@@ -56,7 +60,19 @@ class Stroke:
         # Convert the end point back to event space
         return crv.imageToEventSpace(self.source, self.end)
 
-    def move(self, dx, dy):
+    def get_handle_verts(self, point):
+        size = 6
+        half = size / 2
+        x, y = point
+
+        bottom_left = (x - half, y - half)
+        bottom_right = (x + half, y - half)
+        top_right = (x + half, y + half)
+        top_left = (x - half, y + half)
+
+        return SquareVerts(bottom_left, bottom_right, top_right, top_left)
+
+    def move(self, dx, dy, move_type="stroke"):
         """
         Move the annotation
         """
@@ -64,8 +80,33 @@ class Stroke:
         sx, sy = self.start
         ex, ey = self.end
 
-        self.start = (sx + dx, sy + dy)
-        self.end = (ex + dx, ey + dy)
+        if move_type == "stroke" or move_type == "start":
+            self.start = (sx + dx, sy + dy)
+        if move_type == "stroke" or move_type == "end":
+            self.end = (ex + dx, ey + dy)
+
+    def point_inside_handle(self, point, handle):
+        """
+        Check if a point is inside a handle
+        """
+
+        # Handles are drawn in screen space, so convert to event space first
+        x, y = crv.imageToEventSpace(self.source, point)
+
+        print("x:", x, "y:", y)
+
+        if handle == "start":
+            handle_verts = self.get_handle_verts(self.screen_start)
+        else:
+            handle_verts = self.get_handle_verts(self.screen_end)
+
+        x_start = handle_verts.bottom_left[0]
+        x_end = handle_verts.bottom_right[0]
+        y_start = handle_verts.top_left[1]
+        y_end = handle_verts.bottom_left[1]
+        print(x_start, x_end, y_start, y_end)
+
+        return x_end > x > x_start and y_start > y > y_end
 
     def point_to_stroke_distance(self, point):
         """
@@ -124,25 +165,25 @@ class Stroke:
 
         GL.glDisable(GL.GL_LINE_STIPPLE)
 
-    def draw_handle(self, x, y, size=6):
-        half = size / 2
+    def draw_handle(self, x, y):
 
+        verts = self.get_handle_verts((x, y))
         # Square
         GL.glColor4f(1.0, 1.0, 1.0, 1.0)
         GL.glBegin(GL.GL_QUADS)
-        GL.glVertex2f(x - half, y - half)
-        GL.glVertex2f(x + half, y - half)
-        GL.glVertex2f(x + half, y + half)
-        GL.glVertex2f(x - half, y + half)
+        GL.glVertex2f(*verts.bottom_left)
+        GL.glVertex2f(*verts.bottom_right)
+        GL.glVertex2f(*verts.top_right)
+        GL.glVertex2f(*verts.top_left)
         GL.glEnd()
 
         # Border
         GL.glColor4f(0, 0, 0, 1.0)
         GL.glBegin(GL.GL_LINE_LOOP)
-        GL.glVertex2f(x - half, y - half)
-        GL.glVertex2f(x + half, y - half)
-        GL.glVertex2f(x + half, y + half)
-        GL.glVertex2f(x - half, y + half)
+        GL.glVertex2f(*verts.bottom_left)
+        GL.glVertex2f(*verts.bottom_right)
+        GL.glVertex2f(*verts.top_right)
+        GL.glVertex2f(*verts.top_left)
         GL.glEnd()
 
     def render(self):
