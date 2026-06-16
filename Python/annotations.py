@@ -6,6 +6,7 @@ import rv.commands as crv
 SquareVerts = namedtuple(
     "SquareVerts", ["bottom_left", "bottom_right", "top_right", "top_left"]
 )
+ArrowVerts = namedtuple("ArrowVerts", ["tip", "left_wing", "right_wing", "base"])
 
 
 class AnnotationLayer:
@@ -93,8 +94,6 @@ class Stroke:
         # Handles are drawn in screen space, so convert to event space first
         x, y = crv.imageToEventSpace(self.source, point)
 
-        print("x:", x, "y:", y)
-
         if handle == "start":
             handle_verts = self.get_handle_verts(self.screen_start)
         else:
@@ -104,7 +103,6 @@ class Stroke:
         x_end = handle_verts.bottom_right[0]
         y_start = handle_verts.top_left[1]
         y_end = handle_verts.bottom_left[1]
-        print(x_start, x_end, y_start, y_end)
 
         return x_end > x > x_start and y_start > y > y_end
 
@@ -195,9 +193,67 @@ class LineStroke(Stroke):
         self, start, end, source, width=1.0, color=(1, 0, 0, 1), opacity=1.0
     ) -> None:
         super().__init__(start, end, source, width, color, opacity)
+        self.start_cap = None
+        self.end_cap = "arrow"
 
     def __repr__(self) -> str:
         return f"<LineStroke> start: {self.start} end: {self.end} color: {self.color}"
+
+    def get_arrow_verts(self, direction="forward"):
+        # Calculate the line vector (so we know the direction)
+        sx, sy = self.screen_start
+        ex, ey = self.screen_end
+
+        # Direction
+        direction_x = ex - sx
+        direction_y = ey - sy
+
+        # Magnitude
+        m = math.sqrt(direction_x**2 + direction_y**2)
+        if m == 0:
+            # line length is 0
+            return
+
+        # Unit vector
+        nv = (direction_x / m, direction_y / m)
+
+        length = max(self.width * 2, 1)
+        tip = self.screen_end
+        # No numpy so some direct vector math instead (tip - (direction * length))
+        base = (tip[0] - (nv[0] * length * 2), tip[1] - (nv[1] * length * 2))
+        width = length
+        perp = (-nv[1], nv[0])
+        # base + (perp * width)
+        left_wing = (base[0] + (perp[0] * width), base[1] + (perp[1] * width))
+        # base - (perp * width)
+        right_wing = (base[0] - (perp[0] * width), base[1] - (perp[1] * width))
+
+        return ArrowVerts(tip, left_wing, right_wing, base)
+
+    def draw_arrow(self, point=None):
+        """
+        Draw an arrow had on selected point (start or end)
+        """
+
+        verts = self.get_arrow_verts()
+        if verts:
+            # We only draw if we got verts
+            # Draw
+            GL.glColor4f(self.color[0], self.color[1], self.color[2], self.opacity)
+            GL.glBegin(GL.GL_TRIANGLES)
+            GL.glVertex2f(*verts.tip)
+            GL.glVertex2f(*verts.left_wing)
+            GL.glVertex2f(*verts.right_wing)
+            GL.glEnd()
+
+            # Draw a line around the arrow head to smooth it
+            GL.glLineWidth(1)
+            GL.glColor4f(self.color[0], self.color[1], self.color[2], self.opacity)
+            GL.glBegin(GL.GL_LINE_LOOP)
+            GL.glVertex2f(*verts.tip)
+            GL.glVertex2f(*verts.left_wing)
+            GL.glVertex2f(*verts.right_wing)
+            GL.glEnd()
 
     def render(self):
         # Antialiasing
@@ -211,7 +267,12 @@ class LineStroke(Stroke):
         GL.glColor4f(self.color[0], self.color[1], self.color[2], self.opacity)
         GL.glBegin(GL.GL_LINES)
         GL.glVertex2f(*self.screen_start)
-        GL.glVertex2f(*self.screen_end)
+        if self.end_cap is None:
+            GL.glVertex2f(*self.screen_end)
+        elif self.end_cap == "arrow":
+            verts = self.get_arrow_verts()
+            if verts:
+                GL.glVertex2f(*verts.base)
         GL.glEnd()
 
         # Selection highlighting
@@ -219,6 +280,9 @@ class LineStroke(Stroke):
             self.draw_bounding_box()
             self.draw_handle(*self.screen_start)
             self.draw_handle(*self.screen_end)
+
+        if self.end_cap == "arrow":
+            self.draw_arrow()
 
         # Cleanup - so we don't confuse RV
         GL.glDisable(GL.GL_LINE_SMOOTH)
