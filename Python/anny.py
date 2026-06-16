@@ -81,6 +81,31 @@ class AnnyMode(MinorMode):
             self.active_stroke_type = self.stroke_types.get(tool_id, LineStroke)
             self.bind_draw_tool()
 
+    def update_ui(self):
+        """
+        Update the UI with the selected stroke info
+        """
+        if self.current_stroke:
+            # Update width
+            self.inspector.ui.strokeWidthField.setValue(self.current_stroke.width)
+
+            # Update color
+            r, g, b, a = self.current_stroke.color
+            self.inspector.ui.strokeColorBtn.setStyleSheet(
+                f"background-color: rgba({int(r * 255)}, {int(g * 255)}, {int(b * 255)}, {int(a * 255)}); border: none;"
+            )
+
+            # Update opacity
+            self.inspector.ui.strokeOpacityField.setValue(self.current_stroke.opacity)
+
+            # Update caps
+            self.inspector.ui.startCapCb.setCurrentIndex(
+                self.inspector.ui.startCapCb.findData(self.current_stroke.start_cap)
+            )
+            self.inspector.ui.endCapCb.setCurrentIndex(
+                self.inspector.ui.endCapCb.findData(self.current_stroke.end_cap)
+            )
+
     def select_start(self, event):
         # Get frame (we store the annotation against the frame)
         frame = crv.frame()
@@ -118,13 +143,8 @@ class AnnyMode(MinorMode):
                 self.current_stroke.selected = True
                 self.drag_start_pos = image_pos
 
-                # Update the ui
-                self.inspector.ui.startCapCb.setCurrentIndex(
-                    self.inspector.ui.startCapCb.findData(self.current_stroke.start_cap)
-                )
-                self.inspector.ui.endCapCb.setCurrentIndex(
-                    self.inspector.ui.endCapCb.findData(self.current_stroke.end_cap)
-                )
+                self.update_ui()
+
                 break
 
     def select_update(self, event):
