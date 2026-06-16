@@ -307,6 +307,21 @@ class LineStroke(Stroke):
             GL.glVertex2f(*verts.right_wing)
             GL.glEnd()
 
+    def draw_circle(self, position="start"):
+        segments = 16
+        radius = max(self.width * 1.5, 4)
+        if position == "start":
+            x, y = self.screen_start
+        else:
+            x, y = self.screen_end
+
+        GL.glBegin(GL.GL_TRIANGLE_FAN)
+        GL.glVertex2f(x, y)
+        for i in range(segments + 1):
+            angle = 2 * math.pi * i / segments
+            GL.glVertex2f(x + math.cos(angle) * radius, y + math.sin(angle) * radius)
+        GL.glEnd()
+
     def render(self):
         # Antialiasing
         GL.glEnable(GL.GL_LINE_SMOOTH)
@@ -333,12 +348,6 @@ class LineStroke(Stroke):
         GL.glVertex2f(*line_end)
         GL.glEnd()
 
-        # Selection highlighting
-        if self.selected:
-            self.draw_bounding_box()
-            self.draw_handle(*self.screen_start)
-            self.draw_handle(*self.screen_end)
-
         if self.end_cap == "arrow":
             self.draw_arrow()
         if self.start_cap == "arrow":
@@ -347,6 +356,16 @@ class LineStroke(Stroke):
             self.draw_tick("end")
         if self.start_cap == "tick":
             self.draw_tick("start")
+        if self.end_cap == "circle":
+            self.draw_circle("end")
+        if self.start_cap == "circle":
+            self.draw_circle("start")
+
+        # Selection highlighting
+        if self.selected:
+            self.draw_bounding_box()
+            self.draw_handle(*self.screen_start)
+            self.draw_handle(*self.screen_end)
 
         # Cleanup - so we don't confuse RV
         GL.glDisable(GL.GL_LINE_SMOOTH)
