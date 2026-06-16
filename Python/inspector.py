@@ -13,6 +13,8 @@ class Inspector(QtWidgets.QDialog):
         self.mode = mode
         self.ui = Ui_Inspector()
         self.current_stroke_color = (1.0, 0.0, 0.0, 1.0)
+        self.start_cap = None
+        self.end_cap = None
 
         self.ui.setupUi(self)
         self.setStyleSheet(ANNY_STYLESHEET)
@@ -29,6 +31,12 @@ class Inspector(QtWidgets.QDialog):
         self.tool_group.addButton(self.ui.freeBtn, 4)
         self.tool_group.addButton(self.ui.smoothLineBtn, 5)
 
+        # Setup combo boxes
+        self.ui.startCapCb.addItem("-", None)
+        self.ui.startCapCb.addItem("<", "arrow")
+        self.ui.endCapCb.addItem("-", None)
+        self.ui.endCapCb.addItem(">", "arrow")
+
         # Connections
         self.setup_connections()
 
@@ -43,6 +51,8 @@ class Inspector(QtWidgets.QDialog):
         self.ui.strokeOpacityField.valueChanged.connect(self.mode.update_opacity)
         self.ui.strokeWidthField.valueChanged.connect(self.mode.update_width)
         self.ui.strokeColorBtn.clicked.connect(self.show_color_picker)
+        self.ui.startCapCb.currentIndexChanged.connect(self.mode.update_start_cap)
+        self.ui.endCapCb.currentIndexChanged.connect(self.mode.update_end_cap)
 
     def show_color_picker(self):
         menu = ColorPickerDrowpdown()
