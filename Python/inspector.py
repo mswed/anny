@@ -38,6 +38,7 @@ class Inspector(QtWidgets.QDialog):
         self.ui.startCapCb.addItem("*", "circle")
         self.ui.endCapCb.addItem("-", None)
         self.ui.endCapCb.addItem(">", "arrow")
+        self.ui.endCapCb.addItem("|", "tick")
         self.ui.endCapCb.addItem("*", "circle")
 
         # Connections
