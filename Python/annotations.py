@@ -7,6 +7,7 @@ SquareVerts = namedtuple(
     "SquareVerts", ["bottom_left", "bottom_right", "top_right", "top_left"]
 )
 ArrowVerts = namedtuple("ArrowVerts", ["tip", "left_wing", "right_wing", "base"])
+TickVerts = namedtuple("TickVerts", ["top", "bottom"])
 
 
 class AnnotationLayer:
@@ -207,6 +208,35 @@ class LineStroke(Stroke):
     def __repr__(self) -> str:
         return f"<LineStroke> start: {self.start} end: {self.end} color: {self.color}"
 
+    def get_tick_verts(self, position="start"):
+        # Calculate the line vector (so we can normalize)
+        sx, sy = self.screen_start
+        ex, ey = self.screen_end
+
+        direction_x = ex - sx
+        direction_y = ey - sy
+
+        # Magnitude
+        m = math.sqrt(direction_x**2 + direction_y**2)
+        if m == 0:
+            # line length is 0
+            return
+
+        # Normalized unit vector
+        nv = (direction_x / m, direction_y / m)
+
+        length = max(self.width * 2, 1)
+        base = self.screen_start if position == "start" else self.screen_end
+        # No numpy so some direct vector math instead (tip - (direction * length))
+        width = length
+        perp = (-nv[1], nv[0])
+        # base + (perp * width)
+        top = (base[0] + (perp[0] * width), base[1] + (perp[1] * width))
+        # base - (perp * width)
+        bottom = (base[0] - (perp[0] * width), base[1] - (perp[1] * width))
+
+        return TickVerts(top, bottom)
+
     def get_arrow_verts(self, direction="forward"):
         # Calculate the line vector (so we know the direction)
         sx, sy = self.screen_start
@@ -242,6 +272,16 @@ class LineStroke(Stroke):
 
         return ArrowVerts(tip, left_wing, right_wing, base)
 
+    def draw_tick(self, position="start"):
+        verts = self.get_tick_verts(position)
+        if verts:
+            GL.glLineWidth(self.width / 2)
+            GL.glColor4f(self.color[0], self.color[1], self.color[2], self.opacity)
+            GL.glBegin(GL.GL_LINES)
+            GL.glVertex2f(*verts.top)
+            GL.glVertex2f(*verts.bottom)
+            GL.glEnd()
+
     def draw_arrow(self, direction="forward"):
         """
         Draw an arrow had on selected point (start or end)
@@ -275,21 +315,22 @@ class LineStroke(Stroke):
         GL.glHint(GL.GL_LINE_SMOOTH_HINT, GL.GL_NICEST)
 
         # Draw
+        line_start = self.screen_start
+        line_end = self.screen_end
+        if self.start_cap == "arrow":
+            verts = self.get_arrow_verts("backward")
+            if verts:
+                line_start = verts.base
+        if self.end_cap == "arrow":
+            verts = self.get_arrow_verts()
+            if verts:
+                line_end = verts.base
+
         GL.glLineWidth(self.width)
         GL.glColor4f(self.color[0], self.color[1], self.color[2], self.opacity)
         GL.glBegin(GL.GL_LINES)
-        if self.start_cap is None:
-            GL.glVertex2f(*self.screen_start)
-        elif self.start_cap == "arrow":
-            backward_verts = self.get_arrow_verts("backward")
-            if backward_verts:
-                GL.glVertex2f(*backward_verts.base)
-        if self.end_cap is None:
-            GL.glVertex2f(*self.screen_end)
-        elif self.end_cap == "arrow":
-            forward_verts = self.get_arrow_verts()
-            if forward_verts:
-                GL.glVertex2f(*forward_verts.base)
+        GL.glVertex2f(*line_start)
+        GL.glVertex2f(*line_end)
         GL.glEnd()
 
         # Selection highlighting
@@ -302,6 +343,10 @@ class LineStroke(Stroke):
             self.draw_arrow()
         if self.start_cap == "arrow":
             self.draw_arrow("backwards")
+        if self.end_cap == "tick":
+            self.draw_tick("end")
+        if self.start_cap == "tick":
+            self.draw_tick("start")
 
         # Cleanup - so we don't confuse RV
         GL.glDisable(GL.GL_LINE_SMOOTH)

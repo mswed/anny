@@ -34,8 +34,10 @@ class Inspector(QtWidgets.QDialog):
         # Setup combo boxes
         self.ui.startCapCb.addItem("-", None)
         self.ui.startCapCb.addItem("<", "arrow")
+        self.ui.startCapCb.addItem("|", "tick")
         self.ui.endCapCb.addItem("-", None)
         self.ui.endCapCb.addItem(">", "arrow")
+        self.ui.endCapCb.addItem("|", "tick")
 
         # Connections
         self.setup_connections()
