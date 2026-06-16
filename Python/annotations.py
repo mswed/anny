@@ -193,7 +193,7 @@ class LineStroke(Stroke):
         self, start, end, source, width=1.0, color=(1, 0, 0, 1), opacity=1.0
     ) -> None:
         super().__init__(start, end, source, width, color, opacity)
-        self.start_cap = None
+        self.start_cap = "arrow"
         self.end_cap = "arrow"
 
     def __repr__(self) -> str:
@@ -205,8 +205,12 @@ class LineStroke(Stroke):
         ex, ey = self.screen_end
 
         # Direction
-        direction_x = ex - sx
-        direction_y = ey - sy
+        if direction == "forward":
+            direction_x = ex - sx
+            direction_y = ey - sy
+        else:
+            direction_x = sx - ex
+            direction_y = sy - ey
 
         # Magnitude
         m = math.sqrt(direction_x**2 + direction_y**2)
@@ -218,7 +222,7 @@ class LineStroke(Stroke):
         nv = (direction_x / m, direction_y / m)
 
         length = max(self.width * 2, 1)
-        tip = self.screen_end
+        tip = self.screen_end if direction == "forward" else self.screen_start
         # No numpy so some direct vector math instead (tip - (direction * length))
         base = (tip[0] - (nv[0] * length * 2), tip[1] - (nv[1] * length * 2))
         width = length
@@ -230,12 +234,12 @@ class LineStroke(Stroke):
 
         return ArrowVerts(tip, left_wing, right_wing, base)
 
-    def draw_arrow(self, point=None):
+    def draw_arrow(self, direction="forward"):
         """
         Draw an arrow had on selected point (start or end)
         """
 
-        verts = self.get_arrow_verts()
+        verts = self.get_arrow_verts(direction)
         if verts:
             # We only draw if we got verts
             # Draw
@@ -266,13 +270,18 @@ class LineStroke(Stroke):
         GL.glLineWidth(self.width)
         GL.glColor4f(self.color[0], self.color[1], self.color[2], self.opacity)
         GL.glBegin(GL.GL_LINES)
-        GL.glVertex2f(*self.screen_start)
+        if self.start_cap is None:
+            GL.glVertex2f(*self.screen_start)
+        elif self.start_cap == "arrow":
+            backward_verts = self.get_arrow_verts("backward")
+            if backward_verts:
+                GL.glVertex2f(*backward_verts.base)
         if self.end_cap is None:
             GL.glVertex2f(*self.screen_end)
         elif self.end_cap == "arrow":
-            verts = self.get_arrow_verts()
-            if verts:
-                GL.glVertex2f(*verts.base)
+            forward_verts = self.get_arrow_verts()
+            if forward_verts:
+                GL.glVertex2f(*forward_verts.base)
         GL.glEnd()
 
         # Selection highlighting
@@ -283,6 +292,8 @@ class LineStroke(Stroke):
 
         if self.end_cap == "arrow":
             self.draw_arrow()
+        if self.start_cap == "arrow":
+            self.draw_arrow("backwards")
 
         # Cleanup - so we don't confuse RV
         GL.glDisable(GL.GL_LINE_SMOOTH)

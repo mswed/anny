@@ -13,6 +13,8 @@ class AnnyMode(MinorMode):
         self.annotations = AnnotationLayer()
         self.current_stroke = None
         self.drag_start_pos = None
+        self.drag_type = None
+        self.stroke_types = {1: LineStroke}
 
         self.init(
             "py-anny-mode",
@@ -29,9 +31,6 @@ class AnnyMode(MinorMode):
                 )
             ],
         )
-
-        self.stroke_types = {1: LineStroke}
-        self.current_stroke = None
 
         # Bind the select tool for start
         self.bind_select_tool()
