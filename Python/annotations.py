@@ -190,11 +190,19 @@ class Stroke:
 
 class LineStroke(Stroke):
     def __init__(
-        self, start, end, source, width=1.0, color=(1, 0, 0, 1), opacity=1.0
+        self,
+        start,
+        end,
+        source,
+        width=1.0,
+        color=(1, 0, 0, 1),
+        opacity=1.0,
+        start_cap=None,
+        end_cap=None,
     ) -> None:
         super().__init__(start, end, source, width, color, opacity)
-        self.start_cap = "arrow"
-        self.end_cap = "arrow"
+        self.start_cap = start_cap
+        self.end_cap = end_cap
 
     def __repr__(self) -> str:
         return f"<LineStroke> start: {self.start} end: {self.end} color: {self.color}"

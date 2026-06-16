@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>286</width>
+    <width>340</width>
     <height>607</height>
    </rect>
   </property>
@@ -18,7 +18,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>284</width>
+     <width>330</width>
      <height>410</height>
     </rect>
    </property>
@@ -111,20 +111,7 @@
        <item row="0" column="0">
         <widget class="QLabel" name="strokeWidthLabel">
          <property name="text">
-          <string>width</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="3">
-        <widget class="QDoubleSpinBox" name="strokeOpacityField">
-         <property name="maximum">
-          <double>1.000000000000000</double>
-         </property>
-         <property name="singleStep">
-          <double>0.100000000000000</double>
-         </property>
-         <property name="value">
-          <double>1.000000000000000</double>
+          <string>Width</string>
          </property>
         </widget>
        </item>
@@ -163,12 +150,45 @@
          </property>
         </widget>
        </item>
+       <item row="0" column="3">
+        <widget class="QDoubleSpinBox" name="strokeOpacityField">
+         <property name="maximum">
+          <double>1.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.100000000000000</double>
+         </property>
+         <property name="value">
+          <double>1.000000000000000</double>
+         </property>
+        </widget>
+       </item>
        <item row="0" column="2">
         <widget class="QLabel" name="strokeOpacityLabel">
          <property name="text">
           <string>Opacity</string>
          </property>
         </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="startCapLabel">
+         <property name="text">
+          <string>Start</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QComboBox" name="startCapCb"/>
+       </item>
+       <item row="1" column="2">
+        <widget class="QLabel" name="endCapLabel">
+         <property name="text">
+          <string>End</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="3">
+        <widget class="QComboBox" name="endCapCb"/>
        </item>
       </layout>
      </widget>

@@ -117,6 +117,14 @@ class AnnyMode(MinorMode):
                 self.current_stroke = stroke
                 self.current_stroke.selected = True
                 self.drag_start_pos = image_pos
+
+                # Update the ui
+                self.inspector.ui.startCapCb.setCurrentIndex(
+                    self.inspector.ui.startCapCb.findData(self.current_stroke.start_cap)
+                )
+                self.inspector.ui.endCapCb.setCurrentIndex(
+                    self.inspector.ui.endCapCb.findData(self.current_stroke.end_cap)
+                )
                 break
 
     def select_update(self, event):
@@ -168,6 +176,8 @@ class AnnyMode(MinorMode):
                 width=self.inspector.ui.strokeWidthField.value(),
                 opacity=self.inspector.ui.strokeOpacityField.value(),
                 color=self.inspector.current_stroke_color,
+                start_cap=self.inspector.ui.startCapCb.currentData(),
+                end_cap=self.inspector.ui.endCapCb.currentData(),
             )
             self.annotations.strokes[frame].append(self.current_stroke)
 
@@ -179,6 +189,14 @@ class AnnyMode(MinorMode):
 
     def draw_end(self, event):
         self.current_stroke = None
+
+    def update_start_cap(self):
+        if self.current_stroke:
+            self.current_stroke.start_cap = self.inspector.ui.startCapCb.currentData()
+
+    def update_end_cap(self):
+        if self.current_stroke:
+            self.current_stroke.end_cap = self.inspector.ui.endCapCb.currentData()
 
     def update_opacity(self):
         if self.current_stroke:

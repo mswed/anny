@@ -15,19 +15,19 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QDialog, QDoubleSpinBox, QGridLayout,
-    QGroupBox, QLabel, QPushButton, QSizePolicy,
-    QSpacerItem, QTextEdit, QToolButton, QVBoxLayout,
-    QWidget)
+from PySide6.QtWidgets import (QApplication, QComboBox, QDialog, QDoubleSpinBox,
+    QGridLayout, QGroupBox, QLabel, QPushButton,
+    QSizePolicy, QSpacerItem, QTextEdit, QToolButton,
+    QVBoxLayout, QWidget)
 
 class Ui_Inspector(object):
     def setupUi(self, Inspector):
         if not Inspector.objectName():
             Inspector.setObjectName(u"Inspector")
-        Inspector.resize(286, 607)
+        Inspector.resize(340, 607)
         self.verticalLayoutWidget = QWidget(Inspector)
         self.verticalLayoutWidget.setObjectName(u"verticalLayoutWidget")
-        self.verticalLayoutWidget.setGeometry(QRect(0, 0, 284, 410))
+        self.verticalLayoutWidget.setGeometry(QRect(0, 0, 330, 410))
         self.mainLayout = QVBoxLayout(self.verticalLayoutWidget)
         self.mainLayout.setObjectName(u"mainLayout")
         self.mainLayout.setContentsMargins(8, 8, 8, 8)
@@ -82,14 +82,6 @@ class Ui_Inspector(object):
 
         self.gridLayout_4.addWidget(self.strokeWidthLabel, 0, 0, 1, 1)
 
-        self.strokeOpacityField = QDoubleSpinBox(self.strokeBox)
-        self.strokeOpacityField.setObjectName(u"strokeOpacityField")
-        self.strokeOpacityField.setMaximum(1.000000000000000)
-        self.strokeOpacityField.setSingleStep(0.100000000000000)
-        self.strokeOpacityField.setValue(1.000000000000000)
-
-        self.gridLayout_4.addWidget(self.strokeOpacityField, 0, 3, 1, 1)
-
         self.strokeColorBtn = QPushButton(self.strokeBox)
         self.strokeColorBtn.setObjectName(u"strokeColorBtn")
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
@@ -110,10 +102,38 @@ class Ui_Inspector(object):
 
         self.gridLayout_4.addWidget(self.strokeWidthField, 0, 1, 1, 1)
 
+        self.strokeOpacityField = QDoubleSpinBox(self.strokeBox)
+        self.strokeOpacityField.setObjectName(u"strokeOpacityField")
+        self.strokeOpacityField.setMaximum(1.000000000000000)
+        self.strokeOpacityField.setSingleStep(0.100000000000000)
+        self.strokeOpacityField.setValue(1.000000000000000)
+
+        self.gridLayout_4.addWidget(self.strokeOpacityField, 0, 3, 1, 1)
+
         self.strokeOpacityLabel = QLabel(self.strokeBox)
         self.strokeOpacityLabel.setObjectName(u"strokeOpacityLabel")
 
         self.gridLayout_4.addWidget(self.strokeOpacityLabel, 0, 2, 1, 1)
+
+        self.startCapLabel = QLabel(self.strokeBox)
+        self.startCapLabel.setObjectName(u"startCapLabel")
+
+        self.gridLayout_4.addWidget(self.startCapLabel, 1, 0, 1, 1)
+
+        self.startCapCb = QComboBox(self.strokeBox)
+        self.startCapCb.setObjectName(u"startCapCb")
+
+        self.gridLayout_4.addWidget(self.startCapCb, 1, 1, 1, 1)
+
+        self.endCapLabel = QLabel(self.strokeBox)
+        self.endCapLabel.setObjectName(u"endCapLabel")
+
+        self.gridLayout_4.addWidget(self.endCapLabel, 1, 2, 1, 1)
+
+        self.endCapCb = QComboBox(self.strokeBox)
+        self.endCapCb.setObjectName(u"endCapCb")
+
+        self.gridLayout_4.addWidget(self.endCapCb, 1, 3, 1, 1)
 
         self.gridLayout_4.setColumnStretch(0, 1)
 
@@ -135,7 +155,7 @@ class Ui_Inspector(object):
     # setupUi
 
     def retranslateUi(self, Inspector):
-        Inspector.setWindowTitle(QCoreApplication.translate("Inspector", u"Dialog", None))
+        Inspector.setWindowTitle(QCoreApplication.translate("Inspector", u"Anny", None))
         self.textBtn.setText(QCoreApplication.translate("Inspector", u"T", None))
         self.selectBtn.setText(QCoreApplication.translate("Inspector", u"S", None))
         self.circleBtn.setText(QCoreApplication.translate("Inspector", u"C", None))
@@ -143,8 +163,10 @@ class Ui_Inspector(object):
         self.freeBtn.setText(QCoreApplication.translate("Inspector", u"F", None))
         self.smoothLineBtn.setText(QCoreApplication.translate("Inspector", u"A", None))
         self.strokeBox.setTitle(QCoreApplication.translate("Inspector", u"Stroke", None))
-        self.strokeWidthLabel.setText(QCoreApplication.translate("Inspector", u"width", None))
+        self.strokeWidthLabel.setText(QCoreApplication.translate("Inspector", u"Width", None))
         self.strokeColorBtn.setText("")
         self.strokeOpacityLabel.setText(QCoreApplication.translate("Inspector", u"Opacity", None))
+        self.startCapLabel.setText(QCoreApplication.translate("Inspector", u"Start", None))
+        self.endCapLabel.setText(QCoreApplication.translate("Inspector", u"End", None))
     # retranslateUi
 
