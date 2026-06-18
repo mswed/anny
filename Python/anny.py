@@ -4,6 +4,7 @@ from rv.extra_commands import *
 
 from inspector import Inspector
 from annotations import AnnotationLayer, LineStroke
+from utils import Point
 
 
 class AnnyMode(MinorMode):
@@ -203,8 +204,9 @@ class AnnyMode(MinorMode):
 
     def draw_update(self, event):
         if self.current_stroke:
-            self.current_stroke.end = crv.eventToImageSpace(
-                self.current_stroke.source, event.pointer()
+            self.current_stroke.end = Point(
+                crv.eventToImageSpace(self.current_stroke.source, event.pointer()),
+                self.current_stroke.source,
             )
 
     def draw_end(self, event):
@@ -231,10 +233,19 @@ class AnnyMode(MinorMode):
             )
 
     def get_source_name(self, event):
-        """
-        Get the name of the source under the mouse
-        """
+        """Get the source name under the mouse. Used to convert clicks to image space
 
+        Parameters
+        ----------
+        event : rv.Event
+            The rv event that called the function. In our case a mouse click
+
+        Returns
+        -------
+        String
+            Source name
+
+        """
         # We need to get the source to convert the mouse position to image space
         source = crv.sourceAtPixel(event.pointer())
         if not source:
