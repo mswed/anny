@@ -1,17 +1,30 @@
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 import math
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple, NamedTuple
 from OpenGL import GL
 from PySide6 import QtGui
 from PySide6.QtCore import Qt
 import rv.commands as crv
-from utils import ImagePoint
+from utils import ImagePoint, ScreenPoint
 
-SquareVerts = namedtuple(
-    "SquareVerts", ["bottom_left", "bottom_right", "top_right", "top_left"]
-)
-ArrowVerts = namedtuple("ArrowVerts", ["tip", "left_wing", "right_wing", "base"])
-TickVerts = namedtuple("TickVerts", ["top", "bottom"])
+
+class SquareVerts(NamedTuple):
+    bottom_left: ScreenPoint
+    bottom_right: ScreenPoint
+    top_right: ScreenPoint
+    top_left: ScreenPoint
+
+
+class ArrowVerts(NamedTuple):
+    tip: ScreenPoint
+    left_wing: ScreenPoint
+    right_wing: ScreenPoint
+    base: ScreenPoint
+
+
+class TickVerts(NamedTuple):
+    top: ScreenPoint
+    bottom: ScreenPoint
 
 
 class AnnotationLayer:
@@ -66,15 +79,14 @@ class Stroke:
         # Convert the end point back to event space
         return crv.imageToEventSpace(self.source, self.end)
 
-    def get_handle_verts(self, point):
+    def get_handle_verts(self, point: ScreenPoint):
         size = 6
         half = size / 2
-        x, y = point
 
-        bottom_left = (x - half, y - half)
-        bottom_right = (x + half, y - half)
-        top_right = (x + half, y + half)
-        top_left = (x - half, y + half)
+        bottom_left = ScreenPoint(point.x - half, point.y - half)
+        bottom_right = ScreenPoint(point.x + half, point.y - half)
+        top_right = ScreenPoint(point.x + half, point.y + half)
+        top_left = ScreenPoint(point.x - half, point.y + half)
 
         return SquareVerts(bottom_left, bottom_right, top_right, top_left)
 
@@ -83,33 +95,44 @@ class Stroke:
         Move the annotation
         """
 
-        sx, sy = self.start
-        ex, ey = self.end
+        # sx, sy = self.start
+        # ex, ey = self.end
+        #
+        # if move_type == "stroke" or move_type == "start":
+        #     self.start = (sx + dx, sy + dy)
+        # if move_type == "stroke" or move_type == "end":
+        #     self.end = (ex + dx, ey + dy)
 
-        if move_type == "stroke" or move_type == "start":
-            self.start = (sx + dx, sy + dy)
-        if move_type == "stroke" or move_type == "end":
-            self.end = (ex + dx, ey + dy)
+    def point_inside_handle(self, point: ImagePoint, position: str) -> bool:
+        """Check if a click happened inside a handle
 
-    def point_inside_handle(self, point, handle):
-        """
-        Check if a point is inside a handle
+        Parameters
+        ----------
+        point : ImagePoint
+            Where the user clicked
+        position : str
+            Which handle are we checking against? Start or end?
+
+        Returns
+        -------
+        bool
+            True if handle was clicked false otherwise
         """
 
         # Handles are drawn in screen space, so convert to event space first
-        x, y = crv.imageToEventSpace(self.source, point)
+        hp = point.to_screenspace()
 
-        if handle == "start":
-            handle_verts = self.get_handle_verts(self.screen_start)
+        if position == "start":
+            handle_verts = self.get_handle_verts(self.start.to_screenspace())
         else:
-            handle_verts = self.get_handle_verts(self.screen_end)
+            handle_verts = self.get_handle_verts(self.end.to_screenspace())
 
-        x_start = handle_verts.bottom_left[0]
-        x_end = handle_verts.bottom_right[0]
-        y_start = handle_verts.top_left[1]
-        y_end = handle_verts.bottom_left[1]
+        x_start = handle_verts.bottom_left.x
+        x_end = handle_verts.bottom_right.x
+        y_start = handle_verts.top_left.y
+        y_end = handle_verts.bottom_left.y
 
-        return x_end > x > x_start and y_start > y > y_end
+        return x_end > hp.x > x_start and y_start > hp.y > y_end
 
     def point_to_stroke_distance(self, point):
         """
@@ -217,31 +240,29 @@ class LineStroke(Stroke):
         return f"<LineStroke> start: {self.start} end: {self.end} color: {self.color}"
 
     def get_tick_verts(self, position="start"):
-        # Calculate the line vector (so we can normalize)
-        sx, sy = self.screen_start
-        ex, ey = self.screen_end
 
-        direction_x = ex - sx
-        direction_y = ey - sy
+        # We start by switching to screenspace
+        start = self.start.to_screenspace()
+        end = self.end.to_screenspace()
 
-        # Magnitude
-        m = math.sqrt(direction_x**2 + direction_y**2)
-        if m == 0:
-            # line length is 0
+        # Create a direction vector
+        direction = start.direction_to(end)
+
+        # Normalize the vector so we have a unit vector
+        normalized = direction.normalized
+        if normalized is None:
+            # We don't have a vector, we can't draw
             return
 
-        # Normalized unit vector
-        nv = (direction_x / m, direction_y / m)
+        tick_width = max(self.width * 2, 1)
+        perp = normalized.perpendicular
 
-        length = max(self.width * 2, 1)
-        base = self.screen_start if position == "start" else self.screen_end
-        # No numpy so some direct vector math instead (tip - (direction * length))
-        width = length
-        perp = (-nv[1], nv[0])
+        # Calculate points
+        base = start if position == "start" else end
         # base + (perp * width)
-        top = (base[0] + (perp[0] * width), base[1] + (perp[1] * width))
+        top = base + (perp * tick_width)
         # base - (perp * width)
-        bottom = (base[0] - (perp[0] * width), base[1] - (perp[1] * width))
+        bottom = base - (perp * tick_width)
 
         return TickVerts(top, bottom)
 

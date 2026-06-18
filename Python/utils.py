@@ -130,8 +130,8 @@ class ScreenPoint(Point):
     def image_y(self):
         return self.imagespace[1] if self.imagespace else None
 
-    def to_imagespace(self):
+    def to_imagespace(self) -> ImagePoint:
         return ImagePoint((self.image_x, self.image_y), source=self.source)
 
-    def direction_to(self, end_point: Point) -> Optional[Vector]:
+    def direction_to(self, end_point: Point) -> ScreenVector:
         return ScreenVector(end_point.x - self.x, end_point.y - self.y)
