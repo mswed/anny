@@ -204,10 +204,16 @@ class AnnyMode(MinorMode):
 
     def draw_update(self, event):
         if self.current_stroke:
-            self.current_stroke.end = Point(
-                crv.eventToImageSpace(self.current_stroke.source, event.pointer()),
-                self.current_stroke.source,
+            print("updating draw end")
+            image_x, image_y = crv.eventToImageSpace(
+                self.current_stroke.source, event.pointer()
             )
+
+            print("pointer at", image_x, image_y)
+
+            self.current_stroke.end.x = image_x
+            self.current_stroke.end.y = image_y
+            print("stroke end", self.current_stroke.end.x, self.current_stroke.end.y)
 
     def draw_end(self, event):
         self.current_stroke = None

@@ -9,6 +9,9 @@ class Vector:
         self.x = x
         self.y = y
 
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}> x: {self.x} y: {self.y}"
+
     @property
     def magnitude(self):
         # Magnitude
@@ -22,11 +25,11 @@ class Vector:
     @property
     def normalized(self):
         if self.magnitude:
-            return Vector(self.x / self.magnitude, self.y / self.magnitude)
+            return self.__class__(self.x / self.magnitude, self.y / self.magnitude)
 
     @property
     def perpendicular(self):
-        return Vector(-self.y, self.x)
+        return self.__class__(-self.y, self.x)
 
     def __mul__(self, scalar: float):
         return self.__class__(self.x * scalar, self.y * scalar)
@@ -74,19 +77,18 @@ class Point:
         yield self.x
         yield self.y
 
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}> x: {self.x} y: {self.y}"
+
 
 class ImagePoint(Point):
     def __init__(self, point, source: Optional[str] = None) -> None:
         super().__init__(point, source)
 
-        self._screenspace = None
-
     @property
     def screenspace(self):
-        if self._screenspace is None and self.source:
-            self._screenspace = crv.imageToEventSpace(self.source, (self.x, self.y))
-
-        return self._screenspace
+        if self.source:
+            return crv.imageToEventSpace(self.source, (self.x, self.y))
 
     @property
     def screen_x(self):
@@ -115,14 +117,10 @@ class ScreenPoint(Point):
     def __init__(self, point, source: Optional[str] = None) -> None:
         super().__init__(point, source)
 
-        self._imagespace = None
-
     @property
     def imagespace(self):
-        if self._imagespace is None and self.source:
-            self._imagespace = crv.eventToImageSpace(self.source, (self.x, self.y))
-
-        return self._imagespace
+        if self.source:
+            return crv.eventToImageSpace(self.source, (self.x, self.y))
 
     @property
     def image_x(self):

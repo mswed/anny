@@ -5,7 +5,7 @@ from OpenGL import GL
 from PySide6 import QtGui
 from PySide6.QtCore import Qt
 import rv.commands as crv
-from utils import Point, Vector
+from utils import ImagePoint
 
 SquareVerts = namedtuple(
     "SquareVerts", ["bottom_left", "bottom_right", "top_right", "top_left"]
@@ -48,8 +48,8 @@ class Stroke:
     def __init__(
         self, start, end, source, width=1.0, color=(1, 0, 0, 1), opacity=1.0
     ) -> None:
-        self.start = Point(start, source)
-        self.end = Point(end, source)
+        self.start = ImagePoint(start, source)
+        self.end = ImagePoint(end, source)
         self.source = source
         self.width = width
         self.color = color
@@ -246,13 +246,17 @@ class LineStroke(Stroke):
         return TickVerts(top, bottom)
 
     def get_arrow_verts(self, position="end"):
+        # We start by switching to screenspace
+        start = self.start.to_screenspace()
+        end = self.end.to_screenspace()
+
         # Create a direction vector
         if position == "end":
             # Start to end
-            direction = self.start.direction_to(self.end)
+            direction = start.direction_to(end)
         else:
             # End to start
-            direction = self.end.direction_to(self.start)
+            direction = end.direction_to(start)
 
         # Normalize the vector so we have a unit vector
         normalized = direction.normalized
@@ -265,11 +269,7 @@ class LineStroke(Stroke):
         perp = normalized.perpendicular
 
         # Calculate points
-        tip = (
-            self.end.to_screenspace()
-            if position == "end"
-            else self.start.to_screenspace()
-        )
+        tip = end if position == "end" else start
         base = tip - (normalized * arrow_length * 2)
         left_wing = base + (perp * arrow_width)
         right_wing = base - (perp * arrow_width)
@@ -443,8 +443,8 @@ class LineStroke(Stroke):
         GL.glHint(GL.GL_LINE_SMOOTH_HINT, GL.GL_NICEST)
 
         # Figure out start and end points in screen space
-        line_start = (self.start.screen_x, self.start.screen_y)
-        line_end = (self.end.screen_x, self.end.screen_y)
+        line_start = self.start.to_screenspace()
+        line_end = self.end.to_screenspace()
 
         # If we have arrows the start and end shrink to the base
         # so the arrow has a point
@@ -484,8 +484,8 @@ class LineStroke(Stroke):
             qt_texture = self._generate_text_texture()
             tid, tw, th = self._load_texture(qt_texture)
             mid_point = (
-                (line_start[0] + line_end[0]) / 2,
-                (line_start[1] + line_end[1]) / 2,
+                (line_start.x + line_end.x) / 2,
+                (line_start.y + line_end.y) / 2,
             )
             self.draw_text(mid_point, tw, th, tid)
 
