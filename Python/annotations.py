@@ -1,7 +1,11 @@
 from collections import defaultdict, namedtuple
 import math
+from typing import List, Optional, Tuple
 from OpenGL import GL
+from PySide6 import QtGui
+from PySide6.QtCore import Qt
 import rv.commands as crv
+from utils import Point, Vector
 
 SquareVerts = namedtuple(
     "SquareVerts", ["bottom_left", "bottom_right", "top_right", "top_left"]
@@ -44,8 +48,8 @@ class Stroke:
     def __init__(
         self, start, end, source, width=1.0, color=(1, 0, 0, 1), opacity=1.0
     ) -> None:
-        self.start = start
-        self.end = end
+        self.start = Point(start, source)
+        self.end = Point(end, source)
         self.source = source
         self.width = width
         self.color = color
@@ -192,18 +196,22 @@ class Stroke:
 class LineStroke(Stroke):
     def __init__(
         self,
-        start,
-        end,
-        source,
-        width=1.0,
-        color=(1, 0, 0, 1),
-        opacity=1.0,
-        start_cap=None,
-        end_cap=None,
+        start: tuple,
+        end: tuple,
+        source: str,
+        width: float = 1.0,
+        color: tuple = (1, 0, 0, 1),
+        opacity: float = 1.0,
+        start_cap: Optional[str] = None,
+        end_cap: Optional[str] = None,
+        text: Optional[str] = None,
     ) -> None:
         super().__init__(start, end, source, width, color, opacity)
         self.start_cap = start_cap
         self.end_cap = end_cap
+        self.text = text
+
+        self.text = "hello, world"
 
     def __repr__(self) -> str:
         return f"<LineStroke> start: {self.start} end: {self.end} color: {self.color}"
@@ -237,40 +245,111 @@ class LineStroke(Stroke):
 
         return TickVerts(top, bottom)
 
-    def get_arrow_verts(self, direction="forward"):
-        # Calculate the line vector (so we know the direction)
-        sx, sy = self.screen_start
-        ex, ey = self.screen_end
-
-        # Direction
-        if direction == "forward":
-            direction_x = ex - sx
-            direction_y = ey - sy
+    def get_arrow_verts(self, position="end"):
+        # Create a direction vector
+        if position == "end":
+            # Start to end
+            direction = self.start.direction_to(self.end)
         else:
-            direction_x = sx - ex
-            direction_y = sy - ey
+            # End to start
+            direction = self.end.direction_to(self.start)
 
-        # Magnitude
-        m = math.sqrt(direction_x**2 + direction_y**2)
-        if m == 0:
-            # line length is 0
+        # Normalize the vector so we have a unit vector
+        normalized = direction.normalized
+        if normalized is None:
+            # We don't have a vector, we can't draw
             return
 
-        # Unit vector
-        nv = (direction_x / m, direction_y / m)
+        arrow_length = max(self.width * 2, 1)
+        arrow_width = arrow_length
+        perp = normalized.perpendicular
 
-        length = max(self.width * 2, 1)
-        tip = self.screen_end if direction == "forward" else self.screen_start
-        # No numpy so some direct vector math instead (tip - (direction * length))
-        base = (tip[0] - (nv[0] * length * 2), tip[1] - (nv[1] * length * 2))
-        width = length
-        perp = (-nv[1], nv[0])
-        # base + (perp * width)
-        left_wing = (base[0] + (perp[0] * width), base[1] + (perp[1] * width))
-        # base - (perp * width)
-        right_wing = (base[0] - (perp[0] * width), base[1] - (perp[1] * width))
+        # Calculate points
+        tip = (
+            self.end.to_screenspace()
+            if position == "end"
+            else self.start.to_screenspace()
+        )
+        base = tip - (normalized * arrow_length * 2)
+        left_wing = base + (perp * arrow_width)
+        right_wing = base - (perp * arrow_width)
 
         return ArrowVerts(tip, left_wing, right_wing, base)
+
+    def _generate_text_texture(self) -> Optional[QtGui.QImage]:
+        """Generate a text texture so we can render it using OpenGL
+
+        Returns
+        -------
+        Optional[QtGui.QImage]
+            The texture image
+
+
+        """
+        if self.text is None:
+            return
+
+        font = QtGui.QFont("Ariel", 14)
+
+        # Measure the font so we know how big our texture needs to be
+        metrics = QtGui.QFontMetrics(font)
+        text_rect = metrics.boundingRect(self.text)
+
+        # Padding
+        width = text_rect.width() + 8
+        height = text_rect.height() + 8
+
+        # Create the image
+        image = QtGui.QImage(width, height, QtGui.QImage.Format_RGBA8888)
+        image.fill(Qt.transparent)
+
+        # Paint
+        painter = QtGui.QPainter(image)
+        painter.setFont(font)
+        painter.setPen(QtGui.QColor(255, 255, 255))
+        painter.drawText(image.rect(), Qt.AlignCenter, self.text)
+        painter.end()
+
+        return image
+
+    def _load_texture(self, image: QtGui.QImage) -> Tuple:
+        """Load an image into a GL texture. Used to create texts
+
+        Parameters
+        ----------
+        image : QtGui.QImage
+            Image with text
+
+        Returns
+        -------
+        Tuple
+            texture id, width and height
+
+        """
+
+        width = image.width()
+        height = image.height()
+
+        # Image in bytes
+        pointer = image.constBits()
+
+        texture_id = GL.glGenTextures(1)
+        GL.glBindTexture(GL.GL_TEXTURE_2D, texture_id)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR)
+        GL.glTexImage2D(
+            GL.GL_TEXTURE_2D,
+            0,
+            GL.GL_RGBA,
+            width,
+            height,
+            0,
+            GL.GL_RGBA,
+            GL.GL_UNSIGNED_BYTE,
+            pointer,
+        )
+
+        return texture_id, width, height
 
     def draw_tick(self, position="start"):
         verts = self.get_tick_verts(position)
@@ -282,12 +361,8 @@ class LineStroke(Stroke):
             GL.glVertex2f(*verts.bottom)
             GL.glEnd()
 
-    def draw_arrow(self, direction="forward"):
-        """
-        Draw an arrow had on selected point (start or end)
-        """
-
-        verts = self.get_arrow_verts(direction)
+    def draw_arrow(self, position: str = "end") -> None:
+        verts = self.get_arrow_verts(position)
         if verts:
             # We only draw if we got verts
             # Draw
@@ -307,7 +382,16 @@ class LineStroke(Stroke):
             GL.glVertex2f(*verts.right_wing)
             GL.glEnd()
 
-    def draw_circle(self, position="start"):
+    def draw_circle(self, position: str = "start") -> None:
+        """
+        Draw a GL circle at the start or end of the line
+
+        Parameters
+        ----------
+        position : str
+            Position to draw in: start or end
+
+        """
         segments = 16
         radius = max(self.width * 1.5, 4)
         if position == "start":
@@ -322,6 +406,35 @@ class LineStroke(Stroke):
             GL.glVertex2f(x + math.cos(angle) * radius, y + math.sin(angle) * radius)
         GL.glEnd()
 
+    def draw_text(self, midpoint, width, height, texture_id) -> None:
+        x, y = midpoint
+
+        # Enable and bind
+        GL.glEnable(GL.GL_TEXTURE_2D)
+        GL.glBindTexture(GL.GL_TEXTURE_2D, texture_id)
+
+        # Set color
+        GL.glColor4f(1.0, 1.0, 1.0, self.opacity)
+
+        half_w = width / 2
+        half_h = height / 2
+
+        GL.glBegin(GL.GL_QUADS)
+
+        # Map texture points to screen points
+        GL.glTexCoord2f(0, 1)  # Bottom left
+        GL.glVertex2f(x - half_w, y - half_h)
+        GL.glTexCoord2f(1, 1)  # Bottom right
+        GL.glVertex2f(x + half_w, y - half_h)
+        GL.glTexCoord2f(1, 0)  # Top right
+        GL.glVertex2f(x + half_w, y + half_h)
+        GL.glTexCoord2f(0, 0)  # Top left
+        GL.glVertex2f(x - half_w, y + half_h)
+        GL.glEnd()
+
+        # Cleanup
+        GL.glDisable(GL.GL_TEXTURE_2D)
+
     def render(self):
         # Antialiasing
         GL.glEnable(GL.GL_LINE_SMOOTH)
@@ -329,18 +442,22 @@ class LineStroke(Stroke):
         GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
         GL.glHint(GL.GL_LINE_SMOOTH_HINT, GL.GL_NICEST)
 
-        # Draw
-        line_start = self.screen_start
-        line_end = self.screen_end
+        # Figure out start and end points in screen space
+        line_start = (self.start.screen_x, self.start.screen_y)
+        line_end = (self.end.screen_x, self.end.screen_y)
+
+        # If we have arrows the start and end shrink to the base
+        # so the arrow has a point
         if self.start_cap == "arrow":
-            verts = self.get_arrow_verts("backward")
+            verts = self.get_arrow_verts("start")
             if verts:
                 line_start = verts.base
         if self.end_cap == "arrow":
-            verts = self.get_arrow_verts()
+            verts = self.get_arrow_verts("end")
             if verts:
                 line_end = verts.base
 
+        # Draw the base line
         GL.glLineWidth(self.width)
         GL.glColor4f(self.color[0], self.color[1], self.color[2], self.opacity)
         GL.glBegin(GL.GL_LINES)
@@ -348,10 +465,11 @@ class LineStroke(Stroke):
         GL.glVertex2f(*line_end)
         GL.glEnd()
 
+        # Draw the caps
         if self.end_cap == "arrow":
-            self.draw_arrow()
+            self.draw_arrow("end")
         if self.start_cap == "arrow":
-            self.draw_arrow("backwards")
+            self.draw_arrow("start")
         if self.end_cap == "tick":
             self.draw_tick("end")
         if self.start_cap == "tick":
@@ -360,6 +478,16 @@ class LineStroke(Stroke):
             self.draw_circle("end")
         if self.start_cap == "circle":
             self.draw_circle("start")
+
+        # Draw the text
+        if self.text is not None:
+            qt_texture = self._generate_text_texture()
+            tid, tw, th = self._load_texture(qt_texture)
+            mid_point = (
+                (line_start[0] + line_end[0]) / 2,
+                (line_start[1] + line_end[1]) / 2,
+            )
+            self.draw_text(mid_point, tw, th, tid)
 
         # Selection highlighting
         if self.selected:
