@@ -4,7 +4,7 @@ from rv.extra_commands import *
 
 from inspector import Inspector
 from annotations import AnnotationLayer, LineStroke
-from utils import Point
+from utils import ImagePoint, Point
 
 
 class AnnyMode(MinorMode):
@@ -14,7 +14,7 @@ class AnnyMode(MinorMode):
         self.annotations = AnnotationLayer()
         self.current_stroke = None
         self.drag_start_pos = None
-        self.drag_type = None
+        self.drag_type = ""
         self.stroke_types = {1: LineStroke}
 
         self.init(
@@ -116,7 +116,9 @@ class AnnyMode(MinorMode):
             return
 
         # Image space position
-        image_pos = crv.eventToImageSpace(source_name, event.pointer())
+        image_pos = ImagePoint(
+            crv.eventToImageSpace(source_name, event.pointer()), source=source_name
+        )
 
         # Find closest stoke to threshold
         THRESHOLD = 0.01
@@ -126,7 +128,7 @@ class AnnyMode(MinorMode):
             self.current_stroke.selected = False
             self.current_stroke = None
             self.drag_start_pos = None
-            self.drag_type = None
+            self.drag_type = ""
 
         for stroke in self.annotations.strokes[frame]:
             if stroke.point_inside_handle(image_pos, "start"):
@@ -139,7 +141,7 @@ class AnnyMode(MinorMode):
                 if dist < THRESHOLD:
                     self.drag_type = "stroke"
 
-            if self.drag_type is not None:
+            if self.drag_type != "":
                 self.current_stroke = stroke
                 self.current_stroke.selected = True
                 self.drag_start_pos = image_pos
@@ -159,20 +161,23 @@ class AnnyMode(MinorMode):
             return
 
         # Starting position
-        x1, y1 = self.drag_start_pos
+        starting_position = self.drag_start_pos
 
         # Current position
-        x2, y2 = crv.eventToImageSpace(source_name, event.pointer())
+        current_position = ImagePoint(
+            crv.eventToImageSpace(source_name, event.pointer()), source=source_name
+        )
 
         # Calculate delta between start and current
-        dx = x2 - x1
-        dy = y2 - y1
+        dx = current_position.x - starting_position.x
+        dy = current_position.y - starting_position.y
 
         # Move to new location
         self.current_stroke.move(dx, dy, move_type=self.drag_type)
 
         # Update our start position so the next move works
-        self.drag_start_pos = (x2, y2)
+        self.drag_start_pos.x = current_position.x
+        self.drag_start_pos.y = current_position.y
 
     def select_end(self, event):
         self.drag_start_pos = None
@@ -186,13 +191,20 @@ class AnnyMode(MinorMode):
         if not source_name:
             return
 
-        # Image space position
-        image_pos = crv.eventToImageSpace(source_name, event.pointer())
+        # Start pose
+        start_pos = ImagePoint(
+            crv.eventToImageSpace(source_name, event.pointer()), source=source_name
+        )
+
+        # End pose (we need a seperate point so we don't point to the same object)
+        end_pos = ImagePoint(
+            crv.eventToImageSpace(source_name, event.pointer()), source=source_name
+        )
 
         if not self.current_stroke:
             self.current_stroke = self.active_stroke_type(
-                start=image_pos,
-                end=image_pos,
+                start=start_pos,
+                end=end_pos,
                 source=source_name,
                 width=self.inspector.ui.strokeWidthField.value(),
                 opacity=self.inspector.ui.strokeOpacityField.value(),
@@ -201,10 +213,12 @@ class AnnyMode(MinorMode):
                 end_cap=self.inspector.ui.endCapCb.currentData(),
             )
             self.annotations.strokes[frame].append(self.current_stroke)
+            print("draw started at", self.current_stroke.start)
 
     def draw_update(self, event):
         if self.current_stroke:
-            print("updating draw end")
+            print("Drawing")
+            print("start point is now", self.current_stroke.start)
             image_x, image_y = crv.eventToImageSpace(
                 self.current_stroke.source, event.pointer()
             )
@@ -213,7 +227,9 @@ class AnnyMode(MinorMode):
 
             self.current_stroke.end.x = image_x
             self.current_stroke.end.y = image_y
-            print("stroke end", self.current_stroke.end.x, self.current_stroke.end.y)
+
+            print("start point is", self.current_stroke.start)
+            print("end point is", self.current_stroke.end)
 
     def draw_end(self, event):
         self.current_stroke = None

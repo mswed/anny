@@ -59,49 +59,50 @@ class AnnotationLayer:
 
 class Stroke:
     def __init__(
-        self, start, end, source, width=1.0, color=(1, 0, 0, 1), opacity=1.0
+        self,
+        start: ImagePoint,
+        end: ImagePoint,
+        source: str,
+        width: float = 1.0,
+        color: tuple = (1, 0, 0, 1),
+        opacity: float = 1.0,
     ) -> None:
-        self.start = ImagePoint(start, source)
-        self.end = ImagePoint(end, source)
+        self.start = start
+        self.end = end
         self.source = source
         self.width = width
         self.color = color
         self.opacity = opacity
         self.selected = False
 
-    @property
-    def screen_start(self):
-        # Convert the starting point back to event space
-        return crv.imageToEventSpace(self.source, self.start)
-
-    @property
-    def screen_end(self):
-        # Convert the end point back to event space
-        return crv.imageToEventSpace(self.source, self.end)
-
-    def get_handle_verts(self, point: ScreenPoint):
+    def get_handle_verts(self, point: ScreenPoint) -> SquareVerts:
         size = 6
         half = size / 2
 
-        bottom_left = ScreenPoint(point.x - half, point.y - half)
-        bottom_right = ScreenPoint(point.x + half, point.y - half)
-        top_right = ScreenPoint(point.x + half, point.y + half)
-        top_left = ScreenPoint(point.x - half, point.y + half)
+        bottom_left = ScreenPoint((point.x - half, point.y - half))
+        bottom_right = ScreenPoint((point.x + half, point.y - half))
+        top_right = ScreenPoint((point.x + half, point.y + half))
+        top_left = ScreenPoint((point.x - half, point.y + half))
 
         return SquareVerts(bottom_left, bottom_right, top_right, top_left)
 
-    def move(self, dx, dy, move_type="stroke"):
-        """
-        Move the annotation
+    def move(self, dx: float, dy: float, move_type: str = "stroke"):
+        """Move the annotation or one of its points. All movement is calcualted in image space
+
+        Parameters
+        ----------
+        move_type : str
+            What are we moving? stroke, start or end?
+        dx : float
+            Delta between original point and new point
+        dy : float
+            Delta between original point and new point
         """
 
-        # sx, sy = self.start
-        # ex, ey = self.end
-        #
-        # if move_type == "stroke" or move_type == "start":
-        #     self.start = (sx + dx, sy + dy)
-        # if move_type == "stroke" or move_type == "end":
-        #     self.end = (ex + dx, ey + dy)
+        if move_type == "stroke" or move_type == "start":
+            self.start.move(dx, dy)
+        if move_type == "stroke" or move_type == "end":
+            self.end.move(dx, dy)
 
     def point_inside_handle(self, point: ImagePoint, position: str) -> bool:
         """Check if a click happened inside a handle
@@ -167,15 +168,15 @@ class Stroke:
         Draw a box around the annotation to mark a selection
         """
 
-        x1, y1 = self.screen_start
-        x2, y2 = self.screen_end
+        start = self.start.to_screenspace()
+        end = self.end.to_screenspace()
 
         # get min and max with padding
         padding = 6
-        min_x = min(x1, x2) - padding
-        max_x = max(x1, x2) + padding
-        min_y = min(y1, y2) - padding
-        max_y = max(y1, y2) + padding
+        min_x = min(start.x, end.x) - padding
+        max_x = max(start.x, end.x) + padding
+        min_y = min(start.y, end.y) - padding
+        max_y = max(start.y, end.y) + padding
 
         GL.glEnable(GL.GL_LINE_STIPPLE)
         GL.glLineStipple(1, 0xF0F0)
@@ -191,9 +192,9 @@ class Stroke:
 
         GL.glDisable(GL.GL_LINE_STIPPLE)
 
-    def draw_handle(self, x, y):
+    def draw_handle(self, point: ScreenPoint):
 
-        verts = self.get_handle_verts((x, y))
+        verts = self.get_handle_verts(point)
         # Square
         GL.glColor4f(1.0, 1.0, 1.0, 1.0)
         GL.glBegin(GL.GL_QUADS)
@@ -219,8 +220,8 @@ class Stroke:
 class LineStroke(Stroke):
     def __init__(
         self,
-        start: tuple,
-        end: tuple,
+        start: ImagePoint,
+        end: ImagePoint,
         source: str,
         width: float = 1.0,
         color: tuple = (1, 0, 0, 1),
@@ -416,20 +417,22 @@ class LineStroke(Stroke):
         segments = 16
         radius = max(self.width * 1.5, 4)
         if position == "start":
-            x, y = self.screen_start
+            center = self.start.to_screenspace()
         else:
-            x, y = self.screen_end
+            center = self.end.to_screenspace()
 
         GL.glBegin(GL.GL_TRIANGLE_FAN)
-        GL.glVertex2f(x, y)
+        GL.glVertex2f(*center)
         for i in range(segments + 1):
             angle = 2 * math.pi * i / segments
-            GL.glVertex2f(x + math.cos(angle) * radius, y + math.sin(angle) * radius)
+            GL.glVertex2f(
+                center.x + math.cos(angle) * radius, center.y + math.sin(angle) * radius
+            )
         GL.glEnd()
 
-    def draw_text(self, midpoint, width, height, texture_id) -> None:
-        x, y = midpoint
-
+    def draw_text(
+        self, midpoint: ScreenPoint, width: float, height: float, texture_id: int
+    ) -> None:
         # Enable and bind
         GL.glEnable(GL.GL_TEXTURE_2D)
         GL.glBindTexture(GL.GL_TEXTURE_2D, texture_id)
@@ -444,13 +447,13 @@ class LineStroke(Stroke):
 
         # Map texture points to screen points
         GL.glTexCoord2f(0, 1)  # Bottom left
-        GL.glVertex2f(x - half_w, y - half_h)
+        GL.glVertex2f(midpoint.x - half_w, midpoint.y - half_h)
         GL.glTexCoord2f(1, 1)  # Bottom right
-        GL.glVertex2f(x + half_w, y - half_h)
+        GL.glVertex2f(midpoint.x + half_w, midpoint.y - half_h)
         GL.glTexCoord2f(1, 0)  # Top right
-        GL.glVertex2f(x + half_w, y + half_h)
+        GL.glVertex2f(midpoint.x + half_w, midpoint.y + half_h)
         GL.glTexCoord2f(0, 0)  # Top left
-        GL.glVertex2f(x - half_w, y + half_h)
+        GL.glVertex2f(midpoint.x - half_w, midpoint.y + half_h)
         GL.glEnd()
 
         # Cleanup
@@ -466,6 +469,8 @@ class LineStroke(Stroke):
         # Figure out start and end points in screen space
         line_start = self.start.to_screenspace()
         line_end = self.end.to_screenspace()
+        print("image space points", *self.start, *self.end)
+        print("screen space points", *line_start, *line_end)
 
         # If we have arrows the start and end shrink to the base
         # so the arrow has a point
@@ -503,18 +508,18 @@ class LineStroke(Stroke):
         # Draw the text
         if self.text is not None:
             qt_texture = self._generate_text_texture()
-            tid, tw, th = self._load_texture(qt_texture)
-            mid_point = (
-                (line_start.x + line_end.x) / 2,
-                (line_start.y + line_end.y) / 2,
-            )
-            self.draw_text(mid_point, tw, th, tid)
+            if qt_texture:
+                tid, tw, th = self._load_texture(qt_texture)
+                mid_point = ScreenPoint(
+                    ((line_start.x + line_end.x) / 2, (line_start.y + line_end.y) / 2)
+                )
+                self.draw_text(mid_point, tw, th, tid)
 
         # Selection highlighting
         if self.selected:
             self.draw_bounding_box()
-            self.draw_handle(*self.screen_start)
-            self.draw_handle(*self.screen_end)
+            self.draw_handle(line_start)
+            self.draw_handle(line_end)
 
         # Cleanup - so we don't confuse RV
         GL.glDisable(GL.GL_LINE_SMOOTH)
