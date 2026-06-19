@@ -5,7 +5,7 @@ from OpenGL import GL
 from PySide6 import QtGui
 from PySide6.QtCore import Qt
 import rv.commands as crv
-from utils import ImagePoint, ScreenPoint
+from utils import ImagePoint, ScreenPoint, ScreenVector
 
 
 class SquareVerts(NamedTuple):
@@ -323,12 +323,16 @@ class LineStroke(Stroke):
 
         # Create the image
         image = QtGui.QImage(width, height, QtGui.QImage.Format_RGBA8888)
-        image.fill(Qt.transparent)
+        image.fill(QtGui.QColor(0, 0, 0, 127))
 
         # Paint
         painter = QtGui.QPainter(image)
         painter.setFont(font)
-        painter.setPen(QtGui.QColor(255, 255, 255))
+        painter.setPen(
+            QtGui.QColor.fromRgbF(
+                self.color[0], self.color[1], self.color[2], self.opacity
+            )
+        )
         painter.drawText(image.rect(), Qt.AlignCenter, self.text)
         painter.end()
 
@@ -437,26 +441,39 @@ class LineStroke(Stroke):
         GL.glEnable(GL.GL_TEXTURE_2D)
         GL.glBindTexture(GL.GL_TEXTURE_2D, texture_id)
 
-        # Set color
-        GL.glColor4f(1.0, 1.0, 1.0, self.opacity)
-
         half_w = width / 2
         half_h = height / 2
 
-        GL.glBegin(GL.GL_QUADS)
+        # Calculate rotation
+        direction = self.start.direction_to(self.end)
+        angle = math.atan2(direction.y, direction.x)
 
-        # Map texture points to screen points
+        # Clamp the angle so the text is always readable
+        if angle > math.pi / 2:
+            angle -= math.pi
+        elif angle < -math.pi / 2:
+            angle += math.pi
+
+        # Temporeratly move the drawing to relative mode around 0, 0 so we can rotate
+        GL.glPushMatrix()
+        GL.glTranslatef(midpoint.x, midpoint.y, 0)
+        GL.glRotatef(math.degrees(angle), 0, 0, 1)
+
+        GL.glBegin(GL.GL_QUADS)
+        GL.glColor4f(1.0, 1.0, 1.0, self.opacity)
+        # Map texture points to relative points
         GL.glTexCoord2f(0, 1)  # Bottom left
-        GL.glVertex2f(midpoint.x - half_w, midpoint.y - half_h)
+        GL.glVertex2f(-half_w, -half_h)
         GL.glTexCoord2f(1, 1)  # Bottom right
-        GL.glVertex2f(midpoint.x + half_w, midpoint.y - half_h)
+        GL.glVertex2f(half_w, -half_h)
         GL.glTexCoord2f(1, 0)  # Top right
-        GL.glVertex2f(midpoint.x + half_w, midpoint.y + half_h)
+        GL.glVertex2f(half_w, half_h)
         GL.glTexCoord2f(0, 0)  # Top left
-        GL.glVertex2f(midpoint.x - half_w, midpoint.y + half_h)
+        GL.glVertex2f(-half_w, half_h)
         GL.glEnd()
 
         # Cleanup
+        GL.glPopMatrix()
         GL.glDisable(GL.GL_TEXTURE_2D)
 
     def render(self):
