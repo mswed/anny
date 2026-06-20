@@ -211,55 +211,30 @@ class AnnyMode(MinorMode):
                 color=self.inspector.current_stroke_color,
                 start_cap=self.inspector.ui.startCapCb.currentData(),
                 end_cap=self.inspector.ui.endCapCb.currentData(),
+                text=self.inspector.ui.textField.toPlainText(),
+                fill_color=self.inspector.current_fill_color,
+                fill_opacity=self.inspector.ui.fillOpacityField.value(),
             )
             self.annotations.strokes[frame].append(self.current_stroke)
-            print("draw started at", self.current_stroke.start)
 
     def draw_update(self, event):
         if self.current_stroke:
-            print("Drawing")
-            print("start point is now", self.current_stroke.start)
             image_x, image_y = crv.eventToImageSpace(
                 self.current_stroke.source, event.pointer()
             )
 
-            print("pointer at", image_x, image_y)
-
             self.current_stroke.end.x = image_x
             self.current_stroke.end.y = image_y
 
-            print("start point is", self.current_stroke.start)
-            print("end point is", self.current_stroke.end)
-
     def draw_end(self, event):
         self.current_stroke = None
-
-    def update_start_cap(self):
-        if self.current_stroke:
-            self.current_stroke.start_cap = self.inspector.ui.startCapCb.currentData()
-
-    def update_end_cap(self):
-        if self.current_stroke:
-            self.current_stroke.end_cap = self.inspector.ui.endCapCb.currentData()
-
-    def update_opacity(self):
-        if self.current_stroke:
-            self.current_stroke.opacity = float(
-                self.inspector.ui.strokeOpacityField.value()
-            )
-
-    def update_width(self):
-        if self.current_stroke:
-            self.current_stroke.width = float(
-                self.inspector.ui.strokeWidthField.value()
-            )
 
     def get_source_name(self, event):
         """Get the source name under the mouse. Used to convert clicks to image space
 
         Parameters
         ----------
-        event : rv.Event
+        event : crv.Event
             The rv event that called the function. In our case a mouse click
 
         Returns

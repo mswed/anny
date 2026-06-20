@@ -16,18 +16,18 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QComboBox, QDialog, QDoubleSpinBox,
-    QGridLayout, QGroupBox, QLabel, QPushButton,
-    QSizePolicy, QSpacerItem, QTextEdit, QToolButton,
-    QVBoxLayout, QWidget)
+    QFontComboBox, QGridLayout, QGroupBox, QLabel,
+    QPushButton, QSizePolicy, QSpinBox, QTextEdit,
+    QToolButton, QVBoxLayout, QWidget)
 
 class Ui_Inspector(object):
     def setupUi(self, Inspector):
         if not Inspector.objectName():
             Inspector.setObjectName(u"Inspector")
-        Inspector.resize(340, 607)
+        Inspector.resize(426, 607)
         self.verticalLayoutWidget = QWidget(Inspector)
         self.verticalLayoutWidget.setObjectName(u"verticalLayoutWidget")
-        self.verticalLayoutWidget.setGeometry(QRect(0, 0, 330, 410))
+        self.verticalLayoutWidget.setGeometry(QRect(0, 0, 421, 552))
         self.mainLayout = QVBoxLayout(self.verticalLayoutWidget)
         self.mainLayout.setObjectName(u"mainLayout")
         self.mainLayout.setContentsMargins(8, 8, 8, 8)
@@ -98,7 +98,7 @@ class Ui_Inspector(object):
         self.strokeWidthField = QDoubleSpinBox(self.strokeBox)
         self.strokeWidthField.setObjectName(u"strokeWidthField")
         self.strokeWidthField.setMinimum(0.100000000000000)
-        self.strokeWidthField.setValue(1.000000000000000)
+        self.strokeWidthField.setValue(5.000000000000000)
 
         self.gridLayout_4.addWidget(self.strokeWidthField, 0, 1, 1, 1)
 
@@ -139,14 +139,70 @@ class Ui_Inspector(object):
 
         self.mainLayout.addWidget(self.strokeBox)
 
-        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+        self.fillBox = QGroupBox(self.verticalLayoutWidget)
+        self.fillBox.setObjectName(u"fillBox")
+        self.gridLayout = QGridLayout(self.fillBox)
+        self.gridLayout.setObjectName(u"gridLayout")
+        self.fillOpacityLabel = QLabel(self.fillBox)
+        self.fillOpacityLabel.setObjectName(u"fillOpacityLabel")
 
-        self.mainLayout.addItem(self.verticalSpacer)
+        self.gridLayout.addWidget(self.fillOpacityLabel, 0, 0, 1, 1)
 
-        self.textField = QTextEdit(self.verticalLayoutWidget)
+        self.fillOpacityField = QDoubleSpinBox(self.fillBox)
+        self.fillOpacityField.setObjectName(u"fillOpacityField")
+        self.fillOpacityField.setMaximum(1.000000000000000)
+        self.fillOpacityField.setSingleStep(0.100000000000000)
+        self.fillOpacityField.setValue(1.000000000000000)
+
+        self.gridLayout.addWidget(self.fillOpacityField, 0, 1, 1, 1)
+
+        self.fillColorBtn = QPushButton(self.fillBox)
+        self.fillColorBtn.setObjectName(u"fillColorBtn")
+        sizePolicy.setHeightForWidth(self.fillColorBtn.sizePolicy().hasHeightForWidth())
+        self.fillColorBtn.setSizePolicy(sizePolicy)
+        self.fillColorBtn.setMaximumSize(QSize(24, 24))
+        self.fillColorBtn.setAutoFillBackground(False)
+        self.fillColorBtn.setStyleSheet(u"background-color: red; border: none;")
+
+        self.gridLayout.addWidget(self.fillColorBtn, 0, 2, 1, 1)
+
+
+        self.mainLayout.addWidget(self.fillBox)
+
+        self.textBox = QGroupBox(self.verticalLayoutWidget)
+        self.textBox.setObjectName(u"textBox")
+        self.gridLayout_2 = QGridLayout(self.textBox)
+        self.gridLayout_2.setObjectName(u"gridLayout_2")
+        self.fontCb = QFontComboBox(self.textBox)
+        self.fontCb.setObjectName(u"fontCb")
+
+        self.gridLayout_2.addWidget(self.fontCb, 0, 1, 1, 1)
+
+        self.fontLabel = QLabel(self.textBox)
+        self.fontLabel.setObjectName(u"fontLabel")
+
+        self.gridLayout_2.addWidget(self.fontLabel, 0, 0, 1, 1)
+
+        self.fontSizeLabel = QLabel(self.textBox)
+        self.fontSizeLabel.setObjectName(u"fontSizeLabel")
+
+        self.gridLayout_2.addWidget(self.fontSizeLabel, 0, 2, 1, 1)
+
+        self.textField = QTextEdit(self.textBox)
         self.textField.setObjectName(u"textField")
+        self.textField.setLineWrapColumnOrWidth(0)
 
-        self.mainLayout.addWidget(self.textField)
+        self.gridLayout_2.addWidget(self.textField, 1, 1, 1, 2)
+
+        self.fontSizeField = QSpinBox(self.textBox)
+        self.fontSizeField.setObjectName(u"fontSizeField")
+        self.fontSizeField.setMinimum(1)
+        self.fontSizeField.setValue(14)
+
+        self.gridLayout_2.addWidget(self.fontSizeField, 0, 3, 1, 1)
+
+
+        self.mainLayout.addWidget(self.textBox)
 
 
         self.retranslateUi(Inspector)
@@ -168,5 +224,11 @@ class Ui_Inspector(object):
         self.strokeOpacityLabel.setText(QCoreApplication.translate("Inspector", u"Opacity", None))
         self.startCapLabel.setText(QCoreApplication.translate("Inspector", u"Start", None))
         self.endCapLabel.setText(QCoreApplication.translate("Inspector", u"End", None))
+        self.fillBox.setTitle(QCoreApplication.translate("Inspector", u"Fill", None))
+        self.fillOpacityLabel.setText(QCoreApplication.translate("Inspector", u"Opacity", None))
+        self.fillColorBtn.setText("")
+        self.textBox.setTitle(QCoreApplication.translate("Inspector", u"Text", None))
+        self.fontLabel.setText(QCoreApplication.translate("Inspector", u"Font", None))
+        self.fontSizeLabel.setText(QCoreApplication.translate("Inspector", u"Size", None))
     # retranslateUi
 
