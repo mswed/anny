@@ -27,6 +27,13 @@ class TickVerts(NamedTuple):
     bottom: ScreenPoint
 
 
+class Color(NamedTuple):
+    r: float
+    g: float
+    b: float
+    a: float
+
+
 class AnnotationLayer:
     """
     The base class that renders the actual annotations. Annotations are added to the strokes dict and then
@@ -89,14 +96,26 @@ class Stroke:
         self.end = end
         self.source = source
         self.width = width
-        self.color = color
-        self.fill_color = fill_color
+        self._color = color
+        self._fill_color = fill_color
         self.opacity = opacity
         self.fill_opacity = fill_opacity
         self.selected = False
 
-    def get_handle_verts(self, point: ScreenPoint) -> SquareVerts:
-        size = 6
+    @property
+    def color(self):
+        return Color(self._color[0], self._color[1], self._color[2], self.opacity)
+
+    @property
+    def fill_color(self):
+        return Color(
+            self._fill_color[0],
+            self._fill_color[1],
+            self._fill_color[2],
+            self.fill_opacity,
+        )
+
+    def get_handle_verts(self, point: ScreenPoint, size: float = 6.0) -> SquareVerts:
         half = size / 2
 
         bottom_left = ScreenPoint((point.x - half, point.y - half))
@@ -272,13 +291,50 @@ class RectStroke(Stroke):
     def detect_selection(self, point: ImagePoint) -> bool:
         return self.point_inside_stroke(point)
 
+    def draw_border(self, rect: SquareVerts):
+
+        # Top
+        start = rect.top_left
+        end = ScreenPoint((rect.top_right.x, rect.top_right.y - self.width))
+        verts = self.get_rect_verts(start, end)
+        self.draw_rect(verts, color=self.color)
+
+        # Left
+        start = rect.top_left
+        end = ScreenPoint((rect.bottom_left.x + self.width, rect.bottom_left.y))
+        verts = self.get_rect_verts(start, end)
+        self.draw_rect(verts, color=self.color)
+
+        # Right
+        start = rect.top_right
+        end = ScreenPoint((rect.bottom_right.x - self.width, rect.bottom_right.y))
+        verts = self.get_rect_verts(start, end)
+        self.draw_rect(verts, color=self.color)
+
+        # Bottom
+        start = rect.bottom_left
+        end = ScreenPoint((rect.bottom_right.x, rect.bottom_right.y + self.width))
+        verts = self.get_rect_verts(start, end)
+        self.draw_rect(verts, color=self.color)
+
+    def draw_rect(self, verts: SquareVerts, color: Color):
+
+        # Square
+        GL.glColor4f(color.r, color.g, color.b, color.a)
+        GL.glBegin(GL.GL_QUADS)
+        GL.glVertex2f(*verts.bottom_left)
+        GL.glVertex2f(*verts.bottom_right)
+        GL.glVertex2f(*verts.top_right)
+        GL.glVertex2f(*verts.top_left)
+        GL.glEnd()
+
     def render(self):
 
         # Antialiasing
-        GL.glEnable(GL.GL_LINE_SMOOTH)
+        # GL.glEnable(GL.GL_LINE_SMOOTH)
         GL.glEnable(GL.GL_BLEND)
         GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
-        GL.glHint(GL.GL_LINE_SMOOTH_HINT, GL.GL_NICEST)
+        # GL.glHint(GL.GL_LINE_SMOOTH_HINT, GL.GL_NICEST)
 
         start = self.start.to_screenspace()
         end = self.end.to_screenspace()
@@ -300,14 +356,16 @@ class RectStroke(Stroke):
         GL.glEnd()
 
         # Border
-        GL.glLineWidth(self.width)
-        GL.glColor4f(self.color[0], self.color[1], self.color[2], self.opacity)
-        GL.glBegin(GL.GL_LINE_LOOP)
-        GL.glVertex2f(*verts.bottom_left)
-        GL.glVertex2f(*verts.bottom_right)
-        GL.glVertex2f(*verts.top_right)
-        GL.glVertex2f(*verts.top_left)
-        GL.glEnd()
+        # GL.glLineWidth(self.width)
+        # GL.glColor4f(self.color[0], self.color[1], self.color[2], self.opacity)
+        # GL.glBegin(GL.GL_LINE_LOOP)
+        # GL.glVertex2f(*verts.bottom_left)
+        # GL.glVertex2f(*verts.bottom_right)
+        # GL.glVertex2f(*verts.top_right)
+        # GL.glVertex2f(*verts.top_left)
+        # GL.glEnd()
+
+        self.draw_border(verts)
 
         # Selection highlighting
         if self.selected:
