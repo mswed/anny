@@ -33,23 +33,23 @@ class Ui_Inspector(object):
         self.mainLayout.setContentsMargins(8, 8, 8, 8)
         self.toolsLayout = QGridLayout()
         self.toolsLayout.setObjectName(u"toolsLayout")
-        self.textBtn = QToolButton(self.verticalLayoutWidget)
-        self.textBtn.setObjectName(u"textBtn")
-        self.textBtn.setCheckable(True)
-
-        self.toolsLayout.addWidget(self.textBtn, 0, 2, 1, 1)
-
         self.selectBtn = QToolButton(self.verticalLayoutWidget)
         self.selectBtn.setObjectName(u"selectBtn")
         self.selectBtn.setCheckable(True)
 
         self.toolsLayout.addWidget(self.selectBtn, 0, 0, 1, 1)
 
-        self.circleBtn = QToolButton(self.verticalLayoutWidget)
-        self.circleBtn.setObjectName(u"circleBtn")
-        self.circleBtn.setCheckable(True)
+        self.textBtn = QToolButton(self.verticalLayoutWidget)
+        self.textBtn.setObjectName(u"textBtn")
+        self.textBtn.setCheckable(True)
 
-        self.toolsLayout.addWidget(self.circleBtn, 0, 3, 1, 1)
+        self.toolsLayout.addWidget(self.textBtn, 0, 3, 1, 1)
+
+        self.freeBtn = QToolButton(self.verticalLayoutWidget)
+        self.freeBtn.setObjectName(u"freeBtn")
+        self.freeBtn.setCheckable(True)
+
+        self.toolsLayout.addWidget(self.freeBtn, 0, 5, 1, 1)
 
         self.lineBtn = QToolButton(self.verticalLayoutWidget)
         self.lineBtn.setObjectName(u"lineBtn")
@@ -57,17 +57,23 @@ class Ui_Inspector(object):
 
         self.toolsLayout.addWidget(self.lineBtn, 0, 1, 1, 1)
 
-        self.freeBtn = QToolButton(self.verticalLayoutWidget)
-        self.freeBtn.setObjectName(u"freeBtn")
-        self.freeBtn.setCheckable(True)
+        self.circleBtn = QToolButton(self.verticalLayoutWidget)
+        self.circleBtn.setObjectName(u"circleBtn")
+        self.circleBtn.setCheckable(True)
 
-        self.toolsLayout.addWidget(self.freeBtn, 0, 4, 1, 1)
+        self.toolsLayout.addWidget(self.circleBtn, 0, 4, 1, 1)
 
         self.smoothLineBtn = QToolButton(self.verticalLayoutWidget)
         self.smoothLineBtn.setObjectName(u"smoothLineBtn")
         self.smoothLineBtn.setCheckable(True)
 
-        self.toolsLayout.addWidget(self.smoothLineBtn, 0, 5, 1, 1)
+        self.toolsLayout.addWidget(self.smoothLineBtn, 0, 6, 1, 1)
+
+        self.rectBtn = QToolButton(self.verticalLayoutWidget)
+        self.rectBtn.setObjectName(u"rectBtn")
+        self.rectBtn.setCheckable(True)
+
+        self.toolsLayout.addWidget(self.rectBtn, 0, 2, 1, 1)
 
 
         self.mainLayout.addLayout(self.toolsLayout)
@@ -212,12 +218,13 @@ class Ui_Inspector(object):
 
     def retranslateUi(self, Inspector):
         Inspector.setWindowTitle(QCoreApplication.translate("Inspector", u"Anny", None))
-        self.textBtn.setText(QCoreApplication.translate("Inspector", u"T", None))
         self.selectBtn.setText(QCoreApplication.translate("Inspector", u"S", None))
-        self.circleBtn.setText(QCoreApplication.translate("Inspector", u"C", None))
-        self.lineBtn.setText(QCoreApplication.translate("Inspector", u"L", None))
+        self.textBtn.setText(QCoreApplication.translate("Inspector", u"T", None))
         self.freeBtn.setText(QCoreApplication.translate("Inspector", u"F", None))
+        self.lineBtn.setText(QCoreApplication.translate("Inspector", u"L", None))
+        self.circleBtn.setText(QCoreApplication.translate("Inspector", u"C", None))
         self.smoothLineBtn.setText(QCoreApplication.translate("Inspector", u"A", None))
+        self.rectBtn.setText(QCoreApplication.translate("Inspector", u"R", None))
         self.strokeBox.setTitle(QCoreApplication.translate("Inspector", u"Stroke", None))
         self.strokeWidthLabel.setText(QCoreApplication.translate("Inspector", u"Width", None))
         self.strokeColorBtn.setText("")

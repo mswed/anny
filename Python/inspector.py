@@ -27,10 +27,11 @@ class Inspector(QtWidgets.QDialog):
         # Add the actual buttons from the UI file
         self.tool_group.addButton(self.ui.selectBtn, 0)
         self.tool_group.addButton(self.ui.lineBtn, 1)
-        self.tool_group.addButton(self.ui.textBtn, 2)
-        self.tool_group.addButton(self.ui.circleBtn, 3)
-        self.tool_group.addButton(self.ui.freeBtn, 4)
-        self.tool_group.addButton(self.ui.smoothLineBtn, 5)
+        self.tool_group.addButton(self.ui.rectBtn, 2)
+        self.tool_group.addButton(self.ui.textBtn, 3)
+        self.tool_group.addButton(self.ui.circleBtn, 4)
+        self.tool_group.addButton(self.ui.freeBtn, 5)
+        self.tool_group.addButton(self.ui.smoothLineBtn, 6)
 
         # Setup combo boxes
         self.ui.startCapCb.addItem("-", None)
