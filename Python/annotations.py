@@ -58,6 +58,20 @@ class AnnotationLayer:
 
 
 class Stroke:
+    """A single annotation class
+
+    Attributes
+    ----------
+    start : Start point in image space
+    end : End point in image space
+    source : Name of the source the annotation is drawn on
+    width : Stroke width
+    color : Stroke color as normalized floats
+    opacity : Stroke opacity
+    selected : Is the stroke selected?
+
+    """
+
     def __init__(
         self,
         start: ImagePoint,
@@ -66,13 +80,17 @@ class Stroke:
         width: float = 1.0,
         color: tuple = (1, 0, 0, 1),
         opacity: float = 1.0,
+        fill_color: tuple = (1, 0, 0, 1),
+        fill_opacity: float = 1.0,
     ) -> None:
         self.start = start
         self.end = end
         self.source = source
         self.width = width
         self.color = color
+        self.fill_color = fill_color
         self.opacity = opacity
+        self.fill_opacity = fill_opacity
         self.selected = False
 
     def get_handle_verts(self, point: ScreenPoint) -> SquareVerts:
@@ -226,16 +244,18 @@ class LineStroke(Stroke):
         width: float = 1.0,
         color: tuple = (1, 0, 0, 1),
         opacity: float = 1.0,
+        fill_color: tuple = (1, 0, 0, 1),
+        fill_opacity: float = 1.0,
         start_cap: Optional[str] = None,
         end_cap: Optional[str] = None,
         text: Optional[str] = None,
     ) -> None:
-        super().__init__(start, end, source, width, color, opacity)
+        super().__init__(
+            start, end, source, width, color, opacity, fill_color, fill_opacity
+        )
         self.start_cap = start_cap
         self.end_cap = end_cap
         self.text = text
-
-        self.text = "hello, world"
 
     def __repr__(self) -> str:
         return f"<LineStroke> start: {self.start} end: {self.end} color: {self.color}"
@@ -323,7 +343,14 @@ class LineStroke(Stroke):
 
         # Create the image
         image = QtGui.QImage(width, height, QtGui.QImage.Format_RGBA8888)
-        image.fill(QtGui.QColor(0, 0, 0, 127))
+        image.fill(
+            QtGui.QColor.fromRgbF(
+                self.fill_color[0],
+                self.fill_color[1],
+                self.fill_color[2],
+                self.fill_opacity,
+            )
+        )
 
         # Paint
         painter = QtGui.QPainter(image)
@@ -486,8 +513,6 @@ class LineStroke(Stroke):
         # Figure out start and end points in screen space
         line_start = self.start.to_screenspace()
         line_end = self.end.to_screenspace()
-        print("image space points", *self.start, *self.end)
-        print("screen space points", *line_start, *line_end)
 
         # If we have arrows the start and end shrink to the base
         # so the arrow has a point
@@ -523,7 +548,7 @@ class LineStroke(Stroke):
             self.draw_circle("start")
 
         # Draw the text
-        if self.text is not None:
+        if self.text:
             qt_texture = self._generate_text_texture()
             if qt_texture:
                 tid, tw, th = self._load_texture(qt_texture)
