@@ -451,6 +451,17 @@ class LineStroke(Stroke):
         dist = self._point_to_stroke_distance(point)
         return dist < THRESHOLD
 
+    def get_line_verts(self) -> SquareVerts:
+        start = self.start.to_screenspace()
+        end = self.end.to_screenspace()
+
+        bottom_left = ScreenPoint((start.x, start.y + self.width))
+        bottom_right = end
+        top_right = ScreenPoint((end.x, end.y - self.width))
+        top_left = start
+
+        return SquareVerts(bottom_left, bottom_right, top_right, top_left)
+
     def get_tick_verts(self, position="start"):
 
         # We start by switching to screenspace
@@ -595,6 +606,17 @@ class LineStroke(Stroke):
 
         return texture_id, width, height
 
+    def draw_line(self, verts, color):
+
+        # Square
+        GL.glColor4f(color.r, color.g, color.b, color.a)
+        GL.glBegin(GL.GL_QUADS)
+        GL.glVertex2f(*verts.bottom_left)
+        GL.glVertex2f(*verts.bottom_right)
+        GL.glVertex2f(*verts.top_right)
+        GL.glVertex2f(*verts.top_left)
+        GL.glEnd()
+
     def draw_tick(self, position="start"):
         verts = self.get_tick_verts(position)
         if verts:
@@ -720,13 +742,16 @@ class LineStroke(Stroke):
             if verts:
                 line_end = verts.base
 
-        # Draw the base line
-        GL.glLineWidth(self.width)
-        GL.glColor4f(self.color[0], self.color[1], self.color[2], self.opacity)
-        GL.glBegin(GL.GL_LINES)
-        GL.glVertex2f(*line_start)
-        GL.glVertex2f(*line_end)
-        GL.glEnd()
+        # # Draw the base line
+        # GL.glLineWidth(self.width)
+        # GL.glColor4f(self.color[0], self.color[1], self.color[2], self.opacity)
+        # GL.glBegin(GL.GL_LINES)
+        # GL.glVertex2f(*line_start)
+        # GL.glVertex2f(*line_end)
+        # GL.glEnd()
+
+        line_verts = self.get_line_verts()
+        self.draw_line(line_verts, self.color)
 
         # Draw the caps
         if self.end_cap == "arrow":
