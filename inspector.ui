@@ -37,16 +37,6 @@
     </property>
     <item>
      <layout class="QGridLayout" name="toolsLayout">
-      <item row="0" column="2">
-       <widget class="QToolButton" name="textBtn">
-        <property name="text">
-         <string>T</string>
-        </property>
-        <property name="checkable">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="0">
        <widget class="QToolButton" name="selectBtn">
         <property name="text">
@@ -58,9 +48,19 @@
        </widget>
       </item>
       <item row="0" column="3">
-       <widget class="QToolButton" name="circleBtn">
+       <widget class="QToolButton" name="textBtn">
         <property name="text">
-         <string>C</string>
+         <string>T</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="5">
+       <widget class="QToolButton" name="freeBtn">
+        <property name="text">
+         <string>F</string>
         </property>
         <property name="checkable">
          <bool>true</bool>
@@ -78,19 +78,29 @@
        </widget>
       </item>
       <item row="0" column="4">
-       <widget class="QToolButton" name="freeBtn">
+       <widget class="QToolButton" name="circleBtn">
         <property name="text">
-         <string>F</string>
+         <string>C</string>
         </property>
         <property name="checkable">
          <bool>true</bool>
         </property>
        </widget>
       </item>
-      <item row="0" column="5">
+      <item row="0" column="6">
        <widget class="QToolButton" name="smoothLineBtn">
         <property name="text">
          <string>A</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QToolButton" name="rectBtn">
+        <property name="text">
+         <string>R</string>
         </property>
         <property name="checkable">
          <bool>true</bool>

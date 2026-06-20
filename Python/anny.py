@@ -3,7 +3,7 @@ import rv.commands as crv
 from rv.extra_commands import *
 
 from inspector import Inspector
-from annotations import AnnotationLayer, LineStroke
+from annotations import AnnotationLayer, LineStroke, RectStroke
 from utils import ImagePoint, Point
 
 
@@ -15,7 +15,7 @@ class AnnyMode(MinorMode):
         self.current_stroke = None
         self.drag_start_pos = None
         self.drag_type = ""
-        self.stroke_types = {1: LineStroke}
+        self.stroke_types = {1: LineStroke, 2: RectStroke}
 
         self.init(
             "py-anny-mode",
@@ -65,10 +65,18 @@ class AnnyMode(MinorMode):
             "py-anny-mode", "global", "pointer-1--release", self.select_end, "Release"
         )
 
-    def set_active_tool(self, tool_id):
+    def set_active_tool(self, tool_id: int):
         """
-        Set the tool type we're using and bind it to mouse events
+        Set the tool type we're using and bind it to mouse events based on the stroke_types dict
+
+
+        Parameters
+        ----------
+        tool_id : int
+            The tool id (0 is select)
+
         """
+
         # Clear the current stroke
         if self.current_stroke:
             self.current_stroke.selected = False
@@ -120,9 +128,6 @@ class AnnyMode(MinorMode):
             crv.eventToImageSpace(source_name, event.pointer()), source=source_name
         )
 
-        # Find closest stoke to threshold
-        THRESHOLD = 0.01
-
         # Deselect current stroke if needed
         if self.current_stroke:
             self.current_stroke.selected = False
@@ -131,15 +136,14 @@ class AnnyMode(MinorMode):
             self.drag_type = ""
 
         for stroke in self.annotations.strokes[frame]:
-            if stroke.point_inside_handle(image_pos, "start"):
+            if stroke.detect_handle_selection(image_pos, "start"):
                 self.drag_type = "start"
-            elif stroke.point_inside_handle(image_pos, "end"):
+            elif stroke.detect_handle_selection(image_pos, "end"):
                 self.drag_type = "end"
+            elif stroke.detect_selection(image_pos):
+                self.drag_type = "stroke"
             else:
-                # Check if we clicked the stroke
-                dist = stroke.point_to_stroke_distance(image_pos)
-                if dist < THRESHOLD:
-                    self.drag_type = "stroke"
+                continue
 
             if self.drag_type != "":
                 self.current_stroke = stroke

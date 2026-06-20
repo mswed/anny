@@ -5,7 +5,7 @@ from OpenGL import GL
 from PySide6 import QtGui
 from PySide6.QtCore import Qt
 import rv.commands as crv
-from utils import ImagePoint, ScreenPoint, ScreenVector
+from utils import ImagePoint, ScreenPoint
 
 
 class SquareVerts(NamedTuple):
@@ -122,7 +122,7 @@ class Stroke:
         if move_type == "stroke" or move_type == "end":
             self.end.move(dx, dy)
 
-    def point_inside_handle(self, point: ImagePoint, position: str) -> bool:
+    def detect_handle_selection(self, point: ImagePoint, position: str) -> bool:
         """Check if a click happened inside a handle
 
         Parameters
@@ -153,33 +153,8 @@ class Stroke:
 
         return x_end > hp.x > x_start and y_start > hp.y > y_end
 
-    def point_to_stroke_distance(self, point):
-        """
-        Calculate the distance from the mouse click to the stroke. Used for selection.
-        """
-
-        # Get the points coordinates
-        px, py = point
-        x1, y1 = self.start
-        x2, y2 = self.end
-
-        # Calculate distances
-        dx = x2 - x1
-        dy = y2 - y1
-
-        if dx == 0 and dy == 0:
-            # Our stroke has no length, it's a dot
-            return math.sqrt((px - x1) ** 2 + (py - y1) ** 2)
-
-        # Find the point on the stroke that is closest to our click
-        t = ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy)
-        # Clamp it so it only applies to the actual stroke
-        t = max(0, min(1, t))
-
-        nearest_x = x1 + t * dx
-        nearest_y = y1 + t * dy
-
-        return math.sqrt((px - nearest_x) ** 2 + (py - nearest_y) ** 2)
+    def detect_selection(self, point: ImagePoint) -> bool:
+        return False
 
     def draw_bounding_box(self):
         """
@@ -235,6 +210,115 @@ class Stroke:
         pass
 
 
+class RectStroke(Stroke):
+    def __init__(
+        self,
+        start: ImagePoint,
+        end: ImagePoint,
+        source: str,
+        width: float = 1,
+        color: tuple = (1, 0, 0, 1),
+        opacity: float = 1,
+        fill_color: tuple = (1, 0, 0, 1),
+        fill_opacity: float = 1,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            start, end, source, width, color, opacity, fill_color, fill_opacity
+        )
+
+    def __repr__(self) -> str:
+        return f"<RectStroke> start={self.start} end={self.end} color={self.color}"
+
+    def get_rect_verts(self, start: ScreenPoint, end: ScreenPoint) -> SquareVerts:
+
+        bottom_left = ScreenPoint((start.x, end.y))
+        bottom_right = ScreenPoint((end.x, end.y))
+        top_right = ScreenPoint((end.x, start.y))
+        top_left = ScreenPoint((start.x, start.y))
+
+        return SquareVerts(bottom_left, bottom_right, top_right, top_left)
+
+    def point_inside_stroke(self, point: ImagePoint) -> bool:
+        """Check if a click happened inside a stroke
+
+        Parameters
+        ----------
+        point : ImagePoint
+            Where the user clicked
+
+        Returns
+        -------
+        bool
+            True if stroke was clicked false otherwise
+        """
+
+        # Strokes are drawn in screen space, so convert to event space first
+        hp = point.to_screenspace()
+
+        start = self.start.to_screenspace()
+        end = self.end.to_screenspace()
+        verts = self.get_rect_verts(start, end)
+
+        x_start = verts.bottom_left.x
+        x_end = verts.bottom_right.x
+        y_start = verts.top_left.y
+        y_end = verts.bottom_left.y
+
+        return x_end > hp.x > x_start and y_start > hp.y > y_end
+
+    def detect_selection(self, point: ImagePoint) -> bool:
+        return self.point_inside_stroke(point)
+
+    def render(self):
+
+        # Antialiasing
+        GL.glEnable(GL.GL_LINE_SMOOTH)
+        GL.glEnable(GL.GL_BLEND)
+        GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
+        GL.glHint(GL.GL_LINE_SMOOTH_HINT, GL.GL_NICEST)
+
+        start = self.start.to_screenspace()
+        end = self.end.to_screenspace()
+
+        verts = self.get_rect_verts(start, end)
+
+        # Square
+        GL.glColor4f(
+            self.fill_color[0],
+            self.fill_color[1],
+            self.fill_color[2],
+            self.fill_opacity,
+        )
+        GL.glBegin(GL.GL_QUADS)
+        GL.glVertex2f(*verts.bottom_left)
+        GL.glVertex2f(*verts.bottom_right)
+        GL.glVertex2f(*verts.top_right)
+        GL.glVertex2f(*verts.top_left)
+        GL.glEnd()
+
+        # Border
+        GL.glLineWidth(self.width)
+        GL.glColor4f(self.color[0], self.color[1], self.color[2], self.opacity)
+        GL.glBegin(GL.GL_LINE_LOOP)
+        GL.glVertex2f(*verts.bottom_left)
+        GL.glVertex2f(*verts.bottom_right)
+        GL.glVertex2f(*verts.top_right)
+        GL.glVertex2f(*verts.top_left)
+        GL.glEnd()
+
+        # Selection highlighting
+        if self.selected:
+            self.draw_bounding_box()
+            self.draw_handle(start)
+            self.draw_handle(end)
+
+        # Cleanup - so we don't confuse RV
+        GL.glDisable(GL.GL_LINE_SMOOTH)
+        GL.glDisable(GL.GL_BLEND)
+        GL.glLineWidth(1.0)
+
+
 class LineStroke(Stroke):
     def __init__(
         self,
@@ -258,7 +342,43 @@ class LineStroke(Stroke):
         self.text = text
 
     def __repr__(self) -> str:
-        return f"<LineStroke> start: {self.start} end: {self.end} color: {self.color}"
+        return f"<LineStroke> start={self.start} end={self.end} color={self.color}"
+
+    def _point_to_stroke_distance(self, point):
+        """
+        Calculate the distance from the mouse click to the stroke. Used for selection.
+        """
+
+        # Get the points coordinates
+        px, py = point
+        x1, y1 = self.start
+        x2, y2 = self.end
+
+        # Calculate distances
+        dx = x2 - x1
+        dy = y2 - y1
+
+        if dx == 0 and dy == 0:
+            # Our stroke has no length, it's a dot
+            return math.sqrt((px - x1) ** 2 + (py - y1) ** 2)
+
+        # Find the point on the stroke that is closest to our click
+        t = ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy)
+        # Clamp it so it only applies to the actual stroke
+        t = max(0, min(1, t))
+
+        nearest_x = x1 + t * dx
+        nearest_y = y1 + t * dy
+
+        return math.sqrt((px - nearest_x) ** 2 + (py - nearest_y) ** 2)
+
+    def detect_selection(self, point: ImagePoint) -> bool:
+
+        # Find closest stoke to threshold
+        THRESHOLD = 0.01
+
+        dist = self._point_to_stroke_distance(point)
+        return dist < THRESHOLD
 
     def get_tick_verts(self, position="start"):
 
@@ -511,8 +631,12 @@ class LineStroke(Stroke):
         GL.glHint(GL.GL_LINE_SMOOTH_HINT, GL.GL_NICEST)
 
         # Figure out start and end points in screen space
-        line_start = self.start.to_screenspace()
-        line_end = self.end.to_screenspace()
+        # We need to record the original start and end for the handles
+        original_start = self.start.to_screenspace()
+        original_end = self.end.to_screenspace()
+
+        line_start = original_start
+        line_end = original_end
 
         # If we have arrows the start and end shrink to the base
         # so the arrow has a point
@@ -560,8 +684,8 @@ class LineStroke(Stroke):
         # Selection highlighting
         if self.selected:
             self.draw_bounding_box()
-            self.draw_handle(line_start)
-            self.draw_handle(line_end)
+            self.draw_handle(original_start)
+            self.draw_handle(original_end)
 
         # Cleanup - so we don't confuse RV
         GL.glDisable(GL.GL_LINE_SMOOTH)
