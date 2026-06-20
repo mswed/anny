@@ -115,23 +115,28 @@ class Inspector(QtWidgets.QDialog):
             else:
                 self.mode.current_stroke.fill_color = new_color
 
+            crv.redraw()
+
     def update_start_cap(self) -> None:
         """Update the start of line to match the start cap selection"""
 
         if self.mode.current_stroke:
             self.mode.current_stroke.start_cap = self.ui.startCapCb.currentData()
+            crv.redraw()
 
     def update_end_cap(self) -> None:
         """Update the start of line to match the start cap selection"""
 
         if self.mode.current_stroke:
             self.mode.current_stroke.end_cap = self.ui.endCapCb.currentData()
+            crv.redraw()
 
     def update_stroke_opacity(self) -> None:
         """Update the stroke opacity based on UI selection"""
 
         if self.mode.current_stroke:
             self.mode.current_stroke.opacity = float(self.ui.strokeOpacityField.value())
+            crv.redraw()
 
     def update_fill_opacity(self):
         """Update the fill opacity based on UI selection"""
@@ -139,13 +144,16 @@ class Inspector(QtWidgets.QDialog):
             self.mode.current_stroke.fill_opacity = float(
                 self.ui.fillOpacityField.value()
             )
+            crv.redraw()
 
     def update_stroke_width(self):
         """Update the stroke width based on UI selection"""
         if self.mode.current_stroke:
             self.mode.current_stroke.width = float(self.ui.strokeWidthField.value())
+            crv.redraw()
 
     def update_text(self):
         """Update the text based on UI selection"""
         if self.mode.current_stroke:
             self.mode.current_stroke.text = self.ui.textField.toPlainText()
+            crv.redraw()
