@@ -72,6 +72,8 @@ class Stroke:
 
     """
 
+    editable_properties = ["width", "color", "opacity", "fill_color", "fill_opacity"]
+
     def __init__(
         self,
         start: ImagePoint,
@@ -320,6 +322,17 @@ class RectStroke(Stroke):
 
 
 class LineStroke(Stroke):
+    editable_properties = [
+        "width",
+        "color",
+        "opacity",
+        "fill_color",
+        "fill_opacity",
+        "start_cap",
+        "end_cap",
+        "text",
+    ]
+
     def __init__(
         self,
         start: ImagePoint,
