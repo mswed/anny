@@ -94,26 +94,51 @@ class AnnyMode(MinorMode):
         """
         Update the UI with the selected stroke info
         """
-        if self.current_stroke:
+        if not self.current_stroke:
+            return
+
+        props = self.current_stroke.editable_properties
+        if "width" in props:
             # Update width
             self.inspector.ui.strokeWidthField.setValue(self.current_stroke.width)
 
+        if "color" in props:
             # Update color
             r, g, b, a = self.current_stroke.color
             self.inspector.ui.strokeColorBtn.setStyleSheet(
                 f"background-color: rgba({int(r * 255)}, {int(g * 255)}, {int(b * 255)}, {int(a * 255)}); border: none;"
             )
 
+        if "opacity" in props:
             # Update opacity
             self.inspector.ui.strokeOpacityField.setValue(self.current_stroke.opacity)
 
-            # Update caps
+        # Update caps
+        if "start_cap" in props:
             self.inspector.ui.startCapCb.setCurrentIndex(
                 self.inspector.ui.startCapCb.findData(self.current_stroke.start_cap)
             )
+        if "end_cap" in props:
             self.inspector.ui.endCapCb.setCurrentIndex(
                 self.inspector.ui.endCapCb.findData(self.current_stroke.end_cap)
             )
+
+        if "fill_color" in props:
+            # Update fill color
+            r, g, b, a = self.current_stroke.fill_color
+            self.inspector.ui.fillColorBtn.setStyleSheet(
+                f"background-color: rgba({int(r * 255)}, {int(g * 255)}, {int(b * 255)}, {int(a * 255)}); border: none;"
+            )
+
+        if "fill_opacity" in props:
+            # Update fill opacity
+            self.inspector.ui.fillOpacityField.setValue(
+                self.current_stroke.fill_opacity
+            )
+
+        if "text" in props:
+            # Update text
+            self.inspector.ui.textField.setText(self.current_stroke.text)
 
     def select_start(self, event):
         # Get frame (we store the annotation against the frame)
