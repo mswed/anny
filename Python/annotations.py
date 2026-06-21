@@ -15,6 +15,14 @@ class SquareVerts(NamedTuple):
     top_left: ScreenPoint
 
 
+class ArrowVerts(NamedTuple):
+    tip: ScreenPoint
+    left_wing: ScreenPoint
+    right_wing: ScreenPoint
+    base: ScreenPoint
+    line_base: ScreenPoint
+
+
 class LineVerts(NamedTuple):
     bottom_left: ScreenPoint
     bottom_right: ScreenPoint
@@ -22,16 +30,13 @@ class LineVerts(NamedTuple):
     top_left: ScreenPoint
     mid_left: ScreenPoint
     mid_right: ScreenPoint
+    start_anchor: ScreenPoint
+    end_anchor: ScreenPoint
+    midpoint: ScreenPoint
+    start_arrow: Optional[ArrowVerts]
+    end_arrow: Optional[ArrowVerts]
     perp: ScreenVector
     half_offset: ScreenVector
-
-
-class ArrowVerts(NamedTuple):
-    tip: ScreenPoint
-    left_wing: ScreenPoint
-    right_wing: ScreenPoint
-    base: ScreenPoint
-    line_base: ScreenPoint
 
 
 class TickVerts(NamedTuple):
@@ -118,6 +123,10 @@ class Stroke:
     def color(self):
         return Color(self._color[0], self._color[1], self._color[2], self.opacity)
 
+    @color.setter
+    def color(self, value: tuple):
+        self._color = value
+
     @property
     def fill_color(self):
         return Color(
@@ -126,6 +135,10 @@ class Stroke:
             self._fill_color[2],
             self.fill_opacity,
         )
+
+    @fill_color.setter
+    def fill_color(self, value: tuple):
+        self._fill_color = value
 
     def get_handle_verts(self, point: ScreenPoint, size: float = 6.0) -> SquareVerts:
         half = size / 2
@@ -367,16 +380,6 @@ class RectStroke(Stroke):
         GL.glVertex2f(*verts.top_left)
         GL.glEnd()
 
-        # Border
-        # GL.glLineWidth(self.width)
-        # GL.glColor4f(self.color[0], self.color[1], self.color[2], self.opacity)
-        # GL.glBegin(GL.GL_LINE_LOOP)
-        # GL.glVertex2f(*verts.bottom_left)
-        # GL.glVertex2f(*verts.bottom_right)
-        # GL.glVertex2f(*verts.top_right)
-        # GL.glVertex2f(*verts.top_left)
-        # GL.glEnd()
-
         self.draw_border(verts)
 
         # Selection highlighting
@@ -463,10 +466,29 @@ class LineStroke(Stroke):
         dist = self._point_to_stroke_distance(point)
         return dist < THRESHOLD
 
-    def get_line_verts(
-        self, start: ScreenPoint, end: ScreenPoint
-    ) -> Optional[LineVerts]:
-        direction = start.direction_to(end)
+    def get_line_verts(self) -> Optional[LineVerts]:
+        # Figure out start and end points in screen space
+        # We need to record the original start and end for the handles
+        start_anchor = self.start.to_screenspace()
+        end_anchor = self.end.to_screenspace()
+
+        line_start = start_anchor
+        line_end = end_anchor
+
+        # If we have arrows the start and end shrink to the base
+        # so the arrow has a point
+        start_arrow = None
+        end_arrow = None
+        if self.start_cap == "arrow":
+            start_arrow = self.get_arrow_verts(start_anchor, end_anchor, "start")
+            if start_arrow:
+                line_start = start_arrow.line_base
+        if self.end_cap == "arrow":
+            end_arrow = self.get_arrow_verts(start_anchor, end_anchor, "end")
+            if end_arrow:
+                line_end = end_arrow.line_base
+
+        direction = start_anchor.direction_to(end_anchor)
         normalized = direction.normalized
         if normalized is None:
             return
@@ -475,12 +497,15 @@ class LineStroke(Stroke):
         offset = perp * self.width
         half_offset = perp * (self.width / 2)
 
-        top_left = start
+        top_left = line_start
         bottom_left = top_left + offset
-        top_right = end
+        top_right = line_end
         bottom_right = top_right + offset
         mid_left = top_left + half_offset
         mid_right = top_right + half_offset
+        midpoint = ScreenPoint(
+            ((mid_left.x + mid_right.x) / 2, (mid_left.y + mid_right.y) / 2)
+        )
 
         return LineVerts(
             bottom_left,
@@ -489,32 +514,26 @@ class LineStroke(Stroke):
             top_left,
             mid_left,
             mid_right,
+            start_anchor,
+            end_anchor,
+            midpoint,
+            start_arrow,
+            end_arrow,
             perp,
             half_offset,
         )
 
-    def get_tick_verts(
-        self, start: ScreenPoint, end: ScreenPoint, perp: ScreenVector, position="start"
-    ):
+    def get_tick_verts(self, line: LineVerts, position="start"):
 
-        # Create a direction vector
-        direction = start.direction_to(end)
-
-        # Normalize the vector so we have a unit vector
-        normalized = direction.normalized
-        if normalized is None:
-            # We don't have a vector, we can't draw
-            return
-
+        # Create a direction vecto
         tick_width = max(self.width * 2, 1)
-        perp = normalized.perpendicular
 
         # Calculate points
-        base = start if position == "start" else end
+        base = line.mid_left if position == "start" else line.mid_right
         # base + (perp * width)
-        top = base + (perp * tick_width)
+        top = base + (line.perp * tick_width)
         # base - (perp * width)
-        bottom = base - (perp * tick_width)
+        bottom = base - (line.perp * tick_width)
 
         return TickVerts(top, bottom)
 
@@ -660,8 +679,8 @@ class LineStroke(Stroke):
         GL.glVertex2f(*verts.top_left)
         GL.glEnd()
 
-    def draw_tick(self, start, end, perp, position="start"):
-        verts = self.get_tick_verts(start, end, perp, position)
+    def draw_tick(self, line: LineVerts, position="start"):
+        verts = self.get_tick_verts(line, position)
         if verts:
             GL.glLineWidth(self.width / 2)
             GL.glColor4f(self.color[0], self.color[1], self.color[2], self.opacity)
@@ -693,24 +712,21 @@ class LineStroke(Stroke):
             GL.glVertex2f(*verts.right_wing)
             GL.glEnd()
 
-    def draw_circle(self, start: ScreenPoint, end: ScreenPoint, position: str) -> None:
+    def draw_circle(self, line: LineVerts, position: str) -> None:
         """
         Draw a GL circle at the start or end of the line
 
         Parameters
         ----------
-        start : ScreenPoint
-            The start of the line
-
-        end : ScreenPoint
-            The end of the line
-
+        line : LineVerts
+            The drawn line points
         position : str
             Which point should we use to draw? start or end?
+
         """
         segments = 16
         radius = max(self.width * 1.5, 4)
-        center = start if position == "start" else end
+        center = line.mid_left if position == "start" else line.mid_right
 
         GL.glBegin(GL.GL_TRIANGLE_FAN)
         GL.glVertex2f(*center)
@@ -764,24 +780,17 @@ class LineStroke(Stroke):
         GL.glDisable(GL.GL_TEXTURE_2D)
 
     def _draw_cap(
-        self,
-        cap_type: Optional[str],
-        position: str,
-        start: ScreenPoint,
-        end: ScreenPoint,
-        mid_left: ScreenPoint,
-        mid_right: ScreenPoint,
-        perp: ScreenVector,
+        self, cap_type: Optional[str], position: str, line: LineVerts
     ) -> None:
         if cap_type is None:
             return
 
         if cap_type == "arrow":
-            self.draw_arrow(start, end, position)
+            self.draw_arrow(line.start_anchor, line.end_anchor, position)
         elif cap_type == "tick":
-            self.draw_tick(mid_left, mid_right, perp, position)
+            self.draw_tick(line, position)
         elif cap_type == "circle":
-            self.draw_circle(mid_left, mid_right, position)
+            self.draw_circle(line, position)
         else:
             print("Unknown cap type", cap_type)
 
@@ -792,66 +801,28 @@ class LineStroke(Stroke):
         GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
         GL.glHint(GL.GL_LINE_SMOOTH_HINT, GL.GL_NICEST)
 
-        # Figure out start and end points in screen space
-        # We need to record the original start and end for the handles
-        original_start = self.start.to_screenspace()
-        original_end = self.end.to_screenspace()
-
-        line_start = original_start
-        line_end = original_end
-
-        # If we have arrows the start and end shrink to the base
-        # so the arrow has a point
-        if self.start_cap == "arrow":
-            verts = self.get_arrow_verts(original_start, original_end, "start")
-            if verts:
-                line_start = verts.line_base
-        if self.end_cap == "arrow":
-            verts = self.get_arrow_verts(original_start, original_end, "end")
-            if verts:
-                line_end = verts.line_base
-
-        line_verts = self.get_line_verts(line_start, line_end)
-        if not line_verts:
+        verts = self.get_line_verts()
+        if not verts:
             return
 
-        self.draw_line(line_verts, self.color)
+        self.draw_line(verts, self.color)
 
         # Draw the caps
-        self._draw_cap(
-            self.start_cap,
-            "start",
-            original_start,
-            original_end,
-            line_verts.mid_left,
-            line_verts.mid_right,
-            line_verts.perp,
-        )
-        self._draw_cap(
-            self.end_cap,
-            "end",
-            original_start,
-            original_end,
-            line_verts.mid_left,
-            line_verts.mid_right,
-            line_verts.perp,
-        )
+        self._draw_cap(self.start_cap, "start", verts)
+        self._draw_cap(self.end_cap, "end", verts)
 
         # Draw the text
         if self.text:
             qt_texture = self._generate_text_texture()
             if qt_texture:
                 tid, tw, th = self._load_texture(qt_texture)
-                mid_point = ScreenPoint(
-                    ((line_start.x + line_end.x) / 2, (line_start.y + line_end.y) / 2)
-                )
-                self.draw_text(mid_point, tw, th, tid)
+                self.draw_text(verts.midpoint, tw, th, tid)
 
         # Selection highlighting
         if self.selected:
             self.draw_bounding_box()
-            self.draw_handle(original_start + line_verts.half_offset)
-            self.draw_handle(original_end + line_verts.half_offset)
+            self.draw_handle(verts.start_anchor + verts.half_offset)
+            self.draw_handle(verts.end_anchor + verts.half_offset)
 
         # Cleanup - so we don't confuse RV
         GL.glDisable(GL.GL_LINE_SMOOTH)
