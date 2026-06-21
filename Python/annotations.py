@@ -5,7 +5,7 @@ from OpenGL import GL
 from PySide6 import QtGui
 from PySide6.QtCore import Qt
 import rv.commands as crv
-from utils import ImagePoint, ScreenPoint
+from utils import ImagePoint, ScreenPoint, ScreenVector
 
 
 class SquareVerts(NamedTuple):
@@ -15,11 +15,22 @@ class SquareVerts(NamedTuple):
     top_left: ScreenPoint
 
 
+class LineVerts(NamedTuple):
+    bottom_left: ScreenPoint
+    bottom_right: ScreenPoint
+    top_right: ScreenPoint
+    top_left: ScreenPoint
+    mid_left: ScreenPoint
+    mid_right: ScreenPoint
+    perp: ScreenVector
+
+
 class ArrowVerts(NamedTuple):
     tip: ScreenPoint
     left_wing: ScreenPoint
     right_wing: ScreenPoint
     base: ScreenPoint
+    line_base: ScreenPoint
 
 
 class TickVerts(NamedTuple):
@@ -451,16 +462,42 @@ class LineStroke(Stroke):
         dist = self._point_to_stroke_distance(point)
         return dist < THRESHOLD
 
-    def get_line_verts(self) -> SquareVerts:
-        start = self.start.to_screenspace()
-        end = self.end.to_screenspace()
+    def get_line_verts(self, start: ScreenPoint, end: ScreenPoint) -> LineVerts:
+        direction = start.direction_to(end)
+        normalized = direction.normalized
+        if normalized is None:
+            return
 
-        bottom_left = ScreenPoint((start.x, start.y + self.width))
-        bottom_right = end
-        top_right = ScreenPoint((end.x, end.y - self.width))
+        perp = normalized.perpendicular
+
         top_left = start
+        bottom_left = top_left + (perp * self.width)
+        top_right = end
+        bottom_right = top_right + (perp * self.width)
+        mid_left = top_left + (perp * (self.width / 2))
+        mid_right = top_right + (perp * (self.width / 2))
 
-        return SquareVerts(bottom_left, bottom_right, top_right, top_left)
+        return LineVerts(
+            bottom_left, bottom_right, top_right, top_left, mid_left, mid_right, perp
+        )
+
+    def get_caps_center(self, verts: SquareVerts):
+        # Calculate the cap center for cap placement
+        mid_start = ScreenPoint(
+            (
+                (verts.top_left.x + verts.bottom_left.x) / 2,
+                (verts.top_left.y + verts.bottom_left.y) / 2,
+            )
+        )
+
+        mid_end = ScreenPoint(
+            (
+                (verts.top_right.x + verts.bottom_right.x) / 2,
+                (verts.top_right.y + verts.bottom_right.y) / 2,
+            )
+        )
+
+        return mid_start, mid_end
 
     def get_tick_verts(self, position="start"):
 
@@ -489,10 +526,7 @@ class LineStroke(Stroke):
 
         return TickVerts(top, bottom)
 
-    def get_arrow_verts(self, position="end"):
-        # We start by switching to screenspace
-        start = self.start.to_screenspace()
-        end = self.end.to_screenspace()
+    def get_arrow_verts(self, start: ScreenPoint, end: ScreenPoint, position="end"):
 
         # Create a direction vector
         if position == "end":
@@ -513,12 +547,19 @@ class LineStroke(Stroke):
         perp = normalized.perpendicular
 
         # Calculate points
-        tip = end if position == "end" else start
+        tip = (
+            end + (perp * (self.width / 2))
+            if position == "end"
+            else start - (perp * (self.width / 2))
+        )
         base = tip - (normalized * arrow_length * 2)
         left_wing = base + (perp * arrow_width)
         right_wing = base - (perp * arrow_width)
 
-        return ArrowVerts(tip, left_wing, right_wing, base)
+        line_tip = end if position == "end" else start
+        line_base = line_tip - (normalized * arrow_length * 2)
+
+        return ArrowVerts(tip, left_wing, right_wing, base, line_base)
 
     def _generate_text_texture(self) -> Optional[QtGui.QImage]:
         """Generate a text texture so we can render it using OpenGL
@@ -617,6 +658,16 @@ class LineStroke(Stroke):
         GL.glVertex2f(*verts.top_left)
         GL.glEnd()
 
+        # Draw a line around the line to smooth it
+        GL.glLineWidth(1)
+        GL.glColor4f(self.color[0], self.color[1], self.color[2], self.opacity)
+        GL.glBegin(GL.GL_LINE_LOOP)
+        GL.glVertex2f(*verts.bottom_left)
+        GL.glVertex2f(*verts.bottom_right)
+        GL.glVertex2f(*verts.top_right)
+        GL.glVertex2f(*verts.top_left)
+        GL.glEnd()
+
     def draw_tick(self, position="start"):
         verts = self.get_tick_verts(position)
         if verts:
@@ -627,8 +678,10 @@ class LineStroke(Stroke):
             GL.glVertex2f(*verts.bottom)
             GL.glEnd()
 
-    def draw_arrow(self, position: str = "end") -> None:
-        verts = self.get_arrow_verts(position)
+    def draw_arrow(
+        self, start: ScreenPoint, end: ScreenPoint, position: str = "end"
+    ) -> None:
+        verts = self.get_arrow_verts(start, end, position)
         if verts:
             # We only draw if we got verts
             # Draw
@@ -734,30 +787,25 @@ class LineStroke(Stroke):
         # If we have arrows the start and end shrink to the base
         # so the arrow has a point
         if self.start_cap == "arrow":
-            verts = self.get_arrow_verts("start")
+            verts = self.get_arrow_verts(original_start, original_end, "start")
             if verts:
-                line_start = verts.base
+                line_start = verts.line_base
         if self.end_cap == "arrow":
-            verts = self.get_arrow_verts("end")
+            verts = self.get_arrow_verts(original_start, original_end, "end")
             if verts:
-                line_end = verts.base
+                line_end = verts.line_base
 
-        # # Draw the base line
-        # GL.glLineWidth(self.width)
-        # GL.glColor4f(self.color[0], self.color[1], self.color[2], self.opacity)
-        # GL.glBegin(GL.GL_LINES)
-        # GL.glVertex2f(*line_start)
-        # GL.glVertex2f(*line_end)
-        # GL.glEnd()
+        line_verts = self.get_line_verts(line_start, line_end)
+        if not line_verts:
+            return
 
-        line_verts = self.get_line_verts()
         self.draw_line(line_verts, self.color)
 
         # Draw the caps
         if self.end_cap == "arrow":
-            self.draw_arrow("end")
+            self.draw_arrow(original_start, original_end, "end")
         if self.start_cap == "arrow":
-            self.draw_arrow("start")
+            self.draw_arrow(original_start, original_end, "start")
         if self.end_cap == "tick":
             self.draw_tick("end")
         if self.start_cap == "tick":
@@ -780,8 +828,8 @@ class LineStroke(Stroke):
         # Selection highlighting
         if self.selected:
             self.draw_bounding_box()
-            self.draw_handle(original_start)
-            self.draw_handle(original_end)
+            self.draw_handle(original_start + (line_verts.perp * (self.width / 2)))
+            self.draw_handle(original_end + (line_verts.perp * (self.width / 2)))
 
         # Cleanup - so we don't confuse RV
         GL.glDisable(GL.GL_LINE_SMOOTH)
