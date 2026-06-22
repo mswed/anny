@@ -59,19 +59,16 @@ class ScreenVector(Vector):
 
 
 class Point:
-    def __init__(self, point, source: Optional[str] = None) -> None:
-        self.x, self.y = point
+    def __init__(self, x, y, source: Optional[str] = None) -> None:
+        self.x = x
+        self.y = y
         self.source = source
 
     def __add__(self, vector: Vector):
-        return self.__class__(
-            (self.x + vector.x, self.y + vector.y), source=self.source
-        )
+        return self.__class__(self.x + vector.x, self.y + vector.y, source=self.source)
 
     def __sub__(self, vector: Vector):
-        return self.__class__(
-            (self.x - vector.x, self.y - vector.y), source=self.source
-        )
+        return self.__class__(self.x - vector.x, self.y - vector.y, source=self.source)
 
     def __iter__(self):
         yield self.x
@@ -82,8 +79,8 @@ class Point:
 
 
 class ImagePoint(Point):
-    def __init__(self, point, source: Optional[str] = None) -> None:
-        super().__init__(point, source)
+    def __init__(self, x, y, source: Optional[str] = None) -> None:
+        super().__init__(x, y, source)
 
     @property
     def screenspace(self):
@@ -99,7 +96,7 @@ class ImagePoint(Point):
         return self.screenspace[1] if self.screenspace else None
 
     def to_screenspace(self):
-        return ScreenPoint((self.screen_x, self.screen_y), source=self.source)
+        return ScreenPoint(self.screen_x, self.screen_y, source=self.source)
 
     def direction_to(self, end_point: Point) -> Optional[Vector]:
         return ImageVector(end_point.x - self.x, end_point.y - self.y)
@@ -114,8 +111,8 @@ class ImagePoint(Point):
 
 
 class ScreenPoint(Point):
-    def __init__(self, point, source: Optional[str] = None) -> None:
-        super().__init__(point, source)
+    def __init__(self, x, y, source: Optional[str] = None) -> None:
+        super().__init__(x, y, source)
 
     @property
     def imagespace(self):
@@ -131,7 +128,7 @@ class ScreenPoint(Point):
         return self.imagespace[1] if self.imagespace else None
 
     def to_imagespace(self) -> ImagePoint:
-        return ImagePoint((self.image_x, self.image_y), source=self.source)
+        return ImagePoint(self.image_x, self.image_y, source=self.source)
 
     def direction_to(self, end_point: Point) -> ScreenVector:
         return ScreenVector(end_point.x - self.x, end_point.y - self.y)

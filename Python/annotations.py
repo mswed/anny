@@ -143,10 +143,10 @@ class Stroke:
     def get_handle_verts(self, point: ScreenPoint, size: float = 6.0) -> SquareVerts:
         half = size / 2
 
-        bottom_left = ScreenPoint((point.x - half, point.y - half))
-        bottom_right = ScreenPoint((point.x + half, point.y - half))
-        top_right = ScreenPoint((point.x + half, point.y + half))
-        top_left = ScreenPoint((point.x - half, point.y + half))
+        bottom_left = ScreenPoint(point.x - half, point.y - half)
+        bottom_right = ScreenPoint(point.x + half, point.y - half)
+        top_right = ScreenPoint(point.x + half, point.y + half)
+        top_left = ScreenPoint(point.x - half, point.y + half)
 
         return SquareVerts(bottom_left, bottom_right, top_right, top_left)
 
@@ -201,6 +201,10 @@ class Stroke:
 
     def detect_selection(self, point: ImagePoint) -> bool:
         return False
+
+    def update_draw(self, point: ImagePoint):
+        self.end.x = point.x
+        self.end.y = point.y
 
     def draw_bounding_box(self):
         """
@@ -399,10 +403,10 @@ class RectStroke(Stroke):
 
     def get_rect_verts(self, start: ScreenPoint, end: ScreenPoint) -> SquareVerts:
 
-        bottom_left = ScreenPoint((start.x, end.y))
-        bottom_right = ScreenPoint((end.x, end.y))
-        top_right = ScreenPoint((end.x, start.y))
-        top_left = ScreenPoint((start.x, start.y))
+        bottom_left = ScreenPoint(start.x, end.y)
+        bottom_right = ScreenPoint(end.x, end.y)
+        top_right = ScreenPoint(end.x, start.y)
+        top_left = ScreenPoint(start.x, start.y)
 
         return SquareVerts(bottom_left, bottom_right, top_right, top_left)
 
@@ -441,25 +445,25 @@ class RectStroke(Stroke):
 
         # Top
         start = rect.top_left
-        end = ScreenPoint((rect.top_right.x, rect.top_right.y - self.width))
+        end = ScreenPoint(rect.top_right.x, rect.top_right.y - self.width)
         verts = self.get_rect_verts(start, end)
         self.draw_rect(verts, color=self.color)
 
         # Left
         start = rect.top_left
-        end = ScreenPoint((rect.bottom_left.x + self.width, rect.bottom_left.y))
+        end = ScreenPoint(rect.bottom_left.x + self.width, rect.bottom_left.y)
         verts = self.get_rect_verts(start, end)
         self.draw_rect(verts, color=self.color)
 
         # Right
         start = rect.top_right
-        end = ScreenPoint((rect.bottom_right.x - self.width, rect.bottom_right.y))
+        end = ScreenPoint(rect.bottom_right.x - self.width, rect.bottom_right.y)
         verts = self.get_rect_verts(start, end)
         self.draw_rect(verts, color=self.color)
 
         # Bottom
         start = rect.bottom_left
-        end = ScreenPoint((rect.bottom_right.x, rect.bottom_right.y + self.width))
+        end = ScreenPoint(rect.bottom_right.x, rect.bottom_right.y + self.width)
         verts = self.get_rect_verts(start, end)
         self.draw_rect(verts, color=self.color)
 
@@ -625,7 +629,7 @@ class LineStroke(Stroke):
         mid_left = top_left + half_offset
         mid_right = top_right + half_offset
         midpoint = ScreenPoint(
-            ((mid_left.x + mid_right.x) / 2, (mid_left.y + mid_right.y) / 2)
+            (mid_left.x + mid_right.x) / 2, (mid_left.y + mid_right.y) / 2
         )
 
         return LineVerts(
