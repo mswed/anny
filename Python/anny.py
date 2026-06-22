@@ -149,9 +149,8 @@ class AnnyMode(MinorMode):
             return
 
         # Image space position
-        image_pos = ImagePoint(
-            crv.eventToImageSpace(source_name, event.pointer()), source=source_name
-        )
+        x, y = crv.eventToImageSpace(source_name, event.pointer())
+        image_point = ImagePoint(x, y, source=source_name)
 
         # Deselect current stroke if needed
         if self.current_stroke:
@@ -161,11 +160,11 @@ class AnnyMode(MinorMode):
             self.drag_type = ""
 
         for stroke in self.annotations.strokes[frame]:
-            if stroke.detect_handle_selection(image_pos, "start"):
+            if stroke.detect_handle_selection(image_point, "start"):
                 self.drag_type = "start"
-            elif stroke.detect_handle_selection(image_pos, "end"):
+            elif stroke.detect_handle_selection(image_point, "end"):
                 self.drag_type = "end"
-            elif stroke.detect_selection(image_pos):
+            elif stroke.detect_selection(image_point):
                 self.drag_type = "stroke"
             else:
                 continue
@@ -173,7 +172,7 @@ class AnnyMode(MinorMode):
             if self.drag_type != "":
                 self.current_stroke = stroke
                 self.current_stroke.selected = True
-                self.drag_start_pos = image_pos
+                self.drag_start_pos = image_point
 
                 self.update_ui()
 
@@ -193,9 +192,8 @@ class AnnyMode(MinorMode):
         starting_position = self.drag_start_pos
 
         # Current position
-        current_position = ImagePoint(
-            crv.eventToImageSpace(source_name, event.pointer()), source=source_name
-        )
+        x, y = crv.eventToImageSpace(source_name, event.pointer())
+        current_position = ImagePoint(x, y, source=source_name)
 
         # Calculate delta between start and current
         dx = current_position.x - starting_position.x
@@ -221,14 +219,11 @@ class AnnyMode(MinorMode):
             return
 
         # Start pose
-        start_pos = ImagePoint(
-            crv.eventToImageSpace(source_name, event.pointer()), source=source_name
-        )
+        x, y = crv.eventToImageSpace(source_name, event.pointer())
+        start_pos = ImagePoint(x, y, source=source_name)
 
         # End pose (we need a seperate point so we don't point to the same object)
-        end_pos = ImagePoint(
-            crv.eventToImageSpace(source_name, event.pointer()), source=source_name
-        )
+        end_pos = ImagePoint(x, y, source=source_name)
 
         if not self.current_stroke:
             self.current_stroke = self.active_stroke_type(
@@ -252,8 +247,8 @@ class AnnyMode(MinorMode):
                 self.current_stroke.source, event.pointer()
             )
 
-            self.current_stroke.end.x = image_x
-            self.current_stroke.end.y = image_y
+            point = ImagePoint(image_x, image_y, source=self.current_stroke.source)
+            self.current_stroke.update_draw(point)
 
     def draw_end(self, event):
         self.current_stroke = None
