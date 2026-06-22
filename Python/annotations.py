@@ -260,6 +260,50 @@ class Stroke:
         pass
 
 
+class FreehandStroke(Stroke):
+    def __init__(
+        self,
+        start: ImagePoint,
+        end: ImagePoint,
+        source: str,
+        width: float = 1,
+        color: tuple = (1, 0, 0, 1),
+        opacity: float = 1,
+        fill_color: tuple = (1, 0, 0, 1),
+        fill_opacity: float = 1,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            start, end, source, width, color, opacity, fill_color, fill_opacity
+        )
+        self.points = [start.to_screenspace()]
+
+    def update_draw(self, point: ImagePoint):
+        self.points.append(point.to_screenspace())
+        self.end = point
+        print("point are now", self.points)
+
+    def render(self):
+        # Antialiasing
+        GL.glEnable(GL.GL_LINE_SMOOTH)
+        GL.glEnable(GL.GL_BLEND)
+        GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
+        GL.glHint(GL.GL_LINE_SMOOTH_HINT, GL.GL_NICEST)
+
+        # Draw a line
+        GL.glLineWidth(self.width)
+        GL.glColor4f(self.color[0], self.color[1], self.color[2], self.opacity)
+        GL.glBegin(GL.GL_LINE_STRIP)
+        for p in self.points:
+            GL.glVertex2f(*p)
+        GL.glEnd()
+
+        # Cleanup - so we don't confuse RV
+        GL.glDisable(GL.GL_LINE_SMOOTH)
+        GL.glDisable(GL.GL_BLEND)
+        GL.glLineWidth(1.0)
+
+
 class CircleStroke(Stroke):
     def __init__(
         self,

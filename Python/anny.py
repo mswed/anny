@@ -3,7 +3,13 @@ import rv.commands as crv
 from rv.extra_commands import *
 
 from inspector import Inspector
-from annotations import AnnotationLayer, LineStroke, RectStroke, CircleStroke
+from annotations import (
+    AnnotationLayer,
+    FreehandStroke,
+    LineStroke,
+    RectStroke,
+    CircleStroke,
+)
 from utils import ImagePoint, Point
 
 
@@ -15,7 +21,12 @@ class AnnyMode(MinorMode):
         self.current_stroke = None
         self.drag_start_pos = None
         self.drag_type = ""
-        self.stroke_types = {1: LineStroke, 2: RectStroke, 4: CircleStroke}
+        self.stroke_types = {
+            1: LineStroke,
+            2: RectStroke,
+            4: CircleStroke,
+            5: FreehandStroke,
+        }
 
         self.init(
             "py-anny-mode",
