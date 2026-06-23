@@ -327,12 +327,14 @@ class FreehandStroke(Stroke):
         opacity: float = 1,
         fill_color: tuple = (1, 0, 0, 1),
         fill_opacity: float = 1,
+        smoothing=6,
         **kwargs,
     ) -> None:
         super().__init__(
             start, end, source, width, color, opacity, fill_color, fill_opacity
         )
         self.points = [start]
+        self.smoothing = smoothing
 
     def update_draw(self, point: ImagePoint):
 
@@ -352,6 +354,22 @@ class FreehandStroke(Stroke):
 
     def detect_selection(self, point: ImagePoint) -> bool:
         return self._detect_line_selection(point)
+
+    def _get_smooth_points(self, points, iterations):
+        for _ in range(iterations):
+            new_points = [points[0]]
+            for i in range(len(points) - 1):
+                a = points[i]
+                b = points[i + 1]
+                q = a.lerp(b, 0.25)
+                r = a.lerp(b, 0.75)
+                new_points.append(q)
+                new_points.append(r)
+
+            new_points.append(points[-1])
+            points = new_points
+
+        return points
 
     def _detect_line_selection(self, point: ImagePoint):
         THRESHOLD = 0.01
@@ -461,14 +479,15 @@ class FreehandStroke(Stroke):
 
         # Draw a line
         if len(self.points) > 1:
-            for i in range(1, len(self.points)):
-                start = self.points[i - 1].to_screenspace()
-                end = self.points[i].to_screenspace()
+            points = self._get_smooth_points(self.points, self.smoothing)
+            for i in range(1, len(points)):
+                start = points[i - 1].to_screenspace()
+                end = points[i].to_screenspace()
                 verts = self._get_segment_verts(start, end)
                 if verts:
                     self._draw_segment(verts, self.color)
 
-            for p in self.points:
+            for p in points:
                 point = p.to_screenspace()
                 self._draw_joint(point)
 
