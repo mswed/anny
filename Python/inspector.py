@@ -31,7 +31,6 @@ class Inspector(QtWidgets.QDialog):
         self.tool_group.addButton(self.ui.textBtn, 3)
         self.tool_group.addButton(self.ui.circleBtn, 4)
         self.tool_group.addButton(self.ui.freeBtn, 5)
-        self.tool_group.addButton(self.ui.smoothLineBtn, 6)
 
         # Setup combo boxes
         self.ui.startCapCb.addItem("-", None)
@@ -61,6 +60,7 @@ class Inspector(QtWidgets.QDialog):
         self.ui.strokeColorBtn.clicked.connect(self.show_color_picker)
         self.ui.startCapCb.currentIndexChanged.connect(self.update_start_cap)
         self.ui.endCapCb.currentIndexChanged.connect(self.update_end_cap)
+        self.ui.strokeSmoothingField.valueChanged.connect(self.update_smoothing)
         self.ui.fillColorBtn.clicked.connect(self.show_color_picker)
         self.ui.fillOpacityField.valueChanged.connect(self.update_fill_opacity)
         self.ui.textField.textChanged.connect(self.update_text)
@@ -137,6 +137,13 @@ class Inspector(QtWidgets.QDialog):
 
         if self.mode.current_stroke:
             self.mode.current_stroke.opacity = float(self.ui.strokeOpacityField.value())
+            crv.redraw()
+
+    def update_smoothing(self) -> None:
+        """Update the smoothing of a freehand stroke"""
+
+        if self.mode.current_stroke:
+            self.mode.current_stroke.smoothing = self.ui.strokeSmoothingField.value()
             crv.redraw()
 
     def update_fill_opacity(self):

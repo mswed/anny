@@ -317,6 +317,15 @@ class Stroke:
 
 
 class FreehandStroke(Stroke):
+    editable_properties = [
+        "width",
+        "color",
+        "opacity",
+        "fill_color",
+        "fill_opacity",
+        "smoothing",
+    ]
+
     def __init__(
         self,
         start: ImagePoint,
@@ -334,7 +343,24 @@ class FreehandStroke(Stroke):
             start, end, source, width, color, opacity, fill_color, fill_opacity
         )
         self.points = [start]
-        self.smoothing = smoothing
+        self._smooth_points = []
+        self._smoothing = smoothing
+
+    @property
+    def smoothing(self):
+        return self._smoothing
+
+    @smoothing.setter
+    def smoothing(self, value):
+        self._smooth_points = []
+        self._smoothing = value
+
+    @property
+    def smooth_points(self) -> list:
+        if not self._smooth_points:
+            self._smooth_points = self._get_smooth_points(self.points, self.smoothing)
+
+        return self._smooth_points
 
     def update_draw(self, point: ImagePoint):
 
@@ -373,9 +399,9 @@ class FreehandStroke(Stroke):
 
     def _detect_line_selection(self, point: ImagePoint):
         THRESHOLD = 0.01
-        for i in range(1, len(self.points)):
-            start = self.points[i - 1]
-            end = self.points[i]
+        for i in range(1, len(self.smooth_points)):
+            start = self.smooth_points[i - 1]
+            end = self.smooth_points[i]
             dist = self._point_to_stroke_distance(start, end, point)
             if dist < THRESHOLD:
                 return True
@@ -418,6 +444,7 @@ class FreehandStroke(Stroke):
 
         self.start = self.points[0]
         self.end = self.points[-1]
+        self._smooth_points = []
 
     def _get_segment_verts(
         self, start: ScreenPoint, end: ScreenPoint
@@ -479,7 +506,7 @@ class FreehandStroke(Stroke):
 
         # Draw a line
         if len(self.points) > 1:
-            points = self._get_smooth_points(self.points, self.smoothing)
+            points = self.smooth_points
             for i in range(1, len(points)):
                 start = points[i - 1].to_screenspace()
                 end = points[i].to_screenspace()
@@ -785,6 +812,7 @@ class LineStroke(Stroke):
         start_cap: Optional[str] = None,
         end_cap: Optional[str] = None,
         text: Optional[str] = None,
+        **kwargs,
     ) -> None:
         super().__init__(
             start, end, source, width, color, opacity, fill_color, fill_opacity
