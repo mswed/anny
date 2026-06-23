@@ -86,6 +86,28 @@ class Point:
 
         return dx**2 + dy**2
 
+    def lerp(self, other: Point, t: float) -> Point:
+        """Linear interpolation between the point and another point
+
+        Parameters
+        ----------
+        other : Point
+            The point we are interlpolating toward
+        t : float
+            Position along the line from self (0) to other (1).
+
+        Returns
+        -------
+        Point
+            New interpolated point between self and other
+
+        """
+        return self.__class__(
+            self.x + (other.x - self.x) * t,
+            self.y + (other.y - self.y) * t,
+            source=self.source,
+        )
+
 
 class ImagePoint(Point):
     def __init__(self, x, y, source: Optional[str] = None) -> None:
