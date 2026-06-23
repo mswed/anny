@@ -122,6 +122,9 @@ class Stroke:
         self.fill_opacity = fill_opacity
         self.selected = False
 
+    # ############################################################################
+    # PUBLIC INTERFACE
+    # ############################################################################
     @property
     def color(self):
         return Color(self._color[0], self._color[1], self._color[2], self.opacity)
@@ -143,16 +146,6 @@ class Stroke:
     def fill_color(self, value: tuple):
         self._fill_color = value
 
-    def get_handle_verts(self, point: ScreenPoint, size: float = 6.0) -> SquareVerts:
-        half = size / 2
-
-        bottom_left = ScreenPoint(point.x - half, point.y - half)
-        bottom_right = ScreenPoint(point.x + half, point.y - half)
-        top_right = ScreenPoint(point.x + half, point.y + half)
-        top_left = ScreenPoint(point.x - half, point.y + half)
-
-        return SquareVerts(bottom_left, bottom_right, top_right, top_left)
-
     def move(self, dx: float, dy: float, move_type: str = "stroke"):
         """Move the annotation or one of its points. All movement is calcualted in image space
 
@@ -166,10 +159,14 @@ class Stroke:
             Delta between original point and new point
         """
 
-        if move_type == "stroke" or move_type == "start":
-            self.start.move(dx, dy)
-        if move_type == "stroke" or move_type == "end":
-            self.end.move(dx, dy)
+        self._move(dx, dy, move_type)
+
+    def detect_selection(self, point: ImagePoint) -> bool:
+        return False
+
+    def update_draw(self, point: ImagePoint):
+        self.end.x = point.x
+        self.end.y = point.y
 
     def detect_handle_selection(self, point: ImagePoint, position: str) -> bool:
         """Check if a click happened inside a handle
@@ -202,18 +199,64 @@ class Stroke:
 
         return x_end > hp.x > x_start and y_start > hp.y > y_end
 
-    def detect_selection(self, point: ImagePoint) -> bool:
-        return False
-
-    def update_draw(self, point: ImagePoint):
-        self.end.x = point.x
-        self.end.y = point.y
-
-    def draw_bounding_box(self):
+    # ############################################################################
+    # PRIVATE INTERFACE
+    # ############################################################################
+    def _point_to_stroke_distance(
+        self, stroke_start: ImagePoint, stroke_end: ImagePoint, point: ImagePoint
+    ):
         """
-        Draw a box around the annotation to mark a selection
+        Calculate the distance from the mouse click to the stroke. Used for selection.
         """
 
+        # Calculate stroke length
+        dx = stroke_end.x - stroke_start.x
+        dy = stroke_end.y - stroke_start.y
+
+        if dx == 0 and dy == 0:
+            # Our stroke has no length, it's a dot. Measure the distance to start instead
+            return point.distance_to(stroke_start)
+
+        # Find the point on the actual stroke that is closest to our click
+        t = ((point.x - stroke_start.x) * dx + (point.y - stroke_start.y) * dy) / (
+            dx * dx + dy * dy
+        )
+        # Clamp it so it only applies to the actual stroke
+        t = max(0, min(1, t))
+
+        nearest = ImagePoint(stroke_start.x + t * dx, stroke_start.y + t * dy)
+
+        return point.distance_to(nearest)
+
+    def _move(self, dx: float, dy: float, move_type: str = "stroke"):
+        """Move the annotation or one of its points. All movement is calcualted in image space
+
+        Parameters
+        ----------
+        move_type : str
+            What are we moving? stroke, start or end?
+        dx : float
+            Delta between original point and new point
+        dy : float
+            Delta between original point and new point
+        """
+
+        if move_type == "stroke" or move_type == "start":
+            self.start.move(dx, dy)
+        if move_type == "stroke" or move_type == "end":
+            self.end.move(dx, dy)
+
+    def get_handle_verts(self, point: ScreenPoint, size: float = 6.0) -> SquareVerts:
+        half = size / 2
+
+        bottom_left = ScreenPoint(point.x - half, point.y - half)
+        bottom_right = ScreenPoint(point.x + half, point.y - half)
+        top_right = ScreenPoint(point.x + half, point.y + half)
+        top_left = ScreenPoint(point.x - half, point.y + half)
+
+        return SquareVerts(bottom_left, bottom_right, top_right, top_left)
+
+    def _get_bounding_box_verts(self, padding) -> Optional[SquareVerts]:
         start = self.start.to_screenspace()
         end = self.end.to_screenspace()
 
@@ -224,39 +267,53 @@ class Stroke:
         min_y = min(start.y, end.y) - padding
         max_y = max(start.y, end.y) + padding
 
-        GL.glEnable(GL.GL_LINE_STIPPLE)
-        GL.glLineStipple(1, 0xF0F0)
-        GL.glLineWidth(1.0)
-        GL.glColor4f(1.0, 1.0, 1.0, 0.8)
+        bottom_left = ScreenPoint(min_x, min_y)
+        bottom_right = ScreenPoint(max_x, min_y)
+        top_right = ScreenPoint(max_x, max_y)
+        top_left = ScreenPoint(min_x, max_y)
 
-        GL.glBegin(GL.GL_LINE_LOOP)
-        GL.glVertex2f(min_x, min_y)
-        GL.glVertex2f(max_x, min_y)
-        GL.glVertex2f(max_x, max_y)
-        GL.glVertex2f(min_x, max_y)
-        GL.glEnd()
+        return SquareVerts(bottom_left, bottom_right, top_right, top_left)
 
-        GL.glDisable(GL.GL_LINE_STIPPLE)
+    def draw_bounding_box(self, padding=6):
+        """
+        Draw a box around the annotation to mark a selection
+        """
+
+        v = self._get_bounding_box_verts(padding)
+        if v:
+            GL.glEnable(GL.GL_LINE_STIPPLE)
+            GL.glLineStipple(1, 0xF0F0)
+            GL.glLineWidth(1.0)
+            GL.glColor4f(1.0, 1.0, 1.0, 0.8)
+
+            GL.glBegin(GL.GL_LINE_LOOP)
+            GL.glVertex2f(*v.bottom_left)
+            GL.glVertex2f(*v.bottom_right)
+            GL.glVertex2f(*v.top_right)
+            GL.glVertex2f(*v.top_left)
+            GL.glEnd()
+
+            GL.glDisable(GL.GL_LINE_STIPPLE)
 
     def draw_handle(self, point: ScreenPoint):
 
-        verts = self.get_handle_verts(point)
+        v = self.get_handle_verts(point)
         # Square
         GL.glColor4f(1.0, 1.0, 1.0, 1.0)
         GL.glBegin(GL.GL_QUADS)
-        GL.glVertex2f(*verts.bottom_left)
-        GL.glVertex2f(*verts.bottom_right)
-        GL.glVertex2f(*verts.top_right)
-        GL.glVertex2f(*verts.top_left)
+        GL.glVertex2f(*v.bottom_left)
+        GL.glVertex2f(*v.bottom_right)
+        GL.glVertex2f(*v.top_right)
+        GL.glVertex2f(*v.top_left)
         GL.glEnd()
 
         # Border
         GL.glColor4f(0, 0, 0, 1.0)
         GL.glBegin(GL.GL_LINE_LOOP)
-        GL.glVertex2f(*verts.bottom_left)
-        GL.glVertex2f(*verts.bottom_right)
-        GL.glVertex2f(*verts.top_right)
-        GL.glVertex2f(*verts.top_left)
+        GL.glVertex2f(*v.bottom_left)
+        GL.glVertex2f(*v.bottom_right)
+        GL.glVertex2f(*v.top_right)
+        GL.glVertex2f(*v.top_left)
         GL.glEnd()
 
     def render(self):
@@ -296,6 +353,44 @@ class FreehandStroke(Stroke):
 
         self.points.append(point)
         self.end = point
+
+    def _get_bounding_box_verts(self, padding):
+        if not self.points:
+            return
+
+        xs = [p.to_screenspace().x for p in self.points]
+        ys = [p.to_screenspace().y for p in self.points]
+
+        # get min and max with padding
+        padding = 6
+        min_x = min(xs) - padding
+        max_x = max(xs) + padding
+        min_y = min(ys) - padding
+        max_y = max(ys) + padding
+
+        bottom_left = ScreenPoint(min_x, min_y)
+        bottom_right = ScreenPoint(max_x, min_y)
+        top_right = ScreenPoint(max_x, max_y)
+        top_left = ScreenPoint(min_x, max_y)
+
+        return SquareVerts(bottom_left, bottom_right, top_right, top_left)
+
+    def _move(self, dx: float, dy: float, move_type=None):
+        """Move the annotation or one of its points. All movement is calcualted in image space
+
+        Parameters
+        ----------
+        dx : float
+            Delta between original point and new point
+        dy : float
+            Delta between original point and new point
+        """
+
+        for p in self.points:
+            p.move(dx, dy)
+
+        self.start = self.points[0]
+        self.end = self.points[-1]
 
     def get_segment_verts(
         self, start: ScreenPoint, end: ScreenPoint
@@ -348,6 +443,17 @@ class FreehandStroke(Stroke):
             )
         GL.glEnd()
 
+    def detect_selection(self, point: ImagePoint) -> bool:
+        THRESHOLD = 0.01
+        for i in range(1, len(self.points)):
+            start = self.points[i - 1]
+            end = self.points[i]
+            dist = self._point_to_stroke_distance(start, end, point)
+            if dist < THRESHOLD:
+                return True
+
+        return False
+
     def render(self):
         # Antialiasing
         GL.glEnable(GL.GL_POLYGON_SMOOTH)
@@ -367,6 +473,10 @@ class FreehandStroke(Stroke):
             for p in self.points:
                 point = p.to_screenspace()
                 self.draw_joint(point)
+
+        # Selection highlighting
+        if self.selected:
+            self.draw_bounding_box()
 
         # Cleanup - so we don't confuse RV
         GL.glDisable(GL.GL_POLYGON_SMOOTH)
@@ -669,36 +779,12 @@ class LineStroke(Stroke):
     def __repr__(self) -> str:
         return f"<LineStroke> start={self.start} end={self.end} color={self.color}"
 
-    def _point_to_stroke_distance(self, point: ImagePoint):
-        """
-        Calculate the distance from the mouse click to the stroke. Used for selection.
-        """
-
-        # Calculate stroke length
-        dx = self.end.x - self.start.x
-        dy = self.end.y - self.start.y
-
-        if dx == 0 and dy == 0:
-            # Our stroke has no length, it's a dot. Measure the distance to start instead
-            return point.distance_to(self.start)
-
-        # Find the point on the actual stroke that is closest to our click
-        t = ((point.x - self.start.x) * dx + (point.y - self.start.y) * dy) / (
-            dx * dx + dy * dy
-        )
-        # Clamp it so it only applies to the actual stroke
-        t = max(0, min(1, t))
-
-        nearest = ImagePoint(self.start.x + t * dx, self.start.y + t * dy)
-
-        return point.distance_to(nearest)
-
     def detect_selection(self, point: ImagePoint) -> bool:
 
         # Find closest stoke to threshold
         THRESHOLD = 0.01
 
-        dist = self._point_to_stroke_distance(point)
+        dist = self._point_to_stroke_distance(self.start, self.end, point)
         return dist < THRESHOLD
 
     def get_line_verts(self) -> Optional[LineVerts]:
