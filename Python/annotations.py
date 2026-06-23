@@ -51,9 +51,6 @@ class Color(NamedTuple):
     a: float
 
 
-print("Antialiasing", GL.glGetIntegerv(GL.GL_SAMPLES))
-
-
 class AnnotationLayer:
     """
     The base class that renders the actual annotations. Annotations are added to the strokes dict and then
@@ -188,9 +185,9 @@ class Stroke:
         hp = point.to_screenspace()
 
         if position == "start":
-            handle_verts = self.get_handle_verts(self.start.to_screenspace())
+            handle_verts = self._get_handle_verts(self.start.to_screenspace())
         else:
-            handle_verts = self.get_handle_verts(self.end.to_screenspace())
+            handle_verts = self._get_handle_verts(self.end.to_screenspace())
 
         x_start = handle_verts.bottom_left.x
         x_end = handle_verts.bottom_right.x
@@ -246,7 +243,7 @@ class Stroke:
         if move_type == "stroke" or move_type == "end":
             self.end.move(dx, dy)
 
-    def get_handle_verts(self, point: ScreenPoint, size: float = 6.0) -> SquareVerts:
+    def _get_handle_verts(self, point: ScreenPoint, size: float = 6.0) -> SquareVerts:
         half = size / 2
 
         bottom_left = ScreenPoint(point.x - half, point.y - half)
@@ -261,7 +258,6 @@ class Stroke:
         end = self.end.to_screenspace()
 
         # get min and max with padding
-        padding = 6
         min_x = min(start.x, end.x) - padding
         max_x = max(start.x, end.x) + padding
         min_y = min(start.y, end.y) - padding
@@ -274,7 +270,7 @@ class Stroke:
 
         return SquareVerts(bottom_left, bottom_right, top_right, top_left)
 
-    def draw_bounding_box(self, padding=6):
+    def _draw_bounding_box(self, padding=6):
         """
         Draw a box around the annotation to mark a selection
         """
@@ -295,9 +291,9 @@ class Stroke:
 
             GL.glDisable(GL.GL_LINE_STIPPLE)
 
-    def draw_handle(self, point: ScreenPoint):
+    def _draw_handle(self, point: ScreenPoint):
 
-        v = self.get_handle_verts(point)
+        v = self._get_handle_verts(point)
         # Square
         GL.glColor4f(1.0, 1.0, 1.0, 1.0)
         GL.glBegin(GL.GL_QUADS)
@@ -354,6 +350,20 @@ class FreehandStroke(Stroke):
         self.points.append(point)
         self.end = point
 
+    def detect_selection(self, point: ImagePoint) -> bool:
+        return self._detect_line_selection(point)
+
+    def _detect_line_selection(self, point: ImagePoint):
+        THRESHOLD = 0.01
+        for i in range(1, len(self.points)):
+            start = self.points[i - 1]
+            end = self.points[i]
+            dist = self._point_to_stroke_distance(start, end, point)
+            if dist < THRESHOLD:
+                return True
+
+        return False
+
     def _get_bounding_box_verts(self, padding):
         if not self.points:
             return
@@ -362,7 +372,6 @@ class FreehandStroke(Stroke):
         ys = [p.to_screenspace().y for p in self.points]
 
         # get min and max with padding
-        padding = 6
         min_x = min(xs) - padding
         max_x = max(xs) + padding
         min_y = min(ys) - padding
@@ -392,7 +401,7 @@ class FreehandStroke(Stroke):
         self.start = self.points[0]
         self.end = self.points[-1]
 
-    def get_segment_verts(
+    def _get_segment_verts(
         self, start: ScreenPoint, end: ScreenPoint
     ) -> Optional[SquareVerts]:
 
@@ -411,7 +420,7 @@ class FreehandStroke(Stroke):
 
         return SquareVerts(bottom_left, bottom_right, top_right, top_left)
 
-    def draw_segment(self, verts: SquareVerts, color: Color):
+    def _draw_segment(self, verts: SquareVerts, color: Color):
 
         # Square
         GL.glColor4f(color.r, color.g, color.b, color.a)
@@ -422,7 +431,7 @@ class FreehandStroke(Stroke):
         GL.glVertex2f(*verts.top_left)
         GL.glEnd()
 
-    def draw_joint(self, center: ScreenPoint) -> None:
+    def _draw_joint(self, center: ScreenPoint) -> None:
         """
         Draw a GL circle at a point to smooth the line
 
@@ -443,17 +452,6 @@ class FreehandStroke(Stroke):
             )
         GL.glEnd()
 
-    def detect_selection(self, point: ImagePoint) -> bool:
-        THRESHOLD = 0.01
-        for i in range(1, len(self.points)):
-            start = self.points[i - 1]
-            end = self.points[i]
-            dist = self._point_to_stroke_distance(start, end, point)
-            if dist < THRESHOLD:
-                return True
-
-        return False
-
     def render(self):
         # Antialiasing
         GL.glEnable(GL.GL_POLYGON_SMOOTH)
@@ -466,17 +464,17 @@ class FreehandStroke(Stroke):
             for i in range(1, len(self.points)):
                 start = self.points[i - 1].to_screenspace()
                 end = self.points[i].to_screenspace()
-                verts = self.get_segment_verts(start, end)
+                verts = self._get_segment_verts(start, end)
                 if verts:
-                    self.draw_segment(verts, self.color)
+                    self._draw_segment(verts, self.color)
 
             for p in self.points:
                 point = p.to_screenspace()
-                self.draw_joint(point)
+                self._draw_joint(point)
 
         # Selection highlighting
         if self.selected:
-            self.draw_bounding_box()
+            self._draw_bounding_box()
 
         # Cleanup - so we don't confuse RV
         GL.glDisable(GL.GL_POLYGON_SMOOTH)
@@ -521,7 +519,7 @@ class CircleStroke(Stroke):
     def detect_selection(self, point: ImagePoint) -> bool:
         return self._point_inside_ellipse(point)
 
-    def draw_circle(self) -> None:
+    def _draw_circle(self) -> None:
         """
         Draw a GL circle
         """
@@ -591,13 +589,13 @@ class CircleStroke(Stroke):
 
         start = self.start.to_screenspace()
         end = self.end.to_screenspace()
-        self.draw_circle()
+        self._draw_circle()
 
         # Selection highlighting
         if self.selected:
-            self.draw_bounding_box()
-            self.draw_handle(start)
-            self.draw_handle(end)
+            self._draw_bounding_box()
+            self._draw_handle(start)
+            self._draw_handle(end)
 
         # Cleanup - so we don't confuse RV
         GL.glDisable(GL.GL_LINE_SMOOTH)
@@ -625,7 +623,10 @@ class RectStroke(Stroke):
     def __repr__(self) -> str:
         return f"<RectStroke> start={self.start} end={self.end} color={self.color}"
 
-    def get_rect_verts(self, start: ScreenPoint, end: ScreenPoint) -> SquareVerts:
+    def detect_selection(self, point: ImagePoint) -> bool:
+        return self._point_inside_stroke(point)
+
+    def _get_rect_verts(self, start: ScreenPoint, end: ScreenPoint) -> SquareVerts:
 
         bottom_left = ScreenPoint(start.x, end.y)
         bottom_right = ScreenPoint(end.x, end.y)
@@ -634,7 +635,7 @@ class RectStroke(Stroke):
 
         return SquareVerts(bottom_left, bottom_right, top_right, top_left)
 
-    def point_inside_stroke(self, point: ImagePoint) -> bool:
+    def _point_inside_stroke(self, point: ImagePoint) -> bool:
         """Check if a click happened inside a stroke
 
         Parameters
@@ -653,7 +654,7 @@ class RectStroke(Stroke):
 
         start = self.start.to_screenspace()
         end = self.end.to_screenspace()
-        verts = self.get_rect_verts(start, end)
+        verts = self._get_rect_verts(start, end)
 
         x_start = verts.bottom_left.x
         x_end = verts.bottom_right.x
@@ -662,36 +663,33 @@ class RectStroke(Stroke):
 
         return x_end > hp.x > x_start and y_start > hp.y > y_end
 
-    def detect_selection(self, point: ImagePoint) -> bool:
-        return self.point_inside_stroke(point)
-
-    def draw_border(self, rect: SquareVerts):
+    def _draw_border(self, rect: SquareVerts):
 
         # Top
         start = rect.top_left
         end = ScreenPoint(rect.top_right.x, rect.top_right.y - self.width)
-        verts = self.get_rect_verts(start, end)
-        self.draw_rect(verts, color=self.color)
+        verts = self._get_rect_verts(start, end)
+        self._draw_rect(verts, color=self.color)
 
         # Left
         start = rect.top_left
         end = ScreenPoint(rect.bottom_left.x + self.width, rect.bottom_left.y)
-        verts = self.get_rect_verts(start, end)
-        self.draw_rect(verts, color=self.color)
+        verts = self._get_rect_verts(start, end)
+        self._draw_rect(verts, color=self.color)
 
         # Right
         start = rect.top_right
         end = ScreenPoint(rect.bottom_right.x - self.width, rect.bottom_right.y)
-        verts = self.get_rect_verts(start, end)
-        self.draw_rect(verts, color=self.color)
+        verts = self._get_rect_verts(start, end)
+        self._draw_rect(verts, color=self.color)
 
         # Bottom
         start = rect.bottom_left
         end = ScreenPoint(rect.bottom_right.x, rect.bottom_right.y + self.width)
-        verts = self.get_rect_verts(start, end)
-        self.draw_rect(verts, color=self.color)
+        verts = self._get_rect_verts(start, end)
+        self._draw_rect(verts, color=self.color)
 
-    def draw_rect(self, verts: SquareVerts, color: Color):
+    def _draw_rect(self, verts: SquareVerts, color: Color):
 
         # Square
         GL.glColor4f(color.r, color.g, color.b, color.a)
@@ -713,7 +711,7 @@ class RectStroke(Stroke):
         start = self.start.to_screenspace()
         end = self.end.to_screenspace()
 
-        verts = self.get_rect_verts(start, end)
+        verts = self._get_rect_verts(start, end)
 
         # Square
         GL.glColor4f(
@@ -729,13 +727,13 @@ class RectStroke(Stroke):
         GL.glVertex2f(*verts.top_left)
         GL.glEnd()
 
-        self.draw_border(verts)
+        self._draw_border(verts)
 
         # Selection highlighting
         if self.selected:
-            self.draw_bounding_box()
-            self.draw_handle(start)
-            self.draw_handle(end)
+            self._draw_bounding_box()
+            self._draw_handle(start)
+            self._draw_handle(end)
 
         # Cleanup - so we don't confuse RV
         GL.glDisable(GL.GL_LINE_SMOOTH)
@@ -780,14 +778,16 @@ class LineStroke(Stroke):
         return f"<LineStroke> start={self.start} end={self.end} color={self.color}"
 
     def detect_selection(self, point: ImagePoint) -> bool:
+        return self._detect_line_selection(point)
 
+    def _detect_line_selection(self, point: ImagePoint):
         # Find closest stoke to threshold
         THRESHOLD = 0.01
 
         dist = self._point_to_stroke_distance(self.start, self.end, point)
         return dist < THRESHOLD
 
-    def get_line_verts(self) -> Optional[LineVerts]:
+    def _get_line_verts(self) -> Optional[LineVerts]:
         # Figure out start and end points in screen space
         # We need to record the original start and end for the handles
         start_anchor = self.start.to_screenspace()
@@ -801,11 +801,11 @@ class LineStroke(Stroke):
         start_arrow = None
         end_arrow = None
         if self.start_cap == "arrow":
-            start_arrow = self.get_arrow_verts(start_anchor, end_anchor, "start")
+            start_arrow = self._get_arrow_verts(start_anchor, end_anchor, "start")
             if start_arrow:
                 line_start = start_arrow.line_base
         if self.end_cap == "arrow":
-            end_arrow = self.get_arrow_verts(start_anchor, end_anchor, "end")
+            end_arrow = self._get_arrow_verts(start_anchor, end_anchor, "end")
             if end_arrow:
                 line_end = end_arrow.line_base
 
@@ -844,7 +844,7 @@ class LineStroke(Stroke):
             half_offset,
         )
 
-    def get_tick_verts(self, line: LineVerts, position="start"):
+    def _get_tick_verts(self, line: LineVerts, position="start"):
 
         # Create a direction vecto
         tick_width = max(self.width * 2, 1)
@@ -858,7 +858,7 @@ class LineStroke(Stroke):
 
         return TickVerts(top, bottom)
 
-    def get_arrow_verts(self, start: ScreenPoint, end: ScreenPoint, position="end"):
+    def _get_arrow_verts(self, start: ScreenPoint, end: ScreenPoint, position="end"):
 
         # Create a direction vector
         if position == "end":
@@ -979,7 +979,7 @@ class LineStroke(Stroke):
 
         return texture_id, width, height
 
-    def draw_line(self, verts, color):
+    def _draw_line(self, verts, color):
 
         # Square
         GL.glColor4f(color.r, color.g, color.b, color.a)
@@ -1000,8 +1000,8 @@ class LineStroke(Stroke):
         GL.glVertex2f(*verts.top_left)
         GL.glEnd()
 
-    def draw_tick(self, line: LineVerts, position="start"):
-        verts = self.get_tick_verts(line, position)
+    def _draw_tick(self, line: LineVerts, position="start"):
+        verts = self._get_tick_verts(line, position)
         if verts:
             GL.glLineWidth(self.width / 2)
             GL.glColor4f(self.color[0], self.color[1], self.color[2], self.opacity)
@@ -1010,10 +1010,10 @@ class LineStroke(Stroke):
             GL.glVertex2f(*verts.bottom)
             GL.glEnd()
 
-    def draw_arrow(
+    def _draw_arrow(
         self, start: ScreenPoint, end: ScreenPoint, position: str = "end"
     ) -> None:
-        verts = self.get_arrow_verts(start, end, position)
+        verts = self._get_arrow_verts(start, end, position)
         if verts:
             # We only draw if we got verts
             # Draw
@@ -1033,7 +1033,7 @@ class LineStroke(Stroke):
             GL.glVertex2f(*verts.right_wing)
             GL.glEnd()
 
-    def draw_circle(self, line: LineVerts, position: str) -> None:
+    def _draw_circle(self, line: LineVerts, position: str) -> None:
         """
         Draw a GL circle at the start or end of the line
 
@@ -1058,7 +1058,7 @@ class LineStroke(Stroke):
             )
         GL.glEnd()
 
-    def draw_text(
+    def _draw_text(
         self, midpoint: ScreenPoint, width: float, height: float, texture_id: int
     ) -> None:
         # Enable and bind
@@ -1107,11 +1107,11 @@ class LineStroke(Stroke):
             return
 
         if cap_type == "arrow":
-            self.draw_arrow(line.start_anchor, line.end_anchor, position)
+            self._draw_arrow(line.start_anchor, line.end_anchor, position)
         elif cap_type == "tick":
-            self.draw_tick(line, position)
+            self._draw_tick(line, position)
         elif cap_type == "circle":
-            self.draw_circle(line, position)
+            self._draw_circle(line, position)
         else:
             print("Unknown cap type", cap_type)
 
@@ -1122,11 +1122,11 @@ class LineStroke(Stroke):
         GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
         GL.glHint(GL.GL_LINE_SMOOTH_HINT, GL.GL_NICEST)
 
-        verts = self.get_line_verts()
+        verts = self._get_line_verts()
         if not verts:
             return
 
-        self.draw_line(verts, self.color)
+        self._draw_line(verts, self.color)
 
         # Draw the caps
         self._draw_cap(self.start_cap, "start", verts)
@@ -1137,13 +1137,13 @@ class LineStroke(Stroke):
             qt_texture = self._generate_text_texture()
             if qt_texture:
                 tid, tw, th = self._load_texture(qt_texture)
-                self.draw_text(verts.midpoint, tw, th, tid)
+                self._draw_text(verts.midpoint, tw, th, tid)
 
         # Selection highlighting
         if self.selected:
-            self.draw_bounding_box()
-            self.draw_handle(verts.start_anchor + verts.half_offset)
-            self.draw_handle(verts.end_anchor + verts.half_offset)
+            self._draw_bounding_box()
+            self._draw_handle(verts.start_anchor + verts.half_offset)
+            self._draw_handle(verts.end_anchor + verts.half_offset)
 
         # Cleanup - so we don't confuse RV
         GL.glDisable(GL.GL_LINE_SMOOTH)
