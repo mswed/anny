@@ -279,23 +279,22 @@ class FreehandStroke(Stroke):
         super().__init__(
             start, end, source, width, color, opacity, fill_color, fill_opacity
         )
-        self.points = [start.to_screenspace()]
+        self.points = [start]
 
     def update_draw(self, point: ImagePoint):
-        screen_point = point.to_screenspace()
 
         if self.points:
             last = self.points[-1]
             # Check how far our last point is from the last point
             # We don't bother with getting the root to make it a bit faster
-            distance_squared = screen_point.distance_to_squared(last)
+            distance_squared = point.distance_to_squared(last)
 
-            MIN_DIST = 3
+            MIN_DIST = 0.002
             if distance_squared < MIN_DIST**2:
                 # The point is too close, ignore it
                 return
 
-        self.points.append(screen_point)
+        self.points.append(point)
         self.end = point
 
     def get_segment_verts(
@@ -359,12 +358,15 @@ class FreehandStroke(Stroke):
         # Draw a line
         if len(self.points) > 1:
             for i in range(1, len(self.points)):
-                verts = self.get_segment_verts(self.points[i - 1], self.points[i])
+                start = self.points[i - 1].to_screenspace()
+                end = self.points[i].to_screenspace()
+                verts = self.get_segment_verts(start, end)
                 if verts:
                     self.draw_segment(verts, self.color)
 
             for p in self.points:
-                self.draw_joint(p)
+                point = p.to_screenspace()
+                self.draw_joint(point)
 
         # Cleanup - so we don't confuse RV
         GL.glDisable(GL.GL_POLYGON_SMOOTH)
