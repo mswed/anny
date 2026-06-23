@@ -217,6 +217,8 @@ class AnnyMode(MinorMode):
         self.drag_start_pos.x = current_position.x
         self.drag_start_pos.y = current_position.y
 
+        crv.redraw()
+
     def select_end(self, event):
         self.drag_start_pos = None
 
@@ -260,6 +262,7 @@ class AnnyMode(MinorMode):
 
             point = ImagePoint(image_x, image_y, source=self.current_stroke.source)
             self.current_stroke.update_draw(point)
+            crv.redraw()
 
     def draw_end(self, event):
         self.current_stroke = None

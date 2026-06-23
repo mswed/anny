@@ -77,6 +77,15 @@ class Point:
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}> x: {self.x} y: {self.y}"
 
+    def distance_to(self, end_point: Point) -> float:
+        return math.sqrt(self.distance_to_squared(end_point))
+
+    def distance_to_squared(self, end_point: Point) -> float:
+        dx = end_point.x - self.x
+        dy = end_point.y - self.y
+
+        return dx**2 + dy**2
+
 
 class ImagePoint(Point):
     def __init__(self, x, y, source: Optional[str] = None) -> None:
@@ -98,7 +107,7 @@ class ImagePoint(Point):
     def to_screenspace(self):
         return ScreenPoint(self.screen_x, self.screen_y, source=self.source)
 
-    def direction_to(self, end_point: Point) -> Optional[Vector]:
+    def direction_to(self, end_point: Point) -> Vector:
         return ImageVector(end_point.x - self.x, end_point.y - self.y)
 
     def invalidate(self):
