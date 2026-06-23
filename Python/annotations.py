@@ -51,6 +51,9 @@ class Color(NamedTuple):
     a: float
 
 
+print("Antialiasing", GL.glGetIntegerv(GL.GL_SAMPLES))
+
+
 class AnnotationLayer:
     """
     The base class that renders the actual annotations. Annotations are added to the strokes dict and then
@@ -279,27 +282,92 @@ class FreehandStroke(Stroke):
         self.points = [start.to_screenspace()]
 
     def update_draw(self, point: ImagePoint):
-        self.points.append(point.to_screenspace())
+        screen_point = point.to_screenspace()
+
+        if self.points:
+            last = self.points[-1]
+            # Check how far our last point is from the last point
+            # We don't bother with getting the root to make it a bit faster
+            distance_squared = screen_point.distance_to_squared(last)
+
+            MIN_DIST = 3
+            if distance_squared < MIN_DIST**2:
+                # The point is too close, ignore it
+                return
+
+        self.points.append(screen_point)
         self.end = point
-        print("point are now", self.points)
+
+    def get_segment_verts(
+        self, start: ScreenPoint, end: ScreenPoint
+    ) -> Optional[SquareVerts]:
+
+        direction = start.direction_to(end)
+        normalized = direction.normalized
+        if normalized is None:
+            return
+
+        perp = normalized.perpendicular
+        offset = perp * (self.width / 2)
+
+        bottom_left = start - offset
+        bottom_right = end - offset
+        top_right = end + offset
+        top_left = start + offset
+
+        return SquareVerts(bottom_left, bottom_right, top_right, top_left)
+
+    def draw_segment(self, verts: SquareVerts, color: Color):
+
+        # Square
+        GL.glColor4f(color.r, color.g, color.b, color.a)
+        GL.glBegin(GL.GL_QUADS)
+        GL.glVertex2f(*verts.bottom_left)
+        GL.glVertex2f(*verts.bottom_right)
+        GL.glVertex2f(*verts.top_right)
+        GL.glVertex2f(*verts.top_left)
+        GL.glEnd()
+
+    def draw_joint(self, center: ScreenPoint) -> None:
+        """
+        Draw a GL circle at a point to smooth the line
+
+        Parameters
+        ----------
+        center : ScreenPoint
+            The point to draw the circle around
+        """
+        segments = 12
+        radius = self.width / 2
+
+        GL.glBegin(GL.GL_TRIANGLE_FAN)
+        GL.glVertex2f(*center)
+        for i in range(segments + 1):
+            angle = 2 * math.pi * i / segments
+            GL.glVertex2f(
+                center.x + math.cos(angle) * radius, center.y + math.sin(angle) * radius
+            )
+        GL.glEnd()
 
     def render(self):
         # Antialiasing
-        GL.glEnable(GL.GL_LINE_SMOOTH)
+        GL.glEnable(GL.GL_POLYGON_SMOOTH)
         GL.glEnable(GL.GL_BLEND)
         GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
         GL.glHint(GL.GL_LINE_SMOOTH_HINT, GL.GL_NICEST)
 
         # Draw a line
-        GL.glLineWidth(self.width)
-        GL.glColor4f(self.color[0], self.color[1], self.color[2], self.opacity)
-        GL.glBegin(GL.GL_LINE_STRIP)
-        for p in self.points:
-            GL.glVertex2f(*p)
-        GL.glEnd()
+        if len(self.points) > 1:
+            for i in range(1, len(self.points)):
+                verts = self.get_segment_verts(self.points[i - 1], self.points[i])
+                if verts:
+                    self.draw_segment(verts, self.color)
+
+            for p in self.points:
+                self.draw_joint(p)
 
         # Cleanup - so we don't confuse RV
-        GL.glDisable(GL.GL_LINE_SMOOTH)
+        GL.glDisable(GL.GL_POLYGON_SMOOTH)
         GL.glDisable(GL.GL_BLEND)
         GL.glLineWidth(1.0)
 
@@ -599,33 +667,29 @@ class LineStroke(Stroke):
     def __repr__(self) -> str:
         return f"<LineStroke> start={self.start} end={self.end} color={self.color}"
 
-    def _point_to_stroke_distance(self, point):
+    def _point_to_stroke_distance(self, point: ImagePoint):
         """
         Calculate the distance from the mouse click to the stroke. Used for selection.
         """
 
-        # Get the points coordinates
-        px, py = point
-        x1, y1 = self.start
-        x2, y2 = self.end
-
-        # Calculate distances
-        dx = x2 - x1
-        dy = y2 - y1
+        # Calculate stroke length
+        dx = self.end.x - self.start.x
+        dy = self.end.y - self.start.y
 
         if dx == 0 and dy == 0:
-            # Our stroke has no length, it's a dot
-            return math.sqrt((px - x1) ** 2 + (py - y1) ** 2)
+            # Our stroke has no length, it's a dot. Measure the distance to start instead
+            return point.distance_to(self.start)
 
-        # Find the point on the stroke that is closest to our click
-        t = ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy)
+        # Find the point on the actual stroke that is closest to our click
+        t = ((point.x - self.start.x) * dx + (point.y - self.start.y) * dy) / (
+            dx * dx + dy * dy
+        )
         # Clamp it so it only applies to the actual stroke
         t = max(0, min(1, t))
 
-        nearest_x = x1 + t * dx
-        nearest_y = y1 + t * dy
+        nearest = ImagePoint(self.start.x + t * dx, self.start.y + t * dy)
 
-        return math.sqrt((px - nearest_x) ** 2 + (py - nearest_y) ** 2)
+        return point.distance_to(nearest)
 
     def detect_selection(self, point: ImagePoint) -> bool:
 
