@@ -37,30 +37,10 @@
     </property>
     <item>
      <layout class="QGridLayout" name="toolsLayout">
-      <item row="0" column="0">
-       <widget class="QToolButton" name="selectBtn">
-        <property name="text">
-         <string>S</string>
-        </property>
-        <property name="checkable">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="3">
        <widget class="QToolButton" name="textBtn">
         <property name="text">
          <string>T</string>
-        </property>
-        <property name="checkable">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="5">
-       <widget class="QToolButton" name="freeBtn">
-        <property name="text">
-         <string>F</string>
         </property>
         <property name="checkable">
          <bool>true</bool>
@@ -77,20 +57,10 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="4">
-       <widget class="QToolButton" name="circleBtn">
+      <item row="0" column="5">
+       <widget class="QToolButton" name="freeBtn">
         <property name="text">
-         <string>C</string>
-        </property>
-        <property name="checkable">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="6">
-       <widget class="QToolButton" name="smoothLineBtn">
-        <property name="text">
-         <string>A</string>
+         <string>F</string>
         </property>
         <property name="checkable">
          <bool>true</bool>
@@ -101,6 +71,26 @@
        <widget class="QToolButton" name="rectBtn">
         <property name="text">
          <string>R</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QToolButton" name="selectBtn">
+        <property name="text">
+         <string>S</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="4">
+       <widget class="QToolButton" name="circleBtn">
+        <property name="text">
+         <string>C</string>
         </property>
         <property name="checkable">
          <bool>true</bool>
@@ -118,10 +108,13 @@
        <bool>false</bool>
       </property>
       <layout class="QGridLayout" name="gridLayout_4" columnstretch="1,0,0,0,0">
-       <item row="0" column="0">
-        <widget class="QLabel" name="strokeWidthLabel">
-         <property name="text">
-          <string>Width</string>
+       <item row="0" column="1">
+        <widget class="QDoubleSpinBox" name="strokeWidthField">
+         <property name="minimum">
+          <double>0.100000000000000</double>
+         </property>
+         <property name="value">
+          <double>5.000000000000000</double>
          </property>
         </widget>
        </item>
@@ -150,13 +143,10 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="1">
-        <widget class="QDoubleSpinBox" name="strokeWidthField">
-         <property name="minimum">
-          <double>0.100000000000000</double>
-         </property>
-         <property name="value">
-          <double>5.000000000000000</double>
+       <item row="1" column="2">
+        <widget class="QLabel" name="endCapLabel">
+         <property name="text">
+          <string>End</string>
          </property>
         </widget>
        </item>
@@ -173,12 +163,11 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="2">
-        <widget class="QLabel" name="strokeOpacityLabel">
-         <property name="text">
-          <string>Opacity</string>
-         </property>
-        </widget>
+       <item row="1" column="1">
+        <widget class="QComboBox" name="startCapCb"/>
+       </item>
+       <item row="1" column="3">
+        <widget class="QComboBox" name="endCapCb"/>
        </item>
        <item row="1" column="0">
         <widget class="QLabel" name="startCapLabel">
@@ -187,18 +176,33 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
-        <widget class="QComboBox" name="startCapCb"/>
-       </item>
-       <item row="1" column="2">
-        <widget class="QLabel" name="endCapLabel">
+       <item row="0" column="2">
+        <widget class="QLabel" name="strokeOpacityLabel">
          <property name="text">
-          <string>End</string>
+          <string>Opacity</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="3">
-        <widget class="QComboBox" name="endCapCb"/>
+       <item row="0" column="0">
+        <widget class="QLabel" name="strokeWidthLabel">
+         <property name="text">
+          <string>Width</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="smoothingLabel">
+         <property name="text">
+          <string>Smoothing</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QSpinBox" name="strokeSmoothingField">
+         <property name="maximum">
+          <number>5</number>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>

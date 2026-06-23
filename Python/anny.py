@@ -151,6 +151,12 @@ class AnnyMode(MinorMode):
             # Update text
             self.inspector.ui.textField.setText(self.current_stroke.text)
 
+        if "smoothing" in props:
+            # Update smoothing
+            self.inspector.ui.strokeSmoothingField.setValue(
+                self.current_stroke.smoothing
+            )
+
     def select_start(self, event):
         # Get frame (we store the annotation against the frame)
         frame = crv.frame()
@@ -251,6 +257,7 @@ class AnnyMode(MinorMode):
                 text=self.inspector.ui.textField.toPlainText(),
                 fill_color=self.inspector.current_fill_color,
                 fill_opacity=self.inspector.ui.fillOpacityField.value(),
+                smoothing=self.inspector.ui.strokeSmoothingField.value(),
             )
             self.annotations.strokes[frame].append(self.current_stroke)
 

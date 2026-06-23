@@ -33,23 +33,11 @@ class Ui_Inspector(object):
         self.mainLayout.setContentsMargins(8, 8, 8, 8)
         self.toolsLayout = QGridLayout()
         self.toolsLayout.setObjectName(u"toolsLayout")
-        self.selectBtn = QToolButton(self.verticalLayoutWidget)
-        self.selectBtn.setObjectName(u"selectBtn")
-        self.selectBtn.setCheckable(True)
-
-        self.toolsLayout.addWidget(self.selectBtn, 0, 0, 1, 1)
-
         self.textBtn = QToolButton(self.verticalLayoutWidget)
         self.textBtn.setObjectName(u"textBtn")
         self.textBtn.setCheckable(True)
 
         self.toolsLayout.addWidget(self.textBtn, 0, 3, 1, 1)
-
-        self.freeBtn = QToolButton(self.verticalLayoutWidget)
-        self.freeBtn.setObjectName(u"freeBtn")
-        self.freeBtn.setCheckable(True)
-
-        self.toolsLayout.addWidget(self.freeBtn, 0, 5, 1, 1)
 
         self.lineBtn = QToolButton(self.verticalLayoutWidget)
         self.lineBtn.setObjectName(u"lineBtn")
@@ -57,23 +45,29 @@ class Ui_Inspector(object):
 
         self.toolsLayout.addWidget(self.lineBtn, 0, 1, 1, 1)
 
-        self.circleBtn = QToolButton(self.verticalLayoutWidget)
-        self.circleBtn.setObjectName(u"circleBtn")
-        self.circleBtn.setCheckable(True)
+        self.freeBtn = QToolButton(self.verticalLayoutWidget)
+        self.freeBtn.setObjectName(u"freeBtn")
+        self.freeBtn.setCheckable(True)
 
-        self.toolsLayout.addWidget(self.circleBtn, 0, 4, 1, 1)
-
-        self.smoothLineBtn = QToolButton(self.verticalLayoutWidget)
-        self.smoothLineBtn.setObjectName(u"smoothLineBtn")
-        self.smoothLineBtn.setCheckable(True)
-
-        self.toolsLayout.addWidget(self.smoothLineBtn, 0, 6, 1, 1)
+        self.toolsLayout.addWidget(self.freeBtn, 0, 5, 1, 1)
 
         self.rectBtn = QToolButton(self.verticalLayoutWidget)
         self.rectBtn.setObjectName(u"rectBtn")
         self.rectBtn.setCheckable(True)
 
         self.toolsLayout.addWidget(self.rectBtn, 0, 2, 1, 1)
+
+        self.selectBtn = QToolButton(self.verticalLayoutWidget)
+        self.selectBtn.setObjectName(u"selectBtn")
+        self.selectBtn.setCheckable(True)
+
+        self.toolsLayout.addWidget(self.selectBtn, 0, 0, 1, 1)
+
+        self.circleBtn = QToolButton(self.verticalLayoutWidget)
+        self.circleBtn.setObjectName(u"circleBtn")
+        self.circleBtn.setCheckable(True)
+
+        self.toolsLayout.addWidget(self.circleBtn, 0, 4, 1, 1)
 
 
         self.mainLayout.addLayout(self.toolsLayout)
@@ -83,10 +77,12 @@ class Ui_Inspector(object):
         self.strokeBox.setFlat(False)
         self.gridLayout_4 = QGridLayout(self.strokeBox)
         self.gridLayout_4.setObjectName(u"gridLayout_4")
-        self.strokeWidthLabel = QLabel(self.strokeBox)
-        self.strokeWidthLabel.setObjectName(u"strokeWidthLabel")
+        self.strokeWidthField = QDoubleSpinBox(self.strokeBox)
+        self.strokeWidthField.setObjectName(u"strokeWidthField")
+        self.strokeWidthField.setMinimum(0.100000000000000)
+        self.strokeWidthField.setValue(5.000000000000000)
 
-        self.gridLayout_4.addWidget(self.strokeWidthLabel, 0, 0, 1, 1)
+        self.gridLayout_4.addWidget(self.strokeWidthField, 0, 1, 1, 1)
 
         self.strokeColorBtn = QPushButton(self.strokeBox)
         self.strokeColorBtn.setObjectName(u"strokeColorBtn")
@@ -101,12 +97,10 @@ class Ui_Inspector(object):
 
         self.gridLayout_4.addWidget(self.strokeColorBtn, 0, 4, 1, 1)
 
-        self.strokeWidthField = QDoubleSpinBox(self.strokeBox)
-        self.strokeWidthField.setObjectName(u"strokeWidthField")
-        self.strokeWidthField.setMinimum(0.100000000000000)
-        self.strokeWidthField.setValue(5.000000000000000)
+        self.endCapLabel = QLabel(self.strokeBox)
+        self.endCapLabel.setObjectName(u"endCapLabel")
 
-        self.gridLayout_4.addWidget(self.strokeWidthField, 0, 1, 1, 1)
+        self.gridLayout_4.addWidget(self.endCapLabel, 1, 2, 1, 1)
 
         self.strokeOpacityField = QDoubleSpinBox(self.strokeBox)
         self.strokeOpacityField.setObjectName(u"strokeOpacityField")
@@ -116,30 +110,41 @@ class Ui_Inspector(object):
 
         self.gridLayout_4.addWidget(self.strokeOpacityField, 0, 3, 1, 1)
 
-        self.strokeOpacityLabel = QLabel(self.strokeBox)
-        self.strokeOpacityLabel.setObjectName(u"strokeOpacityLabel")
+        self.startCapCb = QComboBox(self.strokeBox)
+        self.startCapCb.setObjectName(u"startCapCb")
 
-        self.gridLayout_4.addWidget(self.strokeOpacityLabel, 0, 2, 1, 1)
+        self.gridLayout_4.addWidget(self.startCapCb, 1, 1, 1, 1)
+
+        self.endCapCb = QComboBox(self.strokeBox)
+        self.endCapCb.setObjectName(u"endCapCb")
+
+        self.gridLayout_4.addWidget(self.endCapCb, 1, 3, 1, 1)
 
         self.startCapLabel = QLabel(self.strokeBox)
         self.startCapLabel.setObjectName(u"startCapLabel")
 
         self.gridLayout_4.addWidget(self.startCapLabel, 1, 0, 1, 1)
 
-        self.startCapCb = QComboBox(self.strokeBox)
-        self.startCapCb.setObjectName(u"startCapCb")
+        self.strokeOpacityLabel = QLabel(self.strokeBox)
+        self.strokeOpacityLabel.setObjectName(u"strokeOpacityLabel")
 
-        self.gridLayout_4.addWidget(self.startCapCb, 1, 1, 1, 1)
+        self.gridLayout_4.addWidget(self.strokeOpacityLabel, 0, 2, 1, 1)
 
-        self.endCapLabel = QLabel(self.strokeBox)
-        self.endCapLabel.setObjectName(u"endCapLabel")
+        self.strokeWidthLabel = QLabel(self.strokeBox)
+        self.strokeWidthLabel.setObjectName(u"strokeWidthLabel")
 
-        self.gridLayout_4.addWidget(self.endCapLabel, 1, 2, 1, 1)
+        self.gridLayout_4.addWidget(self.strokeWidthLabel, 0, 0, 1, 1)
 
-        self.endCapCb = QComboBox(self.strokeBox)
-        self.endCapCb.setObjectName(u"endCapCb")
+        self.smoothingLabel = QLabel(self.strokeBox)
+        self.smoothingLabel.setObjectName(u"smoothingLabel")
 
-        self.gridLayout_4.addWidget(self.endCapCb, 1, 3, 1, 1)
+        self.gridLayout_4.addWidget(self.smoothingLabel, 2, 0, 1, 1)
+
+        self.strokeSmoothingField = QSpinBox(self.strokeBox)
+        self.strokeSmoothingField.setObjectName(u"strokeSmoothingField")
+        self.strokeSmoothingField.setMaximum(5)
+
+        self.gridLayout_4.addWidget(self.strokeSmoothingField, 2, 1, 1, 1)
 
         self.gridLayout_4.setColumnStretch(0, 1)
 
@@ -218,19 +223,19 @@ class Ui_Inspector(object):
 
     def retranslateUi(self, Inspector):
         Inspector.setWindowTitle(QCoreApplication.translate("Inspector", u"Anny", None))
-        self.selectBtn.setText(QCoreApplication.translate("Inspector", u"S", None))
         self.textBtn.setText(QCoreApplication.translate("Inspector", u"T", None))
-        self.freeBtn.setText(QCoreApplication.translate("Inspector", u"F", None))
         self.lineBtn.setText(QCoreApplication.translate("Inspector", u"L", None))
-        self.circleBtn.setText(QCoreApplication.translate("Inspector", u"C", None))
-        self.smoothLineBtn.setText(QCoreApplication.translate("Inspector", u"A", None))
+        self.freeBtn.setText(QCoreApplication.translate("Inspector", u"F", None))
         self.rectBtn.setText(QCoreApplication.translate("Inspector", u"R", None))
+        self.selectBtn.setText(QCoreApplication.translate("Inspector", u"S", None))
+        self.circleBtn.setText(QCoreApplication.translate("Inspector", u"C", None))
         self.strokeBox.setTitle(QCoreApplication.translate("Inspector", u"Stroke", None))
-        self.strokeWidthLabel.setText(QCoreApplication.translate("Inspector", u"Width", None))
         self.strokeColorBtn.setText("")
-        self.strokeOpacityLabel.setText(QCoreApplication.translate("Inspector", u"Opacity", None))
-        self.startCapLabel.setText(QCoreApplication.translate("Inspector", u"Start", None))
         self.endCapLabel.setText(QCoreApplication.translate("Inspector", u"End", None))
+        self.startCapLabel.setText(QCoreApplication.translate("Inspector", u"Start", None))
+        self.strokeOpacityLabel.setText(QCoreApplication.translate("Inspector", u"Opacity", None))
+        self.strokeWidthLabel.setText(QCoreApplication.translate("Inspector", u"Width", None))
+        self.smoothingLabel.setText(QCoreApplication.translate("Inspector", u"Smoothing", None))
         self.fillBox.setTitle(QCoreApplication.translate("Inspector", u"Fill", None))
         self.fillOpacityLabel.setText(QCoreApplication.translate("Inspector", u"Opacity", None))
         self.fillColorBtn.setText("")
