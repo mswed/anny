@@ -13,7 +13,7 @@ class Inspector(QtWidgets.QDialog):
         self.mode = mode
         self.ui = Ui_Inspector()
         self.current_stroke_color = (1.0, 0.0, 0.0, 1.0)
-        self.current_fill_color = (1.0, 0.0, 0.0, 1.0)
+        self.current_fill_color = (0.0, 0.0, 0.0, 1.0)
         self.start_cap = None
         self.end_cap = None
 
