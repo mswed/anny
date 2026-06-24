@@ -164,10 +164,18 @@
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QComboBox" name="startCapCb"/>
+        <widget class="QComboBox" name="startCapCb">
+         <property name="toolTip">
+          <string extracomment="Set the start of the line to an arrow, a circle or a tick"/>
+         </property>
+        </widget>
        </item>
        <item row="1" column="3">
-        <widget class="QComboBox" name="endCapCb"/>
+        <widget class="QComboBox" name="endCapCb">
+         <property name="toolTip">
+          <string extracomment="Set the end of the line to an arrow, a circle or a tick"/>
+         </property>
+        </widget>
        </item>
        <item row="1" column="0">
         <widget class="QLabel" name="startCapLabel">
@@ -199,6 +207,9 @@
        </item>
        <item row="2" column="1">
         <widget class="QSpinBox" name="strokeSmoothingField">
+         <property name="toolTip">
+          <string extracomment="Smooth a free hand drawn curve"/>
+         </property>
          <property name="maximum">
           <number>5</number>
          </property>
@@ -229,7 +240,7 @@
           <double>0.100000000000000</double>
          </property>
          <property name="value">
-          <double>1.000000000000000</double>
+          <double>0.300000000000000</double>
          </property>
         </widget>
        </item>
@@ -251,7 +262,7 @@
           <bool>false</bool>
          </property>
          <property name="styleSheet">
-          <string notr="true">background-color: red; border: none;</string>
+          <string notr="true">background-color: #000000; border: none;</string>
          </property>
          <property name="text">
           <string/>

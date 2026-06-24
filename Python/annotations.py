@@ -377,6 +377,7 @@ class FreehandStroke(Stroke):
 
         self.points.append(point)
         self.end = point
+        self._smooth_points = []
 
     def detect_selection(self, point: ImagePoint) -> bool:
         return self._detect_line_selection(point)
