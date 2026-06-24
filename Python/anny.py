@@ -9,6 +9,7 @@ from annotations import (
     LineStroke,
     RectStroke,
     CircleStroke,
+    TextStroke,
 )
 from utils import ImagePoint, Point
 
@@ -24,6 +25,7 @@ class AnnyMode(MinorMode):
         self.stroke_types = {
             1: LineStroke,
             2: RectStroke,
+            3: TextStroke,
             4: CircleStroke,
             5: FreehandStroke,
         }
@@ -117,7 +119,7 @@ class AnnyMode(MinorMode):
             # Update color
             r, g, b, a = self.current_stroke.color
             self.inspector.ui.strokeColorBtn.setStyleSheet(
-                f"background-color: rgba({int(r * 255)}, {int(g * 255)}, {int(b * 255)}, {int(a * 255)}); border: none;"
+                f"background-color: rgba({int(r * 255)}, {int(g * 255)}, {int(b * 255)}, 255); border: none;"
             )
 
         if "opacity" in props:
@@ -138,7 +140,7 @@ class AnnyMode(MinorMode):
             # Update fill color
             r, g, b, a = self.current_stroke.fill_color
             self.inspector.ui.fillColorBtn.setStyleSheet(
-                f"background-color: rgba({int(r * 255)}, {int(g * 255)}, {int(b * 255)}, {int(a * 255)}); border: none;"
+                f"background-color: rgba({int(r * 255)}, {int(g * 255)}, {int(b * 255)}, 255); border: none;"
             )
 
         if "fill_opacity" in props:

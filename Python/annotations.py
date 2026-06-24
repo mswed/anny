@@ -106,7 +106,7 @@ class Stroke:
         width: float = 1.0,
         color: tuple = (1, 0, 0, 1),
         opacity: float = 1.0,
-        fill_color: tuple = (1, 0, 0, 1),
+        fill_color: tuple = (1, 1, 1, 1),
         fill_opacity: float = 1.0,
     ) -> None:
         self.start = start
@@ -316,6 +316,259 @@ class Stroke:
         pass
 
 
+class TextStroke(Stroke):
+    editable_properties = [
+        "width",
+        "color",
+        "opacity",
+        "fill_color",
+        "fill_opacity",
+        "text",
+    ]
+
+    def __init__(
+        self,
+        start: ImagePoint,
+        end: ImagePoint,
+        source: str,
+        width: float = 1,
+        color: tuple = (1, 0, 0, 1),
+        opacity: float = 1,
+        fill_color: tuple = (1, 1, 1, 1),
+        fill_opacity: float = 1,
+        text: Optional[str] = None,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            start, end, source, width, color, opacity, fill_color, fill_opacity
+        )
+        self.text = text
+
+    def __repr__(self) -> str:
+        return f"<TextStroke> start={self.start} end={self.end} color={self.color}"
+
+    def detect_selection(self, point: ImagePoint) -> bool:
+        return self._point_inside_stroke(point)
+
+    def _draw_text(self, rect: SquareVerts, texture_id: int) -> None:
+        # Enable and bind
+        GL.glEnable(GL.GL_TEXTURE_2D)
+        GL.glBindTexture(GL.GL_TEXTURE_2D, texture_id)
+
+        GL.glBegin(GL.GL_QUADS)
+        GL.glColor4f(1.0, 1.0, 1.0, self.opacity)
+        # Map texture points to relative points
+        GL.glTexCoord2f(0, 1)  # Bottom left
+        GL.glVertex2f(*rect.bottom_left)
+        GL.glTexCoord2f(1, 1)  # Bottom right
+        GL.glVertex2f(*rect.bottom_right)
+        GL.glTexCoord2f(1, 0)  # Top right
+        GL.glVertex2f(*rect.top_right)
+        GL.glTexCoord2f(0, 0)  # Top left
+        GL.glVertex2f(*rect.top_left)
+        GL.glEnd()
+
+        # Cleanup
+        GL.glDisable(GL.GL_TEXTURE_2D)
+
+    def _get_rect_verts(self, start: ScreenPoint, end: ScreenPoint) -> SquareVerts:
+        """Get the verts of a square. We can not simply get start and end for this type of stroke
+        since it has text and it will invert if end is behind start
+
+
+        Parameters
+        ----------
+        start : ScreenPoint
+            Rect start point
+        end : ScreenPoint
+            Rect end point
+
+        Returns
+        -------
+        SquareVerts
+            Verts to draw
+        """
+        min_x = min(start.x, end.x)
+        max_x = max(start.x, end.x)
+        min_y = min(start.y, end.y)
+        max_y = max(start.y, end.y)
+
+        bottom_left = ScreenPoint(min_x, min_y)
+        bottom_right = ScreenPoint(max_x, min_y)
+        top_right = ScreenPoint(max_x, max_y)
+        top_left = ScreenPoint(min_x, max_y)
+
+        return SquareVerts(bottom_left, bottom_right, top_right, top_left)
+
+    def _point_inside_stroke(self, point: ImagePoint) -> bool:
+        """Check if a click happened inside a stroke
+
+        Parameters
+        ----------
+        point : ImagePoint
+            Where the user clicked
+
+        Returns
+        -------
+        bool
+            True if stroke was clicked false otherwise
+        """
+
+        # Strokes are drawn in screen space, so convert to event space first
+        hp = point.to_screenspace()
+
+        start = self.start.to_screenspace()
+        end = self.end.to_screenspace()
+        verts = self._get_rect_verts(start, end)
+
+        x_start = verts.bottom_left.x
+        x_end = verts.bottom_right.x
+        y_start = verts.top_left.y
+        y_end = verts.bottom_left.y
+
+        return x_end > hp.x > x_start and y_start > hp.y > y_end
+
+    def _draw_rect(self, verts: SquareVerts, color: Color):
+
+        # Square
+        GL.glColor4f(color.r, color.g, color.b, color.a)
+        GL.glBegin(GL.GL_QUADS)
+        GL.glVertex2f(*verts.bottom_left)
+        GL.glVertex2f(*verts.bottom_right)
+        GL.glVertex2f(*verts.top_right)
+        GL.glVertex2f(*verts.top_left)
+        GL.glEnd()
+
+    def _generate_text_texture(self) -> Optional[QtGui.QImage]:
+        """Generate a text texture so we can render it using OpenGL
+
+        Returns
+        -------
+        Optional[QtGui.QImage]
+            The texture image
+
+
+        """
+        if self.text is None:
+            return
+
+        font = QtGui.QFont("Ariel", 14)
+
+        # Measure the font so we know how big our texture needs to be
+        metrics = QtGui.QFontMetrics(font)
+        text_rect = metrics.boundingRect(self.text)
+
+        # Padding
+        width = text_rect.width() + 8
+        height = text_rect.height() + 8
+
+        # Create the image
+        image = QtGui.QImage(width, height, QtGui.QImage.Format_RGBA8888)
+        image.fill(
+            QtGui.QColor.fromRgbF(
+                self.fill_color[0],
+                self.fill_color[1],
+                self.fill_color[2],
+                self.fill_opacity,
+            )
+        )
+
+        # Paint
+        painter = QtGui.QPainter(image)
+        painter.setFont(font)
+        painter.setPen(
+            QtGui.QColor.fromRgbF(
+                self.color[0], self.color[1], self.color[2], self.opacity
+            )
+        )
+        painter.drawText(image.rect(), Qt.AlignCenter, self.text)
+        painter.end()
+
+        return image
+
+    def _load_texture(self, image: QtGui.QImage) -> int:
+        """Load an image into a GL texture. Used to create texts
+
+        Parameters
+        ----------
+        image : QtGui.QImage
+            Image with text
+
+        Returns
+        -------
+        Tuple
+            texture id
+
+        """
+
+        width = image.width()
+        height = image.height()
+
+        # Image in bytes
+        pointer = image.constBits()
+
+        texture_id = GL.glGenTextures(1)
+        GL.glBindTexture(GL.GL_TEXTURE_2D, texture_id)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR)
+        GL.glTexImage2D(
+            GL.GL_TEXTURE_2D,
+            0,
+            GL.GL_RGBA,
+            width,
+            height,
+            0,
+            GL.GL_RGBA,
+            GL.GL_UNSIGNED_BYTE,
+            pointer,
+        )
+
+        return texture_id
+
+    def render(self):
+
+        # Antialiasing
+        GL.glEnable(GL.GL_BLEND)
+        GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
+
+        start = self.start.to_screenspace()
+        end = self.end.to_screenspace()
+
+        v = self._get_rect_verts(start, end)
+
+        # Square
+        GL.glColor4f(
+            self.fill_color[0],
+            self.fill_color[1],
+            self.fill_color[2],
+            self.fill_opacity,
+        )
+        GL.glBegin(GL.GL_QUADS)
+        GL.glVertex2f(*v.bottom_left)
+        GL.glVertex2f(*v.bottom_right)
+        GL.glVertex2f(*v.top_right)
+        GL.glVertex2f(*v.top_left)
+        GL.glEnd()
+
+        # Draw the text
+        if self.text:
+            qt_texture = self._generate_text_texture()
+            if qt_texture:
+                tid = self._load_texture(qt_texture)
+                self._draw_text(v, tid)
+
+        # Selection highlighting
+        if self.selected:
+            self._draw_bounding_box()
+            self._draw_handle(start)
+            self._draw_handle(end)
+
+        # Cleanup - so we don't confuse RV
+        GL.glDisable(GL.GL_LINE_SMOOTH)
+        GL.glDisable(GL.GL_BLEND)
+        GL.glLineWidth(1.0)
+
+
 class FreehandStroke(Stroke):
     editable_properties = [
         "width",
@@ -334,7 +587,7 @@ class FreehandStroke(Stroke):
         width: float = 1,
         color: tuple = (1, 0, 0, 1),
         opacity: float = 1,
-        fill_color: tuple = (1, 0, 0, 1),
+        fill_color: tuple = (1, 1, 1, 1),
         fill_opacity: float = 1,
         smoothing=6,
         **kwargs,
@@ -538,7 +791,7 @@ class CircleStroke(Stroke):
         width: float = 1,
         color: tuple = (1, 0, 0, 1),
         opacity: float = 1,
-        fill_color: tuple = (1, 0, 0, 1),
+        fill_color: tuple = (1, 1, 1, 1),
         fill_opacity: float = 1,
         **kwargs,
     ) -> None:
@@ -659,7 +912,7 @@ class RectStroke(Stroke):
         width: float = 1,
         color: tuple = (1, 0, 0, 1),
         opacity: float = 1,
-        fill_color: tuple = (1, 0, 0, 1),
+        fill_color: tuple = (1, 1, 1, 1),
         fill_opacity: float = 1,
         **kwargs,
     ) -> None:
@@ -808,7 +1061,7 @@ class LineStroke(Stroke):
         width: float = 1.0,
         color: tuple = (1, 0, 0, 1),
         opacity: float = 1.0,
-        fill_color: tuple = (1, 0, 0, 1),
+        fill_color: tuple = (1, 1, 1, 1),
         fill_opacity: float = 1.0,
         start_cap: Optional[str] = None,
         end_cap: Optional[str] = None,
