@@ -93,7 +93,7 @@ class Inspector(QtWidgets.QDialog):
 
         # Update swatch. Note we need to convert to an 8 bit integer
         sender.setStyleSheet(
-            f"background-color: rgba({int(r * 255)}, {int(g * 255)}, {int(b * 255)}, {int(a * 255)}); border: none;"
+            f"background-color: rgba({int(r * 255)}, {int(g * 255)}, {int(b * 255)}, 255); border: none;"
         )
 
         # Update the inspector for any future paint event

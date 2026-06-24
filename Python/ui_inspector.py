@@ -163,7 +163,7 @@ class Ui_Inspector(object):
         self.fillOpacityField.setObjectName(u"fillOpacityField")
         self.fillOpacityField.setMaximum(1.000000000000000)
         self.fillOpacityField.setSingleStep(0.100000000000000)
-        self.fillOpacityField.setValue(1.000000000000000)
+        self.fillOpacityField.setValue(0.300000000000000)
 
         self.gridLayout.addWidget(self.fillOpacityField, 0, 1, 1, 1)
 
@@ -173,7 +173,7 @@ class Ui_Inspector(object):
         self.fillColorBtn.setSizePolicy(sizePolicy)
         self.fillColorBtn.setMaximumSize(QSize(24, 24))
         self.fillColorBtn.setAutoFillBackground(False)
-        self.fillColorBtn.setStyleSheet(u"background-color: red; border: none;")
+        self.fillColorBtn.setStyleSheet(u"background-color: #000000; border: none;")
 
         self.gridLayout.addWidget(self.fillColorBtn, 0, 2, 1, 1)
 
@@ -232,10 +232,19 @@ class Ui_Inspector(object):
         self.strokeBox.setTitle(QCoreApplication.translate("Inspector", u"Stroke", None))
         self.strokeColorBtn.setText("")
         self.endCapLabel.setText(QCoreApplication.translate("Inspector", u"End", None))
+#if QT_CONFIG(tooltip)
+        self.startCapCb.setToolTip("")
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(tooltip)
+        self.endCapCb.setToolTip("")
+#endif // QT_CONFIG(tooltip)
         self.startCapLabel.setText(QCoreApplication.translate("Inspector", u"Start", None))
         self.strokeOpacityLabel.setText(QCoreApplication.translate("Inspector", u"Opacity", None))
         self.strokeWidthLabel.setText(QCoreApplication.translate("Inspector", u"Width", None))
         self.smoothingLabel.setText(QCoreApplication.translate("Inspector", u"Smoothing", None))
+#if QT_CONFIG(tooltip)
+        self.strokeSmoothingField.setToolTip("")
+#endif // QT_CONFIG(tooltip)
         self.fillBox.setTitle(QCoreApplication.translate("Inspector", u"Fill", None))
         self.fillOpacityLabel.setText(QCoreApplication.translate("Inspector", u"Opacity", None))
         self.fillColorBtn.setText("")
