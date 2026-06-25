@@ -1140,6 +1140,7 @@ class LineStroke(Stroke):
         self.start_cap = start_cap
         self.end_cap = end_cap
         self.text = text
+        self.editing = True
 
     def __repr__(self) -> str:
         return f"<LineStroke> start={self.start} end={self.end} color={self.color}"

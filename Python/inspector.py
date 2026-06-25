@@ -63,7 +63,10 @@ class Inspector(QtWidgets.QDialog):
         self.ui.strokeSmoothingField.valueChanged.connect(self.update_smoothing)
         self.ui.fillColorBtn.clicked.connect(self.show_color_picker)
         self.ui.fillOpacityField.valueChanged.connect(self.update_fill_opacity)
+
+        # Text field has two connections one for updates and one for losingn focus
         self.ui.textField.textChanged.connect(self.update_text)
+        self.ui.textField.editingFinished.connect(self.commit_edit)
 
     def show_color_picker(self):
         # We have more thatn one color selector, figure out which was clicked
@@ -162,6 +165,19 @@ class Inspector(QtWidgets.QDialog):
 
     def update_text(self):
         """Update the text based on UI selection"""
-        if self.mode.current_stroke:
+        if (
+            self.mode.current_stroke
+            and "text" in self.mode.current_stroke.editable_properties
+        ):
             self.mode.current_stroke.text = self.ui.textField.toPlainText()
+            self.mode.current_stroke.editing = True
+            crv.redraw()
+
+    def commit_edit(self):
+        """Update the editing status to False on the stroke"""
+        if (
+            self.mode.current_stroke
+            and "text" in self.mode.current_stroke.editable_properties
+        ):
+            self.mode.current_stroke.editing = False
             crv.redraw()
