@@ -1117,6 +1117,7 @@ class LineStroke(Stroke):
         "start_cap",
         "end_cap",
         "text",
+        "font",
     ]
 
     def __init__(
@@ -1132,6 +1133,7 @@ class LineStroke(Stroke):
         start_cap: Optional[str] = None,
         end_cap: Optional[str] = None,
         text: Optional[str] = None,
+        font: QtGui.QFont = QtGui.QFont("Arial", 14),
         **kwargs,
     ) -> None:
         super().__init__(
@@ -1140,7 +1142,7 @@ class LineStroke(Stroke):
         self.start_cap = start_cap
         self.end_cap = end_cap
         self.text = text
-        self.editing = True
+        self.font = font
 
     def __repr__(self) -> str:
         return f"<LineStroke> start={self.start} end={self.end} color={self.color}"
@@ -1274,10 +1276,8 @@ class LineStroke(Stroke):
         if self.text is None:
             return
 
-        font = QtGui.QFont("Arial", 14)
-
         # Measure the font so we know how big our texture needs to be
-        metrics = QtGui.QFontMetrics(font)
+        metrics = QtGui.QFontMetrics(self.font)
         text_rect = metrics.boundingRect(self.text)
 
         # Padding
@@ -1297,7 +1297,7 @@ class LineStroke(Stroke):
 
         # Paint
         painter = QtGui.QPainter(image)
-        painter.setFont(font)
+        painter.setFont(self.font)
         painter.setPen(
             QtGui.QColor.fromRgbF(
                 self.color[0], self.color[1], self.color[2], self.opacity
