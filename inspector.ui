@@ -296,7 +296,7 @@
         </widget>
        </item>
        <item row="1" column="1" colspan="2">
-        <widget class="QTextEdit" name="textField">
+        <widget class="TextEditWithCommit" name="textField">
          <property name="lineWrapColumnOrWidth">
           <number>0</number>
          </property>
@@ -318,6 +318,13 @@
    </layout>
   </widget>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>TextEditWithCommit</class>
+   <extends>QTextEdit</extends>
+   <header>text_editor</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

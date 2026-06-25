@@ -17,8 +17,10 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QComboBox, QDialog, QDoubleSpinBox,
     QFontComboBox, QGridLayout, QGroupBox, QLabel,
-    QPushButton, QSizePolicy, QSpinBox, QTextEdit,
-    QToolButton, QVBoxLayout, QWidget)
+    QPushButton, QSizePolicy, QSpinBox, QToolButton,
+    QVBoxLayout, QWidget)
+
+from text_editor import TextEditWithCommit
 
 class Ui_Inspector(object):
     def setupUi(self, Inspector):
@@ -199,7 +201,7 @@ class Ui_Inspector(object):
 
         self.gridLayout_2.addWidget(self.fontSizeLabel, 0, 2, 1, 1)
 
-        self.textField = QTextEdit(self.textBox)
+        self.textField = TextEditWithCommit(self.textBox)
         self.textField.setObjectName(u"textField")
         self.textField.setLineWrapColumnOrWidth(0)
 
