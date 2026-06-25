@@ -8,7 +8,72 @@ import rv.commands as crv
 from utils import ImagePoint, ScreenPoint, ScreenVector
 
 
-class SquareVerts(NamedTuple):
+class RectEdges(NamedTuple):
+    """A class to store axiss aligned rectangle edges. Top should always be the hightest Y
+
+    Attributes
+    ----------
+    left : X coordinate of the left edge
+    right : X coordinate of the right edge
+    top : Y coordinate of the top edge
+    bottom : Y coordinate of the bottom edge
+    """
+
+    left: float
+    right: float
+    top: float
+    bottom: float
+
+    @property
+    def bottom_left(self):
+        return ScreenPoint(self.left, self.bottom)
+
+    @property
+    def bottom_right(self):
+        return ScreenPoint(self.right, self.bottom)
+
+    @property
+    def top_right(self):
+        return ScreenPoint(self.right, self.top)
+
+    @property
+    def top_left(self):
+        return ScreenPoint(self.left, self.top)
+
+    @property
+    def width(self):
+        return abs(self.right - self.left)
+
+    @property
+    def height(self):
+        return abs(self.top - self.bottom)
+
+    @property
+    def corners(self):
+        return (self.bottom_left, self.bottom_right, self.top_right, self.top_left)
+
+    def padded(self, padding):
+        return RectEdges(
+            self.left - padding,
+            self.right + padding,
+            self.top + padding,
+            self.bottom - padding,
+        )
+
+    def inset(self, margin):
+        return RectEdges(
+            self.left + margin,
+            self.right - margin,
+            self.top - margin,
+            self.bottom + margin,
+        )
+
+
+class QuadCorners(NamedTuple):
+    """
+    Store a quad's corner vertex. Used to store mainly rotated rects.
+    """
+
     bottom_left: ScreenPoint
     bottom_right: ScreenPoint
     top_right: ScreenPoint
@@ -243,73 +308,61 @@ class Stroke:
         if move_type == "stroke" or move_type == "end":
             self.end.move(dx, dy)
 
-    def _get_handle_verts(self, point: ScreenPoint, size: float = 6.0) -> SquareVerts:
+    def _get_handle_verts(self, point: ScreenPoint, size: float = 6.0) -> RectEdges:
         half = size / 2
 
-        bottom_left = ScreenPoint(point.x - half, point.y - half)
-        bottom_right = ScreenPoint(point.x + half, point.y - half)
-        top_right = ScreenPoint(point.x + half, point.y + half)
-        top_left = ScreenPoint(point.x - half, point.y + half)
+        left = point.x - half
+        right = point.x + half
+        top = point.y + half
+        bottom = point.y - half
 
-        return SquareVerts(bottom_left, bottom_right, top_right, top_left)
+        return RectEdges(left, right, top, bottom)
 
-    def _get_bounding_box_verts(self, padding) -> Optional[SquareVerts]:
+    def _get_bounding_box_edges(self) -> Optional[RectEdges]:
         start = self.start.to_screenspace()
         end = self.end.to_screenspace()
 
-        # get min and max with padding
-        min_x = min(start.x, end.x) - padding
-        max_x = max(start.x, end.x) + padding
-        min_y = min(start.y, end.y) - padding
-        max_y = max(start.y, end.y) + padding
+        # get min and max
+        left = min(start.x, end.x)
+        right = max(start.x, end.x)
+        top = max(start.y, end.y)
+        bottom = min(start.y, end.y)
 
-        bottom_left = ScreenPoint(min_x, min_y)
-        bottom_right = ScreenPoint(max_x, min_y)
-        top_right = ScreenPoint(max_x, max_y)
-        top_left = ScreenPoint(min_x, max_y)
+        return RectEdges(left, right, top, bottom)
 
-        return SquareVerts(bottom_left, bottom_right, top_right, top_left)
-
-    def _draw_bounding_box(self, padding=6):
+    def _draw_bounding_box(self, edges: RectEdges, padding=6):
         """
         Draw a box around the annotation to mark a selection
         """
 
-        v = self._get_bounding_box_verts(padding)
-        if v:
-            GL.glEnable(GL.GL_LINE_STIPPLE)
-            GL.glLineStipple(1, 0xF0F0)
-            GL.glLineWidth(1.0)
-            GL.glColor4f(1.0, 1.0, 1.0, 0.8)
+        edges = edges.padded(padding)
+        GL.glEnable(GL.GL_LINE_STIPPLE)
+        GL.glLineStipple(1, 0xF0F0)
+        GL.glLineWidth(1.0)
+        GL.glColor4f(1.0, 1.0, 1.0, 0.8)
 
-            GL.glBegin(GL.GL_LINE_LOOP)
-            GL.glVertex2f(*v.bottom_left)
-            GL.glVertex2f(*v.bottom_right)
-            GL.glVertex2f(*v.top_right)
-            GL.glVertex2f(*v.top_left)
-            GL.glEnd()
+        GL.glBegin(GL.GL_LINE_LOOP)
+        for corner in edges.corners:
+            GL.glVertex2f(corner.x, corner.y)
+        GL.glEnd()
 
-            GL.glDisable(GL.GL_LINE_STIPPLE)
+        GL.glDisable(GL.GL_LINE_STIPPLE)
 
     def _draw_handle(self, point: ScreenPoint):
 
-        v = self._get_handle_verts(point)
+        e = self._get_handle_verts(point)
         # Square
         GL.glColor4f(1.0, 1.0, 1.0, 1.0)
         GL.glBegin(GL.GL_QUADS)
-        GL.glVertex2f(*v.bottom_left)
-        GL.glVertex2f(*v.bottom_right)
-        GL.glVertex2f(*v.top_right)
-        GL.glVertex2f(*v.top_left)
+        for corner in e.corners:
+            GL.glVertex2f(corner.x, corner.y)
         GL.glEnd()
 
         # Border
         GL.glColor4f(0, 0, 0, 1.0)
         GL.glBegin(GL.GL_LINE_LOOP)
-        GL.glVertex2f(*v.bottom_left)
-        GL.glVertex2f(*v.bottom_right)
-        GL.glVertex2f(*v.top_right)
-        GL.glVertex2f(*v.top_left)
+        for corner in e.corners:
+            GL.glVertex2f(corner.x, corner.y)
         GL.glEnd()
 
     def render(self):
@@ -325,6 +378,8 @@ class TextStroke(Stroke):
         "fill_opacity",
         "text",
     ]
+
+    MARGIN = 8
 
     def __init__(
         self,
@@ -343,6 +398,7 @@ class TextStroke(Stroke):
             start, end, source, width, color, opacity, fill_color, fill_opacity
         )
         self.text = text
+        self.editing = True
 
     def __repr__(self) -> str:
         return f"<TextStroke> start={self.start} end={self.end} color={self.color}"
@@ -350,7 +406,7 @@ class TextStroke(Stroke):
     def detect_selection(self, point: ImagePoint) -> bool:
         return self._point_inside_stroke(point)
 
-    def _draw_text(self, rect: SquareVerts, texture_id: int) -> None:
+    def _draw_text(self, edges: RectEdges, texture_id: int) -> None:
         # Enable and bind
         GL.glEnable(GL.GL_TEXTURE_2D)
         GL.glBindTexture(GL.GL_TEXTURE_2D, texture_id)
@@ -359,46 +415,31 @@ class TextStroke(Stroke):
         GL.glColor4f(1.0, 1.0, 1.0, self.opacity)
         # Map texture points to relative points
         GL.glTexCoord2f(0, 1)  # Bottom left
-        GL.glVertex2f(*rect.bottom_left)
+        GL.glVertex2f(*edges.bottom_left)
         GL.glTexCoord2f(1, 1)  # Bottom right
-        GL.glVertex2f(*rect.bottom_right)
+        GL.glVertex2f(*edges.bottom_right)
         GL.glTexCoord2f(1, 0)  # Top right
-        GL.glVertex2f(*rect.top_right)
+        GL.glVertex2f(*edges.top_right)
         GL.glTexCoord2f(0, 0)  # Top left
-        GL.glVertex2f(*rect.top_left)
+        GL.glVertex2f(*edges.top_left)
         GL.glEnd()
 
         # Cleanup
         GL.glDisable(GL.GL_TEXTURE_2D)
 
-    def _get_rect_verts(self, start: ScreenPoint, end: ScreenPoint) -> SquareVerts:
-        """Get the verts of a square. We can not simply get start and end for this type of stroke
-        since it has text and it will invert if end is behind start
+    def _get_rect_edges(self, start: ScreenPoint, end: ScreenPoint) -> RectEdges:
 
+        # Most values come from the original drag
+        left = min(start.x, end.x)
+        right = max(start.x, end.x)
+        top = max(start.y, end.y)
 
-        Parameters
-        ----------
-        start : ScreenPoint
-            Rect start point
-        end : ScreenPoint
-            Rect end point
+        # But the height is calcualted based on either the drag or the size
+        # of the text
+        height = self._get_rect_height()
+        bottom = top - height
 
-        Returns
-        -------
-        SquareVerts
-            Verts to draw
-        """
-        min_x = min(start.x, end.x)
-        max_x = max(start.x, end.x)
-        min_y = min(start.y, end.y)
-        max_y = max(start.y, end.y)
-
-        bottom_left = ScreenPoint(min_x, min_y)
-        bottom_right = ScreenPoint(max_x, min_y)
-        top_right = ScreenPoint(max_x, max_y)
-        top_left = ScreenPoint(min_x, max_y)
-
-        return SquareVerts(bottom_left, bottom_right, top_right, top_left)
+        return RectEdges(left, right, top, bottom)
 
     def _point_inside_stroke(self, point: ImagePoint) -> bool:
         """Check if a click happened inside a stroke
@@ -416,28 +457,61 @@ class TextStroke(Stroke):
 
         # Strokes are drawn in screen space, so convert to event space first
         hp = point.to_screenspace()
-
         start = self.start.to_screenspace()
         end = self.end.to_screenspace()
-        verts = self._get_rect_verts(start, end)
 
-        x_start = verts.bottom_left.x
-        x_end = verts.bottom_right.x
-        y_start = verts.top_left.y
-        y_end = verts.bottom_left.y
+        edges = self._get_rect_edges(start, end)
 
-        return x_end > hp.x > x_start and y_start > hp.y > y_end
+        return edges.right > hp.x > edges.left and edges.top > hp.y > edges.bottom
 
-    def _draw_rect(self, verts: SquareVerts, color: Color):
+    def _draw_rect(self, edges: RectEdges, color: Color):
 
         # Square
         GL.glColor4f(color.r, color.g, color.b, color.a)
         GL.glBegin(GL.GL_QUADS)
-        GL.glVertex2f(*verts.bottom_left)
-        GL.glVertex2f(*verts.bottom_right)
-        GL.glVertex2f(*verts.top_right)
-        GL.glVertex2f(*verts.top_left)
+        for corner in edges.corners:
+            GL.glVertex2f(*corner)
         GL.glEnd()
+
+    def _get_rect_height(self) -> int:
+        """
+        Get the height of the box containing the text. The minimal height (while editing) is what the user drew.
+        Once editing is done the height snaps to match the actual height of the text.
+
+        Returns
+        -------
+        The height of the box as an int. If there's text this value includes the margins as well
+        """
+
+        start = self.start.to_screenspace()
+        end = self.end.to_screenspace()
+
+        # The height as set by the user
+        dragged_height = abs(end.y - start.y)
+
+        if not self.text:
+            return dragged_height
+
+        # The width is set by the user drawing the rect. But we add the margins to it
+        # so text wrapping works correctly
+        width = max(int(abs(end.x - start.x) - 2 * self.MARGIN), 1)
+
+        # We have text measure it to determine height
+        font = QtGui.QFont("Arial", 14)
+        metrics = QtGui.QFontMetrics(font)
+        flags = Qt.TextWordWrap | Qt.AlignLeft
+        # We calculate the inset width for correct text wrapping
+        rect = metrics.boundingRect(0, 0, int(width), 10000, flags, self.text)
+        # We add the margins to the height
+        text_height = rect.height() + 2 * self.MARGIN
+
+        if self.editing:
+            # As long as we're editing the height can only extend, never shrink
+            return max(dragged_height, text_height)
+
+        else:
+            # we are done editing use the text height even if it means shrinking
+            return text_height
 
     def _generate_text_texture(self) -> Optional[QtGui.QImage]:
         """Generate a text texture so we can render it using OpenGL
@@ -446,47 +520,38 @@ class TextStroke(Stroke):
         -------
         Optional[QtGui.QImage]
             The texture image
-
-
         """
-        if self.text is None:
+        if not self.text:
             return
 
-        font = QtGui.QFont("Ariel", 14)
+        font = QtGui.QFont("Arial", 14)
 
-        # Measure the font so we know how big our texture needs to be
-        metrics = QtGui.QFontMetrics(font)
-        text_rect = metrics.boundingRect(self.text)
-
-        # Padding
-        width = text_rect.width() + 8
-        height = text_rect.height() + 8
+        # Margins
+        width = abs(self.end.to_screenspace().x - self.start.to_screenspace().x)
+        width = max(int(width - 2 * self.MARGIN), 1)
+        # get rect height gives us the height of the rect WITH margins
+        # so we remove them to get the proper padding
+        height = max(self._get_rect_height() - 2 * self.MARGIN, 1)
 
         # Create the image
         image = QtGui.QImage(width, height, QtGui.QImage.Format_RGBA8888)
-        image.fill(
-            QtGui.QColor.fromRgbF(
-                self.fill_color[0],
-                self.fill_color[1],
-                self.fill_color[2],
-                self.fill_opacity,
-            )
-        )
+        # The actual fill comes from the drawn rect
+        image.fill(Qt.transparent)
 
         # Paint
         painter = QtGui.QPainter(image)
         painter.setFont(font)
-        painter.setPen(
-            QtGui.QColor.fromRgbF(
-                self.color[0], self.color[1], self.color[2], self.opacity
-            )
-        )
-        painter.drawText(image.rect(), Qt.AlignCenter, self.text)
+        r, g, b, a = self.color
+        painter.setPen(QtGui.QColor.fromRgbF(r, g, b, a))
+
+        flags = Qt.TextWordWrap | Qt.AlignLeft
+
+        painter.drawText(image.rect(), flags, self.text)
         painter.end()
 
         return image
 
-    def _load_texture(self, image: QtGui.QImage) -> int:
+    def _load_texture(self, image: QtGui.QImage) -> tuple:
         """Load an image into a GL texture. Used to create texts
 
         Parameters
@@ -497,7 +562,7 @@ class TextStroke(Stroke):
         Returns
         -------
         Tuple
-            texture id
+            texture id, texture width, texture height
 
         """
 
@@ -523,7 +588,7 @@ class TextStroke(Stroke):
             pointer,
         )
 
-        return texture_id
+        return texture_id, width, height
 
     def render(self):
 
@@ -534,32 +599,26 @@ class TextStroke(Stroke):
         start = self.start.to_screenspace()
         end = self.end.to_screenspace()
 
-        v = self._get_rect_verts(start, end)
+        e = self._get_rect_edges(start, end)
 
         # Square
-        GL.glColor4f(
-            self.fill_color[0],
-            self.fill_color[1],
-            self.fill_color[2],
-            self.fill_opacity,
-        )
+        r, g, b, a = self.fill_color
+        GL.glColor4f(r, g, b, a)
         GL.glBegin(GL.GL_QUADS)
-        GL.glVertex2f(*v.bottom_left)
-        GL.glVertex2f(*v.bottom_right)
-        GL.glVertex2f(*v.top_right)
-        GL.glVertex2f(*v.top_left)
+        for corner in e.corners:
+            GL.glVertex2f(corner.x, corner.y)
         GL.glEnd()
 
-        # Draw the text
+        # # Draw the text
         if self.text:
             qt_texture = self._generate_text_texture()
             if qt_texture:
-                tid = self._load_texture(qt_texture)
-                self._draw_text(v, tid)
+                tid, tw, th = self._load_texture(qt_texture)
+                self._draw_text(e.inset(self.MARGIN), tid)
 
         # Selection highlighting
         if self.selected:
-            self._draw_bounding_box()
+            self._draw_bounding_box(e)
             self._draw_handle(start)
             self._draw_handle(end)
 
@@ -589,7 +648,7 @@ class FreehandStroke(Stroke):
         opacity: float = 1,
         fill_color: tuple = (1, 1, 1, 1),
         fill_opacity: float = 1,
-        smoothing=6,
+        smoothing=0,
         **kwargs,
     ) -> None:
         super().__init__(
@@ -623,7 +682,7 @@ class FreehandStroke(Stroke):
             # We don't bother with getting the root to make it a bit faster
             distance_squared = point.distance_to_squared(last)
 
-            MIN_DIST = 0.002
+            MIN_DIST = 0.009
             if distance_squared < MIN_DIST**2:
                 # The point is too close, ignore it
                 return
@@ -662,7 +721,22 @@ class FreehandStroke(Stroke):
 
         return False
 
-    def _get_bounding_box_verts(self, padding):
+    def _get_bounding_box_edges(self) -> Optional[RectEdges]:
+        """
+        Get the bounding box edges. We need to override the parent since we have
+        more than just start and end
+
+        Parameters
+        ----------
+        padding : int
+            Rect padding
+
+        Returns
+        -------
+        RectEdges
+            The edges of the rectangle
+
+        """
         if not self.points:
             return
 
@@ -670,17 +744,12 @@ class FreehandStroke(Stroke):
         ys = [p.to_screenspace().y for p in self.points]
 
         # get min and max with padding
-        min_x = min(xs) - padding
-        max_x = max(xs) + padding
-        min_y = min(ys) - padding
-        max_y = max(ys) + padding
+        left = min(xs)
+        right = max(xs)
+        top = max(ys)
+        bottom = min(ys)
 
-        bottom_left = ScreenPoint(min_x, min_y)
-        bottom_right = ScreenPoint(max_x, min_y)
-        top_right = ScreenPoint(max_x, max_y)
-        top_left = ScreenPoint(min_x, max_y)
-
-        return SquareVerts(bottom_left, bottom_right, top_right, top_left)
+        return RectEdges(left, right, top, bottom)
 
     def _move(self, dx: float, dy: float, move_type=None):
         """Move the annotation or one of its points. All movement is calcualted in image space
@@ -700,9 +769,9 @@ class FreehandStroke(Stroke):
         self.end = self.points[-1]
         self._smooth_points = []
 
-    def _get_segment_verts(
+    def _get_segment_corners(
         self, start: ScreenPoint, end: ScreenPoint
-    ) -> Optional[SquareVerts]:
+    ) -> Optional[QuadCorners]:
 
         direction = start.direction_to(end)
         normalized = direction.normalized
@@ -717,9 +786,9 @@ class FreehandStroke(Stroke):
         top_right = end + offset
         top_left = start + offset
 
-        return SquareVerts(bottom_left, bottom_right, top_right, top_left)
+        return QuadCorners(bottom_left, bottom_right, top_right, top_left)
 
-    def _draw_segment(self, verts: SquareVerts, color: Color):
+    def _draw_segment(self, verts: QuadCorners, color: Color):
 
         # Square
         GL.glColor4f(color.r, color.g, color.b, color.a)
@@ -764,7 +833,7 @@ class FreehandStroke(Stroke):
             for i in range(1, len(points)):
                 start = points[i - 1].to_screenspace()
                 end = points[i].to_screenspace()
-                verts = self._get_segment_verts(start, end)
+                verts = self._get_segment_corners(start, end)
                 if verts:
                     self._draw_segment(verts, self.color)
 
@@ -774,7 +843,9 @@ class FreehandStroke(Stroke):
 
         # Selection highlighting
         if self.selected:
-            self._draw_bounding_box()
+            edges = self._get_bounding_box_edges()
+            if edges:
+                self._draw_bounding_box(edges)
 
         # Cleanup - so we don't confuse RV
         GL.glDisable(GL.GL_POLYGON_SMOOTH)
@@ -893,7 +964,9 @@ class CircleStroke(Stroke):
 
         # Selection highlighting
         if self.selected:
-            self._draw_bounding_box()
+            edges = self._get_bounding_box_edges()
+            if edges:
+                self._draw_bounding_box(edges)
             self._draw_handle(start)
             self._draw_handle(end)
 
@@ -926,14 +999,14 @@ class RectStroke(Stroke):
     def detect_selection(self, point: ImagePoint) -> bool:
         return self._point_inside_stroke(point)
 
-    def _get_rect_verts(self, start: ScreenPoint, end: ScreenPoint) -> SquareVerts:
+    def _get_rect_edges(self, start: ScreenPoint, end: ScreenPoint) -> RectEdges:
 
-        bottom_left = ScreenPoint(start.x, end.y)
-        bottom_right = ScreenPoint(end.x, end.y)
-        top_right = ScreenPoint(end.x, start.y)
-        top_left = ScreenPoint(start.x, start.y)
+        left = min(start.x, end.x)
+        right = max(start.x, end.x)
+        top = max(start.y, end.y)
+        bottom = min(start.y, end.y)
 
-        return SquareVerts(bottom_left, bottom_right, top_right, top_left)
+        return RectEdges(left, right, top, bottom)
 
     def _point_inside_stroke(self, point: ImagePoint) -> bool:
         """Check if a click happened inside a stroke
@@ -954,64 +1027,57 @@ class RectStroke(Stroke):
 
         start = self.start.to_screenspace()
         end = self.end.to_screenspace()
-        verts = self._get_rect_verts(start, end)
+        edges = self._get_rect_edges(start, end)
 
-        x_start = verts.bottom_left.x
-        x_end = verts.bottom_right.x
-        y_start = verts.top_left.y
-        y_end = verts.bottom_left.y
+        return edges.right > hp.x > edges.left and edges.top > hp.y > edges.bottom
 
-        return x_end > hp.x > x_start and y_start > hp.y > y_end
-
-    def _draw_border(self, rect: SquareVerts):
+    def _draw_border(self, rect: RectEdges):
 
         # Top
         start = rect.top_left
         end = ScreenPoint(rect.top_right.x, rect.top_right.y - self.width)
-        verts = self._get_rect_verts(start, end)
-        self._draw_rect(verts, color=self.color)
+        edges = self._get_rect_edges(start, end)
+        self._draw_rect(edges, color=self.color)
 
         # Left
         start = rect.top_left
         end = ScreenPoint(rect.bottom_left.x + self.width, rect.bottom_left.y)
-        verts = self._get_rect_verts(start, end)
-        self._draw_rect(verts, color=self.color)
+        edges = self._get_rect_edges(start, end)
+        self._draw_rect(edges, color=self.color)
 
         # Right
         start = rect.top_right
         end = ScreenPoint(rect.bottom_right.x - self.width, rect.bottom_right.y)
-        verts = self._get_rect_verts(start, end)
-        self._draw_rect(verts, color=self.color)
+        edges = self._get_rect_edges(start, end)
+        self._draw_rect(edges, color=self.color)
 
         # Bottom
         start = rect.bottom_left
         end = ScreenPoint(rect.bottom_right.x, rect.bottom_right.y + self.width)
-        verts = self._get_rect_verts(start, end)
-        self._draw_rect(verts, color=self.color)
+        edges = self._get_rect_edges(start, end)
+        self._draw_rect(edges, color=self.color)
 
-    def _draw_rect(self, verts: SquareVerts, color: Color):
+    def _draw_rect(self, edges: RectEdges, color: Color):
 
         # Square
         GL.glColor4f(color.r, color.g, color.b, color.a)
         GL.glBegin(GL.GL_QUADS)
-        GL.glVertex2f(*verts.bottom_left)
-        GL.glVertex2f(*verts.bottom_right)
-        GL.glVertex2f(*verts.top_right)
-        GL.glVertex2f(*verts.top_left)
+        GL.glVertex2f(*edges.bottom_left)
+        GL.glVertex2f(*edges.bottom_right)
+        GL.glVertex2f(*edges.top_right)
+        GL.glVertex2f(*edges.top_left)
         GL.glEnd()
 
     def render(self):
 
         # Antialiasing
-        # GL.glEnable(GL.GL_LINE_SMOOTH)
         GL.glEnable(GL.GL_BLEND)
         GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
-        # GL.glHint(GL.GL_LINE_SMOOTH_HINT, GL.GL_NICEST)
 
         start = self.start.to_screenspace()
         end = self.end.to_screenspace()
 
-        verts = self._get_rect_verts(start, end)
+        edges = self._get_rect_edges(start, end)
 
         # Square
         GL.glColor4f(
@@ -1021,17 +1087,17 @@ class RectStroke(Stroke):
             self.fill_opacity,
         )
         GL.glBegin(GL.GL_QUADS)
-        GL.glVertex2f(*verts.bottom_left)
-        GL.glVertex2f(*verts.bottom_right)
-        GL.glVertex2f(*verts.top_right)
-        GL.glVertex2f(*verts.top_left)
+        GL.glVertex2f(*edges.bottom_left)
+        GL.glVertex2f(*edges.bottom_right)
+        GL.glVertex2f(*edges.top_right)
+        GL.glVertex2f(*edges.top_left)
         GL.glEnd()
 
-        self._draw_border(verts)
+        self._draw_border(edges)
 
         # Selection highlighting
         if self.selected:
-            self._draw_bounding_box()
+            self._draw_bounding_box(edges)
             self._draw_handle(start)
             self._draw_handle(end)
 
@@ -1207,7 +1273,7 @@ class LineStroke(Stroke):
         if self.text is None:
             return
 
-        font = QtGui.QFont("Ariel", 14)
+        font = QtGui.QFont("Arial", 14)
 
         # Measure the font so we know how big our texture needs to be
         metrics = QtGui.QFontMetrics(font)
@@ -1442,7 +1508,9 @@ class LineStroke(Stroke):
 
         # Selection highlighting
         if self.selected:
-            self._draw_bounding_box()
+            edges = self._get_bounding_box_edges()
+            if edges:
+                self._draw_bounding_box(edges)
             self._draw_handle(verts.start_anchor + verts.half_offset)
             self._draw_handle(verts.end_anchor + verts.half_offset)
 
