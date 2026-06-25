@@ -174,6 +174,7 @@ class AnnyMode(MinorMode):
         # Deselect current stroke if needed
         if self.current_stroke:
             self.current_stroke.selected = False
+            self.current_stroke.editing = False
             self.current_stroke = None
             self.drag_start_pos = None
             self.drag_type = ""

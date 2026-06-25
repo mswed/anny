@@ -68,6 +68,9 @@ class Inspector(QtWidgets.QDialog):
         self.ui.textField.textChanged.connect(self.update_text)
         self.ui.textField.editingFinished.connect(self.commit_edit)
 
+        self.ui.fontCb.currentFontChanged.connect(self.update_font)
+        self.ui.fontSizeField.valueChanged.connect(self.update_font)
+
     def show_color_picker(self):
         # We have more thatn one color selector, figure out which was clicked
         sender = self.sender()
@@ -180,4 +183,17 @@ class Inspector(QtWidgets.QDialog):
             and "text" in self.mode.current_stroke.editable_properties
         ):
             self.mode.current_stroke.editing = False
+            crv.redraw()
+
+    def update_font(self):
+
+        if (
+            self.mode.current_stroke
+            and "font" in self.mode.current_stroke.editable_properties
+        ):
+            font = self.ui.fontCb.currentFont()
+            font.setPointSize(self.ui.fontSizeField.value())
+
+            self.mode.current_stroke.font = font
+
             crv.redraw()
