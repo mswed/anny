@@ -183,6 +183,7 @@ class Stroke:
         self.opacity = opacity
         self.fill_opacity = fill_opacity
         self.selected = False
+        self.editing = True
 
     # ############################################################################
     # PUBLIC INTERFACE
@@ -377,6 +378,7 @@ class TextStroke(Stroke):
         "fill_color",
         "fill_opacity",
         "text",
+        "font",
     ]
 
     MARGIN = 8
@@ -392,13 +394,14 @@ class TextStroke(Stroke):
         fill_color: tuple = (1, 1, 1, 1),
         fill_opacity: float = 1,
         text: Optional[str] = None,
+        font: QtGui.QFont = QtGui.QFont("Arial", 14),
         **kwargs,
     ) -> None:
         super().__init__(
             start, end, source, width, color, opacity, fill_color, fill_opacity
         )
         self.text = text
-        self.editing = True
+        self.font = font
 
     def __repr__(self) -> str:
         return f"<TextStroke> start={self.start} end={self.end} color={self.color}"
@@ -497,8 +500,7 @@ class TextStroke(Stroke):
         width = max(int(abs(end.x - start.x) - 2 * self.MARGIN), 1)
 
         # We have text measure it to determine height
-        font = QtGui.QFont("Arial", 14)
-        metrics = QtGui.QFontMetrics(font)
+        metrics = QtGui.QFontMetrics(self.font)
         flags = Qt.TextWordWrap | Qt.AlignLeft
         # We calculate the inset width for correct text wrapping
         rect = metrics.boundingRect(0, 0, int(width), 10000, flags, self.text)
@@ -524,8 +526,6 @@ class TextStroke(Stroke):
         if not self.text:
             return
 
-        font = QtGui.QFont("Arial", 14)
-
         # Margins
         width = abs(self.end.to_screenspace().x - self.start.to_screenspace().x)
         width = max(int(width - 2 * self.MARGIN), 1)
@@ -540,7 +540,7 @@ class TextStroke(Stroke):
 
         # Paint
         painter = QtGui.QPainter(image)
-        painter.setFont(font)
+        painter.setFont(self.font)
         r, g, b, a = self.color
         painter.setPen(QtGui.QColor.fromRgbF(r, g, b, a))
 
