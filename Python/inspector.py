@@ -1,9 +1,10 @@
-from PySide6 import QtWidgets, QtCore
+from PySide6 import QtGui, QtWidgets, QtCore
 import rv.commands as crv
 from pprint import pprint
 
 from ui_inspector import Ui_Inspector
 from style import ANNY_STYLESHEET
+import resources_rc
 from color_picker import ColorPickerDrowpdown
 
 
@@ -18,29 +19,40 @@ class Inspector(QtWidgets.QDialog):
         self.end_cap = None
 
         self.ui.setupUi(self)
+        # Set the overall style
+        self.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
+        # Override some settings to make it nicer
         self.setStyleSheet(ANNY_STYLESHEET)
 
         # Tool button group
         self.tool_group = QtWidgets.QButtonGroup(self)
         self.tool_group.setExclusive(True)
 
-        # Add the actual buttons from the UI file
+        # Add the actual buttons from the UI file and assign them IDs
         self.tool_group.addButton(self.ui.selectBtn, 0)
-        self.tool_group.addButton(self.ui.lineBtn, 1)
-        self.tool_group.addButton(self.ui.rectBtn, 2)
-        self.tool_group.addButton(self.ui.textBtn, 3)
+        self.tool_group.addButton(self.ui.freeBtn, 1)
+        self.tool_group.addButton(self.ui.lineBtn, 2)
+        self.tool_group.addButton(self.ui.rectBtn, 3)
         self.tool_group.addButton(self.ui.circleBtn, 4)
-        self.tool_group.addButton(self.ui.freeBtn, 5)
+        self.tool_group.addButton(self.ui.textBtn, 5)
 
         # Setup combo boxes
-        self.ui.startCapCb.addItem("-", None)
-        self.ui.startCapCb.addItem("<", "arrow")
-        self.ui.startCapCb.addItem("|", "tick")
-        self.ui.startCapCb.addItem("*", "circle")
-        self.ui.endCapCb.addItem("-", None)
-        self.ui.endCapCb.addItem(">", "arrow")
-        self.ui.endCapCb.addItem("|", "tick")
-        self.ui.endCapCb.addItem("*", "circle")
+        self.ui.startCapCb.addItem(QtGui.QIcon(":/icons/cap-plain.svg"), "", None)
+        self.ui.startCapCb.addItem(
+            QtGui.QIcon(":/icons/cap-arrow-left.svg"), "", "arrow"
+        )
+        self.ui.startCapCb.addItem(QtGui.QIcon(":/icons/cap-tick-left.svg"), "", "tick")
+        self.ui.startCapCb.addItem(
+            QtGui.QIcon(":/icons/cap-circle-left.svg"), "", "circle"
+        )
+        self.ui.endCapCb.addItem(QtGui.QIcon(":/icons/cap-plain.svg"), "", None)
+        self.ui.endCapCb.addItem(
+            QtGui.QIcon(":/icons/cap-arrow-right.svg"), "", "arrow"
+        )
+        self.ui.endCapCb.addItem(QtGui.QIcon(":/icons/cap-tick-right.svg"), "", "tick")
+        self.ui.endCapCb.addItem(
+            QtGui.QIcon(":/icons/cap-circle-right.svg"), "", "circle"
+        )
 
         # Connections
         self.setup_connections()

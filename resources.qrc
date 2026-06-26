@@ -1,0 +1,19 @@
+<RCC>
+  <qresource>
+    <file>icons/down-arrow.svg</file>
+    <file>icons/up-arrow.svg</file>
+    <file>icons/font-solid-full.svg</file>
+    <file>icons/cap-tick-left.svg</file>
+    <file>icons/cap-plain.svg</file>
+    <file>icons/cap-circle-right.svg</file>
+    <file>icons/cap-circle-left.svg</file>
+    <file>icons/cap-arrow-right.svg</file>
+    <file>icons/cap-arrow-left.svg</file>
+    <file>icons/cap-tick-right.svg</file>
+    <file>icons/circle-regular-full.svg</file>
+    <file>icons/square-regular-full.svg</file>
+    <file>icons/slash-solid-full.svg</file>
+    <file>icons/pen-solid-full.svg</file>
+    <file>icons/arrow-pointer-solid-full.svg</file>
+  </qresource>
+</RCC>

@@ -23,11 +23,11 @@ class AnnyMode(MinorMode):
         self.drag_start_pos = None
         self.drag_type = ""
         self.stroke_types = {
-            1: LineStroke,
-            2: RectStroke,
-            3: TextStroke,
+            1: FreehandStroke,
+            2: LineStroke,
+            3: RectStroke,
             4: CircleStroke,
-            5: FreehandStroke,
+            5: TextStroke,
         }
 
         self.init(
@@ -58,15 +58,6 @@ class AnnyMode(MinorMode):
 
         # Bind the select tool for start
         self.bind_select_tool()
-
-    def delete_selected_stroke(self, event):
-        print(self.annotations.strokes)
-        frame = crv.frame()
-        if self.current_stroke:
-            self.annotations.strokes[frame].remove(self.current_stroke)
-
-        print(self.annotations.strokes)
-        crv.redraw()
 
     def show_ui(self, event):
         self.inspector.show()
@@ -316,6 +307,13 @@ class AnnyMode(MinorMode):
             return
 
         return source[0]["name"]
+
+    def delete_selected_stroke(self, event):
+        frame = crv.frame()
+        if self.current_stroke:
+            self.annotations.strokes[frame].remove(self.current_stroke)
+
+        crv.redraw()
 
     def render(self, event):
         self.annotations.render(event)
