@@ -83,6 +83,8 @@ class Inspector(QtWidgets.QDialog):
         self.ui.fontCb.currentFontChanged.connect(self.update_font)
         self.ui.fontSizeField.valueChanged.connect(self.update_font)
 
+        self.ui.clearFrameBtn.clicked.connect(self.clear_frame)
+
     def show_color_picker(self):
         # We have more thatn one color selector, figure out which was clicked
         sender = self.sender()
@@ -209,3 +211,6 @@ class Inspector(QtWidgets.QDialog):
             self.mode.current_stroke.font = font
 
             crv.redraw()
+
+    def clear_frame(self):
+        self.mode.clear_frame()

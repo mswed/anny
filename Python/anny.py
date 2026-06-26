@@ -319,6 +319,16 @@ class AnnyMode(MinorMode):
 
         crv.redraw()
 
+    def clear_frame(self):
+        # source = self.get_source_name()
+        frame = crv.frame()
+        current_sources = crv.sourcesRendered()
+        for source in current_sources:
+            self.annotations.clear_frame(source["name"], frame)
+
+        self.current_stroke = None
+        crv.redraw()
+
     def render(self, event):
         self.annotations.render(event)
 
