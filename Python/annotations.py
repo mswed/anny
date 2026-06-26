@@ -134,6 +134,9 @@ class SourceAnnotations:
     def strokes_at_frame(self, frame):
         return self.frames.get(frame, [])
 
+    def clear_frame(self, frame):
+        self.frames[frame] = []
+
     @property
     def annotated_frames(self):
         return sorted(list(self.frames.keys()))
@@ -153,6 +156,9 @@ class AnnotationLayer:
 
     def delete_stroke(self, source: str, frame: int, stroke: Stroke):
         self.sources[source].remove(frame, stroke)
+
+    def clear_frame(self, source, frame):
+        self.sources[source].clear_frame(frame)
 
     def render(self, event):
 
