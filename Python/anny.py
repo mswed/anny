@@ -1,6 +1,7 @@
 from rv.rvtypes import *
 import rv.commands as crv
 from rv.extra_commands import *
+from pprint import pprint
 
 from inspector import Inspector
 from annotations import (
@@ -189,7 +190,7 @@ class AnnyMode(MinorMode):
             self.drag_start_pos = None
             self.drag_type = ""
 
-        for stroke in self.annotations.strokes[frame]:
+        for stroke in self.annotations.sources[source_name].strokes_at_frame(frame):
             if stroke.detect_handle_selection(image_point, "start"):
                 self.drag_type = "start"
             elif stroke.detect_handle_selection(image_point, "end"):
@@ -272,7 +273,8 @@ class AnnyMode(MinorMode):
                 fill_opacity=self.inspector.ui.fillOpacityField.value(),
                 smoothing=self.inspector.ui.strokeSmoothingField.value(),
             )
-            self.annotations.strokes[frame].append(self.current_stroke)
+
+            self.annotations.add_stroke(source_name, frame, self.current_stroke)
 
     def draw_update(self, event):
         if self.current_stroke:
@@ -311,7 +313,9 @@ class AnnyMode(MinorMode):
     def delete_selected_stroke(self, event):
         frame = crv.frame()
         if self.current_stroke:
-            self.annotations.strokes[frame].remove(self.current_stroke)
+            source = self.current_stroke.source
+            self.annotations.delete_stroke(source, frame, self.current_stroke)
+            self.current_stroke = None
 
         crv.redraw()
 
