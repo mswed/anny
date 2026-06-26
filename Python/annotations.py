@@ -1,3 +1,4 @@
+from __future__ import annotations
 from collections import defaultdict
 import math
 from typing import Optional, Tuple, NamedTuple
@@ -116,6 +117,28 @@ class Color(NamedTuple):
     a: float
 
 
+class SourceAnnotations:
+    """
+    Strokes for a specific source
+    """
+
+    def __init__(self) -> None:
+        self.frames: dict[int, list[Stroke]] = defaultdict(list)
+
+    def add(self, frame, stroke):
+        self.frames[frame].append(stroke)
+
+    def remove(self, frame, stroke):
+        self.frames[frame].remove(stroke)
+
+    def strokes_at_frame(self, frame):
+        return self.frames.get(frame, [])
+
+    @property
+    def annotated_frames(self):
+        return sorted(list(self.frames.keys()))
+
+
 class AnnotationLayer:
     """
     The base class that renders the actual annotations. Annotations are added to the strokes dict and then
@@ -123,7 +146,13 @@ class AnnotationLayer:
     """
 
     def __init__(self) -> None:
-        self.strokes = defaultdict(list)
+        self.sources: dict[str, SourceAnnotations] = defaultdict(SourceAnnotations)
+
+    def add_stroke(self, source, frame, stroke):
+        self.sources[source].add(frame, stroke)
+
+    def delete_stroke(self, source: str, frame: int, stroke: Stroke):
+        self.sources[source].remove(frame, stroke)
 
     def render(self, event):
 
@@ -140,9 +169,8 @@ class AnnotationLayer:
         GL.glMatrixMode(GL.GL_MODELVIEW)
         GL.glLoadIdentity()
 
-        frame_strokes = self.strokes.get(frame)
-        if frame_strokes:
-            for stroke in frame_strokes:
+        for source in self.sources.values():
+            for stroke in source.strokes_at_frame(frame):
                 stroke.render()
 
 
