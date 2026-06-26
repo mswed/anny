@@ -34,6 +34,16 @@ class AnnyMode(MinorMode):
             "py-anny-mode",
             [
                 ("render", self.render, "Render overlay"),
+                (
+                    "key-down--delete",
+                    self.delete_selected_stroke,
+                    "Capture keyboard events",
+                ),
+                (
+                    "key-down--j",
+                    self.delete_selected_stroke,
+                    "Capture keyboard events",
+                ),
             ],
             None,
             [
@@ -48,6 +58,15 @@ class AnnyMode(MinorMode):
 
         # Bind the select tool for start
         self.bind_select_tool()
+
+    def delete_selected_stroke(self, event):
+        print(self.annotations.strokes)
+        frame = crv.frame()
+        if self.current_stroke:
+            self.annotations.strokes[frame].remove(self.current_stroke)
+
+        print(self.annotations.strokes)
+        crv.redraw()
 
     def show_ui(self, event):
         self.inspector.show()
