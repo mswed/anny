@@ -125,6 +125,10 @@ class SourceAnnotations:
     def __init__(self) -> None:
         self.frames: dict[int, list[Stroke]] = defaultdict(list)
 
+    @property
+    def annotated_frames(self):
+        return sorted(list(self.frames.keys()))
+
     def add(self, frame, stroke):
         self.frames[frame].append(stroke)
 
@@ -137,9 +141,27 @@ class SourceAnnotations:
     def clear_frame(self, frame):
         self.frames[frame] = []
 
-    @property
-    def annotated_frames(self):
-        return sorted(list(self.frames.keys()))
+    def next_annotated_frame(self, current_frame: int) -> Optional[int]:
+        frames = self.annotated_frames
+        if not frames:
+            return
+
+        for i in range(len(frames)):
+            if frames[i] > current_frame:
+                return frames[i]
+
+        return frames[0]
+
+    def previous_annotated_frame(self, current_frame: int) -> Optional[int]:
+        frames = self.annotated_frames
+        if not frames:
+            return
+
+        for i in range(len(frames) - 1, -1, -1):
+            if frames[i] < current_frame:
+                return frames[i]
+
+        return frames[-1]
 
 
 class AnnotationLayer:
@@ -159,6 +181,12 @@ class AnnotationLayer:
 
     def clear_frame(self, source, frame):
         self.sources[source].clear_frame(frame)
+
+    def get_next_frame(self, source, frame):
+        return self.sources[source].next_annotated_frame(frame)
+
+    def get_previous_frame(self, source, frame):
+        return self.sources[source].previous_annotated_frame(frame)
 
     def render(self, event):
 

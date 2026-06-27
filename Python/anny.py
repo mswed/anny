@@ -47,6 +47,8 @@ class AnnyMode(MinorMode):
                     "Anny",
                     [
                         ("Show UI", self.show_ui, "=", None),
+                        ("Next Annotation", self.next_annotation, "'", None),
+                        ("Previous Annotation", self.previous_annotation, ";", None),
                     ],
                 )
             ],
@@ -171,7 +173,7 @@ class AnnyMode(MinorMode):
         # Get frame (we store the annotation against the frame)
         frame = crv.frame()
 
-        source_name = self.get_source_name(event)
+        source_name, source_node = self.get_source_name(event)
         if not source_name:
             return
 
@@ -187,7 +189,7 @@ class AnnyMode(MinorMode):
             self.drag_start_pos = None
             self.drag_type = ""
 
-        for stroke in self.annotations.sources[source_name].strokes_at_frame(frame):
+        for stroke in self.annotations.sources[source_node].strokes_at_frame(frame):
             if stroke.detect_handle_selection(image_point, "start"):
                 self.drag_type = "start"
             elif stroke.detect_handle_selection(image_point, "end"):
@@ -210,7 +212,7 @@ class AnnyMode(MinorMode):
         if not self.current_stroke or not self.drag_start_pos:
             # We have nothing selected
             return
-        source_name = self.get_source_name(event)
+        source_name, source_node = self.get_source_name(event)
 
         if not source_name:
             # We have no source
@@ -244,7 +246,7 @@ class AnnyMode(MinorMode):
         # Get frame (we store the annotation against the frame)
         frame = crv.frame()
 
-        source_name = self.get_source_name(event)
+        source_name, source_node = self.get_source_name(event)
         if not source_name:
             return
 
@@ -271,7 +273,7 @@ class AnnyMode(MinorMode):
                 smoothing=self.inspector.ui.strokeSmoothingField.value(),
             )
 
-            self.annotations.add_stroke(source_name, frame, self.current_stroke)
+            self.annotations.add_stroke(source_node, frame, self.current_stroke)
 
     def draw_update(self, event):
         if self.current_stroke:
@@ -305,7 +307,7 @@ class AnnyMode(MinorMode):
         if not source:
             return
 
-        return source[0]["name"]
+        return source[0]["name"], source[0]["node"]
 
     def delete_selected_stroke(self, event):
         frame = crv.frame()
@@ -326,9 +328,6 @@ class AnnyMode(MinorMode):
         self.current_stroke = None
         crv.redraw()
 
-    def render(self, event):
-        self.annotations.render(event)
-
     def unbind(self):
         """
         Unbind all mouse actions so other modes can take over
@@ -348,6 +347,23 @@ class AnnyMode(MinorMode):
             "global",
             "pointer-1--release",
         )
+
+    def next_annotation(self, event):
+        frame = crv.frame()
+        source = crv.sourcesRendered()
+        source_name = source[0]["node"]
+        next_frame = self.annotations.get_next_frame(source_name, frame)
+        crv.setFrame(next_frame)
+
+    def previous_annotation(self, event):
+        frame = crv.frame()
+        source = crv.sourcesRendered()
+        source_name = source[0]["node"]
+        previous_frame = self.annotations.get_previous_frame(source_name, frame)
+        crv.setFrame(previous_frame)
+
+    def render(self, event):
+        self.annotations.render(event)
 
 
 def createMode():
