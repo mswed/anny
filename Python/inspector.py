@@ -60,6 +60,11 @@ class Inspector(QtWidgets.QDialog):
         # Default to the select tool
         self.ui.selectBtn.setChecked(True)
 
+    def closeEvent(self, arg__1: QtGui.QCloseEvent) -> None:
+        self.mode.unbind()
+
+        return super().closeEvent(arg__1)
+
     def on_tool_changed(self, tool_id):
         self.mode.set_active_tool(tool_id)
 

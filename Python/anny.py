@@ -12,7 +12,7 @@ from annotations import (
     CircleStroke,
     TextStroke,
 )
-from utils import ImagePoint, Point
+from utils import ImagePoint
 
 
 class AnnyMode(MinorMode):
@@ -40,11 +40,6 @@ class AnnyMode(MinorMode):
                     self.delete_selected_stroke,
                     "Capture keyboard events",
                 ),
-                (
-                    "key-down--j",
-                    self.delete_selected_stroke,
-                    "Capture keyboard events",
-                ),
             ],
             None,
             [
@@ -55,6 +50,8 @@ class AnnyMode(MinorMode):
                     ],
                 )
             ],
+            "py-anny-mode",  # Needed to set the mode to override other mode binding
+            -10,  # set the override value (default is 0)
         )
 
         # Bind the select tool for start
@@ -331,6 +328,26 @@ class AnnyMode(MinorMode):
 
     def render(self, event):
         self.annotations.render(event)
+
+    def unbind(self):
+        """
+        Unbind all mouse actions so other modes can take over
+        """
+        crv.unbind(
+            "py-anny-mode",
+            "global",
+            "pointer-1--push",
+        )
+        crv.unbind(
+            "py-anny-mode",
+            "global",
+            "pointer-1--drag",
+        )
+        crv.unbind(
+            "py-anny-mode",
+            "global",
+            "pointer-1--release",
+        )
 
 
 def createMode():
