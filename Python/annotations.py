@@ -127,7 +127,7 @@ class SourceAnnotations:
 
     @property
     def annotated_frames(self):
-        return sorted(list(self.frames.keys()))
+        return sorted(list(self.frames.keys())) if self.frames else []
 
     def add(self, frame, stroke):
         self.frames[frame].append(stroke)
@@ -187,6 +187,24 @@ class AnnotationLayer:
 
     def get_previous_frame(self, source, frame):
         return self.sources[source].previous_annotated_frame(frame)
+
+    def get_annotated_frames(self, source):
+        return self.sources[source].annotated_frames
+
+    def capture_frame_buffer(self, event):
+        # Get viewport size
+        w, h = event.domain()
+
+        # Get the buffer
+        buffer = GL.glReadPixels(0, 0, w, h, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE)
+
+        # Convert it to an image
+        image = QtGui.QImage(buffer, w, h, QtGui.QImage.Format_RGBA8888)
+
+        # Flip it vertically
+        image = image.mirrored(False, True)
+
+        return image
 
     def render(self, event):
 

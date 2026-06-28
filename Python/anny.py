@@ -1,6 +1,8 @@
 from rv.rvtypes import *
 import rv.commands as crv
 from rv.extra_commands import *
+import os
+from time import time, sleep
 from pprint import pprint
 
 from inspector import Inspector
@@ -30,15 +32,21 @@ class AnnyMode(MinorMode):
             4: CircleStroke,
             5: TextStroke,
         }
+        self.capture_frame = False
+        self._export_queue = []
+        self.frames_to_save = 0
+        self.save_dir = None
+        self.save_to = None
 
         self.init(
             "py-anny-mode",
             [
                 ("render", self.render, "Render overlay"),
+                ("frame-changed", self.on_frame_changed, "Save frame"),
                 (
                     "key-down--delete",
                     self.delete_selected_stroke,
-                    "Capture keyboard events",
+                    "Delete annotation",
                 ),
             ],
             None,
@@ -49,6 +57,8 @@ class AnnyMode(MinorMode):
                         ("Show UI", self.show_ui, "=", None),
                         ("Next Annotation", self.next_annotation, "'", None),
                         ("Previous Annotation", self.previous_annotation, ";", None),
+                        ("Export Frame", self.export_annotation, None, None),
+                        ("Export All Frames", self.export_all_annotations, None, None),
                     ],
                 )
             ],
@@ -56,10 +66,9 @@ class AnnyMode(MinorMode):
             -10,  # set the override value (default is 0)
         )
 
+    def show_ui(self, event):
         # Bind the select tool for start
         self.bind_select_tool()
-
-    def show_ui(self, event):
         self.inspector.show()
 
     def bind_draw_tool(self):
@@ -362,8 +371,57 @@ class AnnyMode(MinorMode):
         previous_frame = self.annotations.get_previous_frame(source_name, frame)
         crv.setFrame(previous_frame)
 
+    def export_annotation(self, event):
+        self.save_to = self.inspector.get_save_path()
+        if self.save_to:
+            # Cancel any batch exports
+            self._export_queue = []
+            self._capture_current_frame(batch=False)
+
+    def export_all_annotations(self, event):
+        self.save_dir = self.inspector.get_save_path("directory")
+        if self.save_dir:
+            os.makedirs(self.save_dir, exist_ok=True)
+            source = crv.sourcesRendered()
+            source_name = source[0]["node"]
+            self._export_queue = self.annotations.get_annotated_frames(source_name)
+            self._advance_export()
+
+    def _advance_export(self):
+        if not self._export_queue:
+            return
+
+        target = self._export_queue[0]
+        if crv.frame() == target:
+            # We are already on the right frame, just capture
+            self._capture_current_frame()
+        else:
+            # We need to move to the target frame
+            crv.setFrame(target)
+
+    def _capture_current_frame(self, batch=True):
+        if batch:
+            self.save_to = self.save_dir / f"annotation.{crv.frame()}.jpg"
+        self.capture_frame = True
+        crv.redraw()
+
+    def on_frame_changed(self, event):
+        if self._export_queue and crv.frame() == self._export_queue[0]:
+            self._capture_current_frame()
+
     def render(self, event):
         self.annotations.render(event)
+        if self.capture_frame:
+            image = self.annotations.capture_frame_buffer(event)
+            image.save(str(self.save_to))
+            self.capture_frame = False
+
+            if self._export_queue:
+                self._export_queue.pop(0)
+                self._advance_export()
+            else:
+                self.save_dir = None
+                self.save_to = None
 
 
 def createMode():
