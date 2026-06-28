@@ -1,4 +1,6 @@
 from PySide6 import QtGui, QtWidgets, QtCore
+from typing import Optional
+from pathlib import Path
 import rv.commands as crv
 from pprint import pprint
 
@@ -219,3 +221,22 @@ class Inspector(QtWidgets.QDialog):
 
     def clear_frame(self):
         self.mode.clear_frame()
+
+    def get_save_path(self, save_type="file") -> Optional[Path]:
+        dialog = QtWidgets.QFileDialog(
+            self,
+            "Export Annotation",
+            "/home/mswed/Desktop/",
+        )
+        dialog.setOption(QtWidgets.QFileDialog.DontUseNativeDialog, True)
+        if save_type == "file":
+            dialog.setFileMode(QtWidgets.QFileDialog.AnyFile)
+            dialog.setAcceptMode(QtWidgets.QFileDialog.AcceptSave)
+        else:
+            dialog.setFileMode(QtWidgets.QFileDialog.Directory)
+        dialog.setNameFilter("Images (*.jpg *.png)")
+
+        if dialog.exec():
+            files = dialog.selectedFiles()
+            print("selected", files)
+            return Path(files[0]) if files else None
