@@ -1,6 +1,6 @@
 from __future__ import annotations
 import math
-from typing import Optional, NamedTuple, NewType
+from typing import Optional, NamedTuple, NewType, Self
 import rv.commands as crv
 
 
@@ -136,19 +136,19 @@ class Point:
 
         return dx**2 + dy**2
 
-    def lerp(self, target: Point, t: float) -> Point:
+    def lerp(self, target: Self, t: float) -> Self:
         """Linear interpolation between the point and another point
 
         Parameters
         ----------
-        target : Point
+        target : Self
             The point we are interlpolating toward
         t : float
             Position along the line from self (0) to other (1).
 
         Returns
         -------
-        Point
+        Self
             New interpolated point between self and other
 
         """
