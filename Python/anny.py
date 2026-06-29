@@ -2,7 +2,7 @@ from rv.rvtypes import *
 import rv.commands as crv
 from rv.extra_commands import *
 import os
-from time import time, sleep
+from utils import SourceName, SourceNode
 from pprint import pprint
 
 from inspector import Inspector
@@ -270,7 +270,7 @@ class AnnyMode(MinorMode):
             self.current_stroke = self.active_stroke_type(
                 start=start_pos,
                 end=end_pos,
-                source=source_name,
+                source=source_node,
                 width=self.inspector.ui.strokeWidthField.value(),
                 opacity=self.inspector.ui.strokeOpacityField.value(),
                 color=self.inspector.current_stroke_color,
@@ -316,7 +316,7 @@ class AnnyMode(MinorMode):
         if not source:
             return
 
-        return source[0]["name"], source[0]["node"]
+        return SourceName(source[0]["name"]), SourceNode(source[0]["node"])
 
     def delete_selected_stroke(self, event):
         frame = crv.frame()
