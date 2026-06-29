@@ -4,7 +4,7 @@ from typing import Optional
 from OpenGL import GL
 
 from annotations import Stroke
-from utils import ImagePoint, ScreenPoint, SourceNode, RectEdges, Color
+from utils import ImagePoint, ScreenPoint, SourceName, RectEdges, Color
 
 
 class TextStroke(Stroke):
@@ -24,7 +24,7 @@ class TextStroke(Stroke):
         self,
         start: ImagePoint,
         end: ImagePoint,
-        source: SourceNode,
+        source: SourceName,
         width: float = 1,
         color: tuple = (1, 0, 0, 1),
         opacity: float = 1,

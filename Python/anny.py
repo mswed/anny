@@ -8,12 +8,12 @@ from pprint import pprint
 from inspector import Inspector
 from annotations import (
     AnnotationLayer,
-    FreehandStroke,
     LineStroke,
     RectStroke,
     CircleStroke,
 )
 from stroke_text import TextStroke
+from stroke_freehand import FreehandStroke
 from utils import ImagePoint
 
 
