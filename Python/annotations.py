@@ -15,6 +15,8 @@ from utils import (
     LineVerts,
     TickVerts,
     Color,
+    SourceName,
+    SourceNode,
 )
 
 
@@ -95,12 +97,12 @@ class SourceAnnotations:
         self.frames[frame] = []
 
     def next_annotated_frame(self, current_frame: int) -> Optional[int]:
-        """Search for the next frame that has annotations on it
+        """Search forward for the next frame that has annotations on it
 
         Parameters
         ----------
         current_frame : int
-            Frame to start the search from
+            The current frame the first annotated frame that is larger is our next frame
 
         Returns
         -------
@@ -119,12 +121,12 @@ class SourceAnnotations:
         return frames[0]
 
     def previous_annotated_frame(self, current_frame: int) -> Optional[int]:
-        """Search for the previous frame that has annotations on it
+        """Search backward for the previous frame that has annotations on it
 
         Parameters
         ----------
         current_frame : int
-            Frame to start the search from
+            The current frame the first annotated frame that is smaller is our next frame
 
         Returns
         -------
@@ -147,30 +149,126 @@ class AnnotationLayer:
     """
     The base class that renders the actual annotations. Annotations are added to the sources dict and then
     rendered via the stroke's render function
+
+    Attributes
+    ----------
+    sources : The sources in the session. The source name is the source node
+
     """
 
     def __init__(self) -> None:
         self.sources: dict[str, SourceAnnotations] = defaultdict(SourceAnnotations)
 
-    def add_stroke(self, source, frame, stroke):
+    def add_stroke(self, source: SourceNode, frame: int, stroke: Stroke):
+        """Add a stroke to the layer
+
+        Parameters
+        ----------
+        source : SourceNode
+            The sources node to add the stroke to
+        frame : int
+            The frame to add the stroke to
+        stroke : Stroke
+            The stroke data
+        """
+
         self.sources[source].add(frame, stroke)
 
-    def delete_stroke(self, source: str, frame: int, stroke: Stroke):
+    def delete_stroke(self, source: SourceNode, frame: int, stroke: Stroke):
+        """Delete a stroke from the layer
+
+        Parameters
+        ----------
+        source : SourceNode
+            The sources node to add the stroke to
+        frame : int
+            The frame to add the stroke to
+        stroke : Stroke
+            The stroke data
+        """
+
         self.sources[source].remove(frame, stroke)
 
-    def clear_frame(self, source, frame):
+    def clear_frame(self, source: SourceNode, frame: int):
+        """Delete all annotations on the frame
+
+        Parameters
+        ----------
+        source : SourceNode
+            The sources node to add the stroke to
+        frame : int
+            The frame to add the stroke to
+        """
         self.sources[source].clear_frame(frame)
 
-    def get_next_frame(self, source, frame):
-        return self.sources[source].next_annotated_frame(frame)
+    def get_next_frame(self, source: SourceNode, current_frame: int) -> Optional[int]:
+        """Get the next annotated frame
 
-    def get_previous_frame(self, source, frame):
-        return self.sources[source].previous_annotated_frame(frame)
+        Parameters
+        ----------
+        source : SourceNode
+            The source node to search for
+        current_frame : int
+            The current frame
 
-    def get_annotated_frames(self, source):
+        Returns
+        -------
+        Optional[int]
+            Next annotated from number if one is found, else None
+
+        """
+        return self.sources[source].next_annotated_frame(current_frame)
+
+    def get_previous_frame(
+        self, source: SourceNode, current_frame: int
+    ) -> Optional[int]:
+        """Get the previous annotated frame
+
+        Parameters
+        ----------
+        source : SourceNode
+            The source node to search for
+        current_frame : int
+            The current frame
+
+        Returns
+        -------
+        Optional[int]
+            Previous annotated from number if one is found, else None
+
+        """
+        return self.sources[source].previous_annotated_frame(current_frame)
+
+    def get_annotated_frames(self, source: SourceNode) -> list:
+        """Get a sorted list of all annotated frames on the source
+
+        Parameters
+        ----------
+        source : SourceNode
+            The source name
+
+        Returns
+        -------
+        list
+            A sorted list of all annotated frames on the source
+
+        """
         return self.sources[source].annotated_frames
 
-    def capture_frame_buffer(self, event):
+    def capture_frame_buffer(self, event) -> QtGui.QImage:
+        """Capture the current frame as a QImage
+
+        Parameters
+        ----------
+        event : Event
+            The RV event that triggered the capture
+
+        Returns
+        -------
+        QtGui.QImage
+            The captured viewport
+
+        """
         # Get viewport size
         w, h = event.domain()
 
@@ -186,7 +284,14 @@ class AnnotationLayer:
         return image
 
     def render(self, event):
+        """Render all of the strokes on all of the sources in the layer
 
+        Parameters
+        ----------
+        event : Event
+            The internal RV event that triggered the render
+
+        """
         # Get viewport size
         w, h = event.domain()
 
@@ -200,6 +305,7 @@ class AnnotationLayer:
         GL.glMatrixMode(GL.GL_MODELVIEW)
         GL.glLoadIdentity()
 
+        # TODO: We should probably only render the first source using renderedSources
         for source in self.sources.values():
             for stroke in source.strokes_at_frame(frame):
                 stroke.render()
@@ -248,15 +354,40 @@ class Stroke:
     # PUBLIC INTERFACE
     # ############################################################################
     @property
-    def color(self):
+    def color(self) -> Color:
+        """Get the stroke's color
+
+        Returns
+        -------
+        Color
+            The stroke's color
+
+        """
         return Color(self._color[0], self._color[1], self._color[2], self.opacity)
 
     @color.setter
     def color(self, value: tuple):
+        """Set the stroke's color
+
+        Parameters
+        ----------
+        value : tuple
+            RGBA values for the stroke
+
+        """
         self._color = value
 
     @property
-    def fill_color(self):
+    def fill_color(self) -> Color:
+        """Get the stroke's fill color
+
+        Returns
+        -------
+        Color
+            The stroke's fill color
+
+        """
+
         return Color(
             self._fill_color[0],
             self._fill_color[1],
@@ -266,6 +397,14 @@ class Stroke:
 
     @fill_color.setter
     def fill_color(self, value: tuple):
+        """Set the stroke's fill color
+
+        Parameters
+        ----------
+        value : tuple
+            RGBA values for the stroke
+        """
+
         self._fill_color = value
 
     def move(self, dx: float, dy: float, move_type: str = "stroke"):
@@ -273,22 +412,43 @@ class Stroke:
 
         Parameters
         ----------
-        move_type : str
-            What are we moving? stroke, start or end?
         dx : float
             Delta between original point and new point
         dy : float
             Delta between original point and new point
+        move_type : str
+            What are we moving? stroke, start or end?
         """
 
         self._move(dx, dy, move_type)
 
-    def detect_selection(self, point: ImagePoint) -> bool:
+    def detect_selection(self, position: ImagePoint) -> bool:
+        """Subclasses need to implement this to detect stroke selection
+
+        Parameters
+        ----------
+        position : ImagePoint
+            The position of the mouse click
+
+        Returns
+        -------
+        bool
+            True if selected, False otherwise
+
+        """
         return False
 
-    def update_draw(self, point: ImagePoint):
-        self.end.x = point.x
-        self.end.y = point.y
+    def update_draw(self, new_position: ImagePoint):
+        """Update the end point of the stroke. Called during drawing
+
+        Parameters
+        ----------
+        new_position : ImagePoint
+            The current position of the mouse
+
+        """
+        self.end.x = new_position.x
+        self.end.y = new_position.y
 
     def detect_handle_selection(self, point: ImagePoint, position: str) -> bool:
         """Check if a click happened inside a handle
@@ -303,34 +463,53 @@ class Stroke:
         Returns
         -------
         bool
-            True if handle was clicked false otherwise
+            True if handle was clicked False otherwise
         """
 
         # Handles are drawn in screen space, so convert to event space first
         hp = point.to_screenspace()
+        start = self.start.to_screenspace()
+        end = self.end.to_screenspace()
 
-        if position == "start":
-            handle_verts = self._get_handle_verts(self.start.to_screenspace())
-        else:
-            handle_verts = self._get_handle_verts(self.end.to_screenspace())
+        if hp and start and end:
+            if position == "start":
+                handle_verts = self._get_handle_verts(start)
+            else:
+                handle_verts = self._get_handle_verts(end)
 
-        x_start = handle_verts.bottom_left.x
-        x_end = handle_verts.bottom_right.x
-        y_start = handle_verts.top_left.y
-        y_end = handle_verts.bottom_left.y
+            x_start = handle_verts.bottom_left.x
+            x_end = handle_verts.bottom_right.x
+            y_start = handle_verts.top_left.y
+            y_end = handle_verts.bottom_left.y
 
-        return x_end > hp.x > x_start and y_start > hp.y > y_end
+            return x_end > hp.x > x_start and y_start > hp.y > y_end
+
+        return False
 
     # ############################################################################
     # PRIVATE INTERFACE
     # ############################################################################
     def _point_to_stroke_distance(
         self, stroke_start: ImagePoint, stroke_end: ImagePoint, point: ImagePoint
-    ):
+    ) -> float:
         """
         Calculate the distance from the mouse click to the stroke. Used for selection.
-        """
 
+        Parameters
+        ----------
+        stroke_start : ImagePoint
+            The start of the stroke
+        stroke_end : ImagePoint
+            The end of the stroke
+        point : ImagePoint
+            The point to check against (where the user clicked)
+
+        Returns
+        -------
+        float
+            The distance between the click and the stroke
+
+        """
         # Calculate stroke length
         dx = stroke_end.x - stroke_start.x
         dy = stroke_end.y - stroke_start.y
@@ -355,12 +534,12 @@ class Stroke:
 
         Parameters
         ----------
-        move_type : str
-            What are we moving? stroke, start or end?
         dx : float
             Delta between original point and new point
         dy : float
             Delta between original point and new point
+        move_type : str
+            What are we moving? stroke, start or end?
         """
 
         if move_type == "stroke" or move_type == "start":
@@ -369,6 +548,21 @@ class Stroke:
             self.end.move(dx, dy)
 
     def _get_handle_verts(self, point: ScreenPoint, size: float = 6.0) -> RectEdges:
+        """Get the verts of a handle so we can draw it
+
+        Parameters
+        ----------
+        point : ScreenPoint
+            The center point of the handle
+        size : float
+            The width and height of the handle
+
+        Returns
+        -------
+        RectEdges
+            The edges of the handle
+
+        """
         half = size / 2
 
         left = point.x - half
@@ -379,37 +573,35 @@ class Stroke:
         return RectEdges(left, right, top, bottom)
 
     def _get_bounding_box_edges(self) -> Optional[RectEdges]:
+        """Get the stroke's bounding box edges so we can draw it
+
+        Returns
+        -------
+        Optional[RectEdges]
+            The edges of the bounding box if we are able to calcualte them else None
+
+        """
         start = self.start.to_screenspace()
         end = self.end.to_screenspace()
 
-        # get min and max
-        left = min(start.x, end.x)
-        right = max(start.x, end.x)
-        top = max(start.y, end.y)
-        bottom = min(start.y, end.y)
+        if start and end:
+            # get min and max
+            left = min(start.x, end.x)
+            right = max(start.x, end.x)
+            top = max(start.y, end.y)
+            bottom = min(start.y, end.y)
 
-        return RectEdges(left, right, top, bottom)
-
-    def _draw_bounding_box(self, edges: RectEdges, padding=6):
-        """
-        Draw a box around the annotation to mark a selection
-        """
-
-        edges = edges.padded(padding)
-        GL.glEnable(GL.GL_LINE_STIPPLE)
-        GL.glLineStipple(1, 0xF0F0)
-        GL.glLineWidth(1.0)
-        GL.glColor4f(1.0, 1.0, 1.0, 0.8)
-
-        GL.glBegin(GL.GL_LINE_LOOP)
-        for corner in edges.corners:
-            GL.glVertex2f(corner.x, corner.y)
-        GL.glEnd()
-
-        GL.glDisable(GL.GL_LINE_STIPPLE)
+            return RectEdges(left, right, top, bottom)
 
     def _draw_handle(self, point: ScreenPoint):
+        """Draw a control handle around a point
 
+        Parameters
+        ----------
+        point : ScreenPoint
+            The point to draw the handle around
+
+        """
         e = self._get_handle_verts(point)
         # Square
         GL.glColor4f(1.0, 1.0, 1.0, 1.0)
@@ -424,6 +616,30 @@ class Stroke:
         for corner in e.corners:
             GL.glVertex2f(corner.x, corner.y)
         GL.glEnd()
+
+    def _draw_bounding_box(self, edges: RectEdges, padding: int = 6):
+        """Draw a box around the annotation to mark a selection
+
+        Parameters
+        ----------
+        edges : RectEdges
+            The bounding box edges to draw
+        padding : int
+            Padding to add to the box
+
+        """
+        edges = edges.padded(padding)
+        GL.glEnable(GL.GL_LINE_STIPPLE)
+        GL.glLineStipple(1, 0xF0F0)
+        GL.glLineWidth(1.0)
+        GL.glColor4f(1.0, 1.0, 1.0, 0.8)
+
+        GL.glBegin(GL.GL_LINE_LOOP)
+        for corner in edges.corners:
+            GL.glVertex2f(corner.x, corner.y)
+        GL.glEnd()
+
+        GL.glDisable(GL.GL_LINE_STIPPLE)
 
     def render(self):
         pass

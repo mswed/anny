@@ -1,6 +1,6 @@
 from __future__ import annotations
 import math
-from typing import Optional, NamedTuple
+from typing import Optional, NamedTuple, NewType
 import rv.commands as crv
 
 
@@ -553,3 +553,7 @@ class Color(NamedTuple):
     g: float
     b: float
     a: float
+
+
+SourceName = NewType("SourceName", str)
+SourceNode = NewType("SourceNode", str)
