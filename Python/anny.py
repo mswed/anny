@@ -9,11 +9,11 @@ from inspector import Inspector
 from annotations import (
     AnnotationLayer,
     LineStroke,
-    RectStroke,
 )
 from stroke_text import TextStroke
 from stroke_freehand import FreehandStroke
 from stroke_ellipse import EllipseStroke
+from stroke_rect import RectStroke
 
 
 class AnnyMode(MinorMode):
