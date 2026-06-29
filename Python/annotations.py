@@ -1,147 +1,113 @@
 from __future__ import annotations
 from collections import defaultdict
 import math
-from typing import Optional, Tuple, NamedTuple
+from typing import Optional, Tuple
 from OpenGL import GL
 from PySide6 import QtGui
 from PySide6.QtCore import Qt
 import rv.commands as crv
-from utils import ImagePoint, ScreenPoint, ScreenVector
-
-
-class RectEdges(NamedTuple):
-    """A class to store axiss aligned rectangle edges. Top should always be the hightest Y
-
-    Attributes
-    ----------
-    left : X coordinate of the left edge
-    right : X coordinate of the right edge
-    top : Y coordinate of the top edge
-    bottom : Y coordinate of the bottom edge
-    """
-
-    left: float
-    right: float
-    top: float
-    bottom: float
-
-    @property
-    def bottom_left(self):
-        return ScreenPoint(self.left, self.bottom)
-
-    @property
-    def bottom_right(self):
-        return ScreenPoint(self.right, self.bottom)
-
-    @property
-    def top_right(self):
-        return ScreenPoint(self.right, self.top)
-
-    @property
-    def top_left(self):
-        return ScreenPoint(self.left, self.top)
-
-    @property
-    def width(self):
-        return abs(self.right - self.left)
-
-    @property
-    def height(self):
-        return abs(self.top - self.bottom)
-
-    @property
-    def corners(self):
-        return (self.bottom_left, self.bottom_right, self.top_right, self.top_left)
-
-    def padded(self, padding):
-        return RectEdges(
-            self.left - padding,
-            self.right + padding,
-            self.top + padding,
-            self.bottom - padding,
-        )
-
-    def inset(self, margin):
-        return RectEdges(
-            self.left + margin,
-            self.right - margin,
-            self.top - margin,
-            self.bottom + margin,
-        )
-
-
-class QuadCorners(NamedTuple):
-    """
-    Store a quad's corner vertex. Used to store mainly rotated rects.
-    """
-
-    bottom_left: ScreenPoint
-    bottom_right: ScreenPoint
-    top_right: ScreenPoint
-    top_left: ScreenPoint
-
-
-class ArrowVerts(NamedTuple):
-    tip: ScreenPoint
-    left_wing: ScreenPoint
-    right_wing: ScreenPoint
-    base: ScreenPoint
-    line_base: ScreenPoint
-
-
-class LineVerts(NamedTuple):
-    bottom_left: ScreenPoint
-    bottom_right: ScreenPoint
-    top_right: ScreenPoint
-    top_left: ScreenPoint
-    mid_left: ScreenPoint
-    mid_right: ScreenPoint
-    start_anchor: ScreenPoint
-    end_anchor: ScreenPoint
-    midpoint: ScreenPoint
-    start_arrow: Optional[ArrowVerts]
-    end_arrow: Optional[ArrowVerts]
-    perp: ScreenVector
-    half_offset: ScreenVector
-
-
-class TickVerts(NamedTuple):
-    top: ScreenPoint
-    bottom: ScreenPoint
-
-
-class Color(NamedTuple):
-    r: float
-    g: float
-    b: float
-    a: float
+from utils import (
+    ImagePoint,
+    ScreenPoint,
+    RectEdges,
+    QuadCorners,
+    ArrowVerts,
+    LineVerts,
+    TickVerts,
+    Color,
+)
 
 
 class SourceAnnotations:
-    """
-    Strokes for a specific source
+    """Store a source strokes against frames
+
+    Attributes
+    ----------
+    frames : Frame dictionary. Each frame contains a list of strokes
     """
 
     def __init__(self) -> None:
         self.frames: dict[int, list[Stroke]] = defaultdict(list)
 
     @property
-    def annotated_frames(self):
+    def annotated_frames(self) -> list:
+        """A sorted list of frames with strokes
+
+        Returns
+        -------
+        list
+            Sorted list of frame numbers
+
+        """
         return sorted(list(self.frames.keys())) if self.frames else []
 
-    def add(self, frame, stroke):
+    def add(self, frame: int, stroke: Stroke):
+        """Add a a stroke to the specified frame
+
+        Parameters
+        ----------
+        frame : int
+            The frame the stroke is on
+        stroke : Stroke
+            The stroke data
+
+        """
         self.frames[frame].append(stroke)
 
-    def remove(self, frame, stroke):
+    def remove(self, frame: int, stroke: Stroke):
+        """Remove a stroke from the specified frame
+
+        Parameters
+        ----------
+        frame : int
+            Frame to remove the stroke from
+        stroke : Stroke
+            The stroke reference
+
+        """
         self.frames[frame].remove(stroke)
 
-    def strokes_at_frame(self, frame):
+    def strokes_at_frame(self, frame: int) -> list:
+        """Get all of the sources strokes at the specified frame
+
+        Parameters
+        ----------
+        frame : int
+            Frame to look for
+
+        Returns
+        -------
+        list
+            The list of stroke for that frame
+
+        """
         return self.frames.get(frame, [])
 
-    def clear_frame(self, frame):
+    def clear_frame(self, frame: int):
+        """Remove all strokes from the specified frame
+
+        Parameters
+        ----------
+        frame : int
+            The frame to remove the strokes from
+
+        """
         self.frames[frame] = []
 
     def next_annotated_frame(self, current_frame: int) -> Optional[int]:
+        """Search for the next frame that has annotations on it
+
+        Parameters
+        ----------
+        current_frame : int
+            Frame to start the search from
+
+        Returns
+        -------
+        Optional[int]
+            Frame number if a next frame is found None otherwise
+
+        """
         frames = self.annotated_frames
         if not frames:
             return
@@ -153,6 +119,19 @@ class SourceAnnotations:
         return frames[0]
 
     def previous_annotated_frame(self, current_frame: int) -> Optional[int]:
+        """Search for the previous frame that has annotations on it
+
+        Parameters
+        ----------
+        current_frame : int
+            Frame to start the search from
+
+        Returns
+        -------
+        Optional[int]
+            Frame number if a previous frame is found None otherwise
+
+        """
         frames = self.annotated_frames
         if not frames:
             return
@@ -166,7 +145,7 @@ class SourceAnnotations:
 
 class AnnotationLayer:
     """
-    The base class that renders the actual annotations. Annotations are added to the strokes dict and then
+    The base class that renders the actual annotations. Annotations are added to the sources dict and then
     rendered via the stroke's render function
     """
 
