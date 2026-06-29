@@ -12,8 +12,8 @@ from annotations import (
     LineStroke,
     RectStroke,
     CircleStroke,
-    TextStroke,
 )
+from stroke_text import TextStroke
 from utils import ImagePoint
 
 
@@ -270,7 +270,7 @@ class AnnyMode(MinorMode):
             self.current_stroke = self.active_stroke_type(
                 start=start_pos,
                 end=end_pos,
-                source=source_node,
+                source=source_name,
                 width=self.inspector.ui.strokeWidthField.value(),
                 opacity=self.inspector.ui.strokeOpacityField.value(),
                 color=self.inspector.current_stroke_color,
