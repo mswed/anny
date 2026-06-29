@@ -2,7 +2,7 @@ from rv.rvtypes import *
 import rv.commands as crv
 from rv.extra_commands import *
 import os
-from utils import SourceName, SourceNode
+from utils import SourceName, SourceNode, ImagePoint
 from pprint import pprint
 
 from inspector import Inspector
@@ -10,11 +10,10 @@ from annotations import (
     AnnotationLayer,
     LineStroke,
     RectStroke,
-    CircleStroke,
 )
 from stroke_text import TextStroke
 from stroke_freehand import FreehandStroke
-from utils import ImagePoint
+from stroke_ellipse import EllipseStroke
 
 
 class AnnyMode(MinorMode):
@@ -29,7 +28,7 @@ class AnnyMode(MinorMode):
             1: FreehandStroke,
             2: LineStroke,
             3: RectStroke,
-            4: CircleStroke,
+            4: EllipseStroke,
             5: TextStroke,
         }
         self.capture_frame = False
