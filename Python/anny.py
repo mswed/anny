@@ -6,14 +6,12 @@ from utils import SourceName, SourceNode, ImagePoint
 from pprint import pprint
 
 from inspector import Inspector
-from annotations import (
-    AnnotationLayer,
-    LineStroke,
-)
+from annotations import AnnotationLayer
 from stroke_text import TextStroke
 from stroke_freehand import FreehandStroke
 from stroke_ellipse import EllipseStroke
 from stroke_rect import RectStroke
+from stroke_line import LineStroke
 
 
 class AnnyMode(MinorMode):
