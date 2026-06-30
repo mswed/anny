@@ -4,13 +4,7 @@ from typing import Optional
 from OpenGL import GL
 from PySide6 import QtGui
 import rv.commands as crv
-from utils import (
-    ImagePoint,
-    ScreenPoint,
-    RectEdges,
-    SourceName,
-    SourceNode,
-)
+from utils import ImagePoint, ScreenPoint, RectEdges, SourceName, SourceNode, Color
 
 
 class SourceAnnotations:

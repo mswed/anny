@@ -11,6 +11,16 @@ from color_picker import ColorPickerDrowpdown
 
 
 class Inspector(QtWidgets.QDialog):
+    PROPERTY_WIDGETS = {
+        "width": ["strokeWidthField"],
+        "opacity": ["strokeOpacityField"],
+        "smoothing": ["strokeSmoothingField"],
+        "start_cap": ["startCapCb"],
+        "end_cap": ["endCapCb"],
+        "fill_opacity": ["fillOpacityField"],
+        "text": ["textField", "fontCb", "fontSizeField"],
+    }
+
     def __init__(self, mode, parent=None) -> None:
         super().__init__(parent)
         self.mode = mode
