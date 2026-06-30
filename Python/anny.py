@@ -1,8 +1,9 @@
 from __future__ import annotations
 import os
+from sys import set_coroutine_origin_tracking_depth
 from rv.rvtypes import MinorMode
 import rv.commands as crv
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 from utils import SourceName, SourceNode, ImagePoint
 from pprint import pprint
 
@@ -211,13 +212,23 @@ class AnnyMode(MinorMode):
         else:
             self.inspector.ui.strokeSmoothingField.setEnabled(False)
 
-    def select_start(self, event):
+    def select_start(self, event: Event):
+        """Select a stroke
+
+        Parameters
+        ----------
+        event : Event
+            The event that called the selection process (mouse click in this case)
+
+        """
         # Get frame (we store the annotation against the frame)
         frame = crv.frame()
 
-        source_name, source_node = self.get_source_name(event)
-        if not source_name:
+        source = self.get_source_name(event)
+        if not source:
             return
+
+        source_name, source_node = source
 
         # Image space position
         x, y = crv.eventToImageSpace(source_name, event.pointer())
@@ -251,11 +262,24 @@ class AnnyMode(MinorMode):
 
                 break
 
-    def select_update(self, event):
+    def select_update(self, event: Event):
+        """Draging after a stroke selection moves the stroke
+
+        Parameters
+        ----------
+        event : Event
+            The user is dragging the stroke
+
+        """
         if not self.current_stroke or not self.drag_start_pos:
             # We have nothing selected
             return
-        source_name, source_node = self.get_source_name(event)
+
+        source = self.get_source_name(event)
+        if not source:
+            return
+
+        source_name, _ = source
 
         if not source_name:
             # We have no source
@@ -281,15 +305,34 @@ class AnnyMode(MinorMode):
 
         crv.redraw()
 
-    def select_end(self, event):
+    def select_end(self, event: Event):
+        """When we're done dragging a stroke we disable the drag_start_pos attr
+
+        Parameters
+        ----------
+        event : Event
+            The user stopped dragging
+
+        """
         self.drag_start_pos = None
 
-    def draw_start(self, event):
+    def draw_start(self, event: Event):
+        """The start of the stroke drawing process
 
+        Parameters
+        ----------
+        event : Event
+            The user clicked the mouse while a drawing tool is enabled
+
+        """
         # Get frame (we store the annotation against the frame)
         frame = crv.frame()
 
-        source_name, source_node = self.get_source_name(event)
+        source = self.get_source_name(event)
+        if not source:
+            return
+
+        source_name, source_node = source
         if not source_name:
             return
 
@@ -318,7 +361,16 @@ class AnnyMode(MinorMode):
 
             self.annotations.add_stroke(source_node, frame, self.current_stroke)
 
-    def draw_update(self, event):
+    def draw_update(self, event: Event):
+        """
+        The user is drawing a stroke
+
+        Parameters
+        ----------
+        event : Event
+            The mouse is dragging after a mouse click event
+
+        """
         if self.current_stroke:
             image_x, image_y = crv.eventToImageSpace(
                 self.current_stroke.source, event.pointer()
@@ -328,15 +380,23 @@ class AnnyMode(MinorMode):
             self.current_stroke.update_draw(point)
             crv.redraw()
 
-    def draw_end(self, event):
+    def draw_end(self, event: Event):
+        """The user finished drawing the stroke
+
+        Parameters
+        ----------
+        event : Event
+            The mouse click is released
+
+        """
         self.current_stroke = None
 
-    def get_source_name(self, event):
+    def get_source_name(self, event: Event) -> Optional[tuple[SourceName, SourceNode]]:
         """Get the source name under the mouse. Used to convert clicks to image space
 
         Parameters
         ----------
-        event : crv.Event
+        event : Event
             The rv event that called the function. In our case a mouse click
 
         Returns
@@ -348,7 +408,7 @@ class AnnyMode(MinorMode):
         # We need to get the source to convert the mouse position to image space
         source = crv.sourceAtPixel(event.pointer())
         if not source:
-            return
+            return None
 
         return SourceName(source[0]["name"]), SourceNode(source[0]["node"])
 
@@ -362,7 +422,8 @@ class AnnyMode(MinorMode):
         crv.redraw()
 
     def clear_frame(self):
-        # source = self.get_source_name()
+        """Clear the current frame of all strokes"""
+
         frame = crv.frame()
         current_sources = crv.sourcesRendered()
         for source in current_sources:
@@ -391,21 +452,45 @@ class AnnyMode(MinorMode):
             "pointer-1--release",
         )
 
-    def next_annotation(self, event):
+    def next_annotation(self, event: Event):
+        """Go to the next annotated frame
+
+        Parameters
+        ----------
+        event : Event
+            The next annotation menu item has been clicked
+
+        """
         frame = crv.frame()
         source = crv.sourcesRendered()
         source_name = source[0]["node"]
         next_frame = self.annotations.get_next_frame(source_name, frame)
         crv.setFrame(next_frame)
 
-    def previous_annotation(self, event):
+    def previous_annotation(self, event: Event):
+        """Go to the prvious annotated frame
+
+        Parameters
+        ----------
+        event : Event
+            The previous annotation menu item has been clicked
+
+        """
         frame = crv.frame()
         source = crv.sourcesRendered()
         source_name = source[0]["node"]
         previous_frame = self.annotations.get_previous_frame(source_name, frame)
         crv.setFrame(previous_frame)
 
-    def export_annotation(self, event):
+    def export_annotation(self, event: Event):
+        """Export a single annotated frame
+
+        Parameters
+        ----------
+        event : Event
+            The export annotation menu item has been clicked
+
+        """
         self.save_to = self.inspector.get_save_path()
         if self.save_to:
             # Cancel any batch exports
@@ -413,6 +498,16 @@ class AnnyMode(MinorMode):
             self._capture_current_frame(batch=False)
 
     def export_all_annotations(self, event):
+        """Export a all annotated frames. Due to the way RV processes it's loop
+        we can not simply loop over the frame list. Instead we create a queue and
+        advance through it one frame at a time
+
+        Parameters
+        ----------
+        event : Event
+            The export all annotation menu item has been clicked
+
+        """
         self.save_dir = self.inspector.get_save_path("directory")
         if self.save_dir:
             os.makedirs(self.save_dir, exist_ok=True)
@@ -422,6 +517,9 @@ class AnnyMode(MinorMode):
             self._advance_export()
 
     def _advance_export(self):
+        """Advance in the export queue. If we are already on the correct frame we simply capture item
+        otherwise we move to the target frame which will trigger a render
+        """
         if not self._export_queue:
             return
 
@@ -433,17 +531,45 @@ class AnnyMode(MinorMode):
             # We need to move to the target frame
             crv.setFrame(target)
 
-    def _capture_current_frame(self, batch=True):
-        if batch:
+    def _capture_current_frame(self, batch: bool = True):
+        """Mark the frame to be captured. The actual capturing happens in the render event.
+        If it's a batch capture also set file name
+
+        Parameters
+        ----------
+        batch : bool
+            True if we're capturing multiple frames else False
+
+        """
+        if batch and self.save_dir:
             self.save_to = self.save_dir / f"annotation.{crv.frame()}.jpg"
+
         self.capture_frame = True
         crv.redraw()
 
-    def on_frame_changed(self, event):
+    def on_frame_changed(self, event: Event):
+        """When the frame changes check if we need to capture it
+
+        Parameters
+        ----------
+        event : Event
+            The viewport frame has changed
+
+        """
         if self._export_queue and crv.frame() == self._export_queue[0]:
+            # We are expporting a frame AND the current frame matches the one we want to export
             self._capture_current_frame()
 
-    def render(self, event):
+    def render(self, event: Event):
+        """Render all of the annotations in the layer and if the frame is marked for
+        capture save it
+
+        Parameters
+        ----------
+        event : Event
+            [TODO:description]
+
+        """
         self.annotations.render(event)
         if self.capture_frame:
             image = self.annotations.capture_frame_buffer(event)
