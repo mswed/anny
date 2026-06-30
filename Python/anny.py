@@ -129,11 +129,26 @@ class AnnyMode(MinorMode):
         else:
             self.active_stroke_type = self.stroke_types.get(tool_id, LineStroke)
             self.bind_draw_tool()
+            self.update_ui_states(self.active_stroke_type.editable_properties)
 
     def update_ui(self):
         stroke = self.current_stroke or self.active_stroke_type
         if not stroke:
             return
+
+    def update_ui_states(self, stroke_props: list[str]):
+        """Enable and/or disable ui features based on the stroke type
+
+        Parameters
+        ----------
+        stroke_props : list[str]
+            List of stroke props
+
+        """
+        for prop, widgets in self.inspector.PROPERTY_WIDGETS.items():
+            is_enabled = prop in stroke_props
+            for w in widgets:
+                getattr(self.inspector.ui, w).setEnabled(is_enabled)
 
     def update_ui_values(self):
         """
@@ -143,12 +158,10 @@ class AnnyMode(MinorMode):
             return
 
         props = self.current_stroke.editable_properties
+
         if "width" in props:
             # Update width
-            self.inspector.ui.strokeWidthField.setEnabled(True)
             self.inspector.ui.strokeWidthField.setValue(self.current_stroke.width)
-        else:
-            self.inspector.ui.strokeWidthField.setEnabled(False)
 
         if "color" in props:
             # Update color
@@ -159,27 +172,18 @@ class AnnyMode(MinorMode):
 
         if "opacity" in props:
             # Update opacity
-            self.inspector.ui.strokeOpacityField.setEnabled(True)
             self.inspector.ui.strokeOpacityField.setValue(self.current_stroke.opacity)
-        else:
-            self.inspector.ui.strokeOpacityField.setEnabled(False)
 
         # Update caps
         if "start_cap" in props:
-            self.inspector.ui.startCapCb.setEnabled(True)
             self.inspector.ui.startCapCb.setCurrentIndex(
                 self.inspector.ui.startCapCb.findData(self.current_stroke.start_cap)
             )
-        else:
-            self.inspector.ui.startCapCb.setEnabled(False)
 
         if "end_cap" in props:
-            self.inspector.ui.endCapCb.setEnabled(True)
             self.inspector.ui.endCapCb.setCurrentIndex(
                 self.inspector.ui.endCapCb.findData(self.current_stroke.end_cap)
             )
-        else:
-            self.inspector.ui.endCapCb.setEnabled(False)
 
         if "fill_color" in props:
             # Update fill color
@@ -190,23 +194,13 @@ class AnnyMode(MinorMode):
 
         if "fill_opacity" in props:
             # Update fill opacity
-            self.inspector.ui.fillOpacityField.setEnabled(True)
             self.inspector.ui.fillOpacityField.setValue(
                 self.current_stroke.fill_opacity
             )
-        else:
-            self.inspector.ui.fillOpacityField.setEnabled(False)
 
         if "text" in props:
             # Update text
-            self.inspector.ui.textField.setEnabled(True)
-            self.inspector.ui.fontSizeField.setEnabled(True)
-            self.inspector.ui.fontCb.setEnabled(True)
             self.inspector.ui.textField.setText(self.current_stroke.text)
-        else:
-            self.inspector.ui.textField.setEnabled(False)
-            self.inspector.ui.fontSizeField.setEnabled(False)
-            self.inspector.ui.fontCb.setEnabled(False)
 
         if "smoothing" in props:
             # Update smoothing
@@ -252,6 +246,7 @@ class AnnyMode(MinorMode):
                 self.current_stroke.selected = True
                 self.drag_start_pos = image_point
 
+                self.update_ui_states(self.current_stroke.editable_properties)
                 self.update_ui_values()
 
                 break
