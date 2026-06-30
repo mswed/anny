@@ -11,8 +11,6 @@ class FreehandStroke(Stroke):
         "width",
         "color",
         "opacity",
-        "fill_color",
-        "fill_opacity",
         "smoothing",
     ]
 
