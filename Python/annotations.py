@@ -242,7 +242,32 @@ class AnnotationLayer:
         """
         return self.sources[source].annotated_frames
 
-    def capture_frame_buffer(self, event) -> QtGui.QImage:
+    def get_image_boundries(
+        self, source_name: SourceName
+    ) -> Optional[tuple[int, int, int, int]]:
+        geo = crv.imageGeometry(source_name)
+        if not geo or len(geo) == 0:
+            # We don't have an image
+            return
+
+        xs = [p[0] for p in geo]
+        ys = [p[1] for p in geo]
+
+        left = min(xs)
+        right = max(xs)
+        top = max(ys)
+        bottom = min(ys)
+
+        bounds = RectEdges(left, right, top, bottom)
+
+        return (
+            int(bounds.left),
+            int(bounds.bottom),
+            int(bounds.width),
+            int(bounds.height),
+        )
+
+    def capture_frame_buffer(self, event) -> Optional[QtGui.QImage]:
         """Capture the current frame as a QImage
 
         Parameters
@@ -256,11 +281,20 @@ class AnnotationLayer:
             The captured viewport
 
         """
-        # Get viewport size
-        w, h = event.domain()
+        source = crv.sourcesRendered()
+        source_name = source[0]["name"]
+        image_bounds = self.get_image_boundries(source_name)
+
+        if image_bounds:
+            x, y, w, h = image_bounds
+        else:
+            # Get viewport size
+            w, h = event.domain()
+            w, h = int(w), int(h)
+            x, y = 0, 0
 
         # Get the buffer
-        buffer = GL.glReadPixels(0, 0, w, h, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE)
+        buffer = GL.glReadPixels(x, y, w, h, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE)
 
         # Convert it to an image
         image = QtGui.QImage(buffer, w, h, QtGui.QImage.Format_RGBA8888)
