@@ -1,19 +1,13 @@
 from __future__ import annotations
 from collections import defaultdict
-import math
-from typing import Optional, Tuple
+from typing import Optional
 from OpenGL import GL
 from PySide6 import QtGui
-from PySide6.QtCore import Qt
 import rv.commands as crv
 from utils import (
     ImagePoint,
     ScreenPoint,
     RectEdges,
-    ArrowVerts,
-    LineVerts,
-    TickVerts,
-    Color,
     SourceName,
     SourceNode,
 )

@@ -1,7 +1,8 @@
-from rv.rvtypes import *
-import rv.commands as crv
-from rv.extra_commands import *
+from __future__ import annotations
 import os
+from rv.rvtypes import MinorMode
+import rv.commands as crv
+from typing import TYPE_CHECKING
 from utils import SourceName, SourceNode, ImagePoint
 from pprint import pprint
 
@@ -12,6 +13,9 @@ from stroke_freehand import FreehandStroke
 from stroke_ellipse import EllipseStroke
 from stroke_rect import RectStroke
 from stroke_line import LineStroke
+
+if TYPE_CHECKING:
+    from rv_stubs import Event
 
 
 class AnnyMode(MinorMode):
@@ -54,6 +58,7 @@ class AnnyMode(MinorMode):
                         ("Show UI", self.show_ui, "=", None),
                         ("Next Annotation", self.next_annotation, "'", None),
                         ("Previous Annotation", self.previous_annotation, ";", None),
+                        ("_", None),
                         ("Export Frame", self.export_annotation, None, None),
                         ("Export All Frames", self.export_all_annotations, None, None),
                     ],
@@ -63,7 +68,14 @@ class AnnyMode(MinorMode):
             -10,  # set the override value (default is 0)
         )
 
-    def show_ui(self, event):
+    def show_ui(self, event: Event):
+        """Show the Anny UI and bind the select tool to start
+
+        Parameters
+        ----------
+        event : Event
+            The RV event that called the action
+        """
         # Bind the select tool for start
         self.bind_select_tool()
         self.inspector.show()
@@ -98,7 +110,6 @@ class AnnyMode(MinorMode):
         """
         Set the tool type we're using and bind it to mouse events based on the stroke_types dict
 
-
         Parameters
         ----------
         tool_id : int
@@ -120,6 +131,11 @@ class AnnyMode(MinorMode):
             self.bind_draw_tool()
 
     def update_ui(self):
+        stroke = self.current_stroke or self.active_stroke_type
+        if not stroke:
+            return
+
+    def update_ui_values(self):
         """
         Update the UI with the selected stroke info
         """
@@ -129,7 +145,10 @@ class AnnyMode(MinorMode):
         props = self.current_stroke.editable_properties
         if "width" in props:
             # Update width
+            self.inspector.ui.strokeWidthField.setEnabled(True)
             self.inspector.ui.strokeWidthField.setValue(self.current_stroke.width)
+        else:
+            self.inspector.ui.strokeWidthField.setEnabled(False)
 
         if "color" in props:
             # Update color
@@ -140,17 +159,27 @@ class AnnyMode(MinorMode):
 
         if "opacity" in props:
             # Update opacity
+            self.inspector.ui.strokeOpacityField.setEnabled(True)
             self.inspector.ui.strokeOpacityField.setValue(self.current_stroke.opacity)
+        else:
+            self.inspector.ui.strokeOpacityField.setEnabled(False)
 
         # Update caps
         if "start_cap" in props:
+            self.inspector.ui.startCapCb.setEnabled(True)
             self.inspector.ui.startCapCb.setCurrentIndex(
                 self.inspector.ui.startCapCb.findData(self.current_stroke.start_cap)
             )
+        else:
+            self.inspector.ui.startCapCb.setEnabled(False)
+
         if "end_cap" in props:
+            self.inspector.ui.endCapCb.setEnabled(True)
             self.inspector.ui.endCapCb.setCurrentIndex(
                 self.inspector.ui.endCapCb.findData(self.current_stroke.end_cap)
             )
+        else:
+            self.inspector.ui.endCapCb.setEnabled(False)
 
         if "fill_color" in props:
             # Update fill color
@@ -161,19 +190,32 @@ class AnnyMode(MinorMode):
 
         if "fill_opacity" in props:
             # Update fill opacity
+            self.inspector.ui.fillOpacityField.setEnabled(True)
             self.inspector.ui.fillOpacityField.setValue(
                 self.current_stroke.fill_opacity
             )
+        else:
+            self.inspector.ui.fillOpacityField.setEnabled(False)
 
         if "text" in props:
             # Update text
+            self.inspector.ui.textField.setEnabled(True)
+            self.inspector.ui.fontSizeField.setEnabled(True)
+            self.inspector.ui.fontCb.setEnabled(True)
             self.inspector.ui.textField.setText(self.current_stroke.text)
+        else:
+            self.inspector.ui.textField.setEnabled(False)
+            self.inspector.ui.fontSizeField.setEnabled(False)
+            self.inspector.ui.fontCb.setEnabled(False)
 
         if "smoothing" in props:
             # Update smoothing
+            self.inspector.ui.strokeSmoothingField.setEnabled(True)
             self.inspector.ui.strokeSmoothingField.setValue(
                 self.current_stroke.smoothing
             )
+        else:
+            self.inspector.ui.strokeSmoothingField.setEnabled(False)
 
     def select_start(self, event):
         # Get frame (we store the annotation against the frame)
@@ -210,7 +252,7 @@ class AnnyMode(MinorMode):
                 self.current_stroke.selected = True
                 self.drag_start_pos = image_point
 
-                self.update_ui()
+                self.update_ui_values()
 
                 break
 

@@ -125,4 +125,42 @@ ANNY_STYLESHEET = """
     QPushButton:pressed {
         background-color: #2c2825;
     }
+
+    /* --- disabled states --- */
+        QWidget:disabled {
+            color: #6b645e;
+        }
+
+        QToolButton:disabled {
+            background-color: #2c2825;
+            border: 1px solid #3a3431;
+            color: #6b645e;
+        }
+        QToolButton:checked:disabled {
+            background-color: #7a5527;
+            border: 1px solid #8a6230;
+            color: #463a2c;
+        }
+
+        QDoubleSpinBox:disabled, QSpinBox:disabled,
+        QComboBox:disabled, QFontComboBox:disabled, QTextEdit:disabled {
+            background-color: #2c2825;
+            border: 1px solid #3a3431;
+            color: #6b645e;
+        }
+
+        QDoubleSpinBox::up-button:disabled, QSpinBox::up-button:disabled,
+        QDoubleSpinBox::down-button:disabled, QSpinBox::down-button:disabled {
+            background-color: #332e2b;
+        }
+
+        QPushButton:disabled {
+            background-color: #2c2825;
+            border: 1px solid #3a3431;
+            color: #6b645e;
+        }
+
+        QLabel:disabled {
+            color: #6b645e;
+        }
 """
