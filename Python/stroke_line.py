@@ -1,6 +1,7 @@
 from typing import Optional
 import math
 from PySide6 import QtGui
+from PySide6.QtCore import Qt
 from OpenGL import GL
 
 from annotations import Stroke
