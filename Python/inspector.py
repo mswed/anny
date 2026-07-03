@@ -1,4 +1,5 @@
-from PySide6 import QtGui, QtWidgets, QtCore
+from PySide6 import QtGui, QtWidgets
+from PySide6.QtCore import Qt
 from typing import Optional
 from pathlib import Path
 import rv.commands as crv
@@ -79,6 +80,10 @@ class Inspector(QtWidgets.QDialog):
 
     def on_tool_changed(self, tool_id):
         self.mode.set_active_tool(tool_id)
+        if tool_id == 0:
+            crv.setCursor(Qt.CursorShape.ArrowCursor.value)
+        else:
+            crv.setCursor(Qt.CursorShape.CrossCursor.value)
 
     def setup_connections(self) -> None:
         """Connect UI to actions"""

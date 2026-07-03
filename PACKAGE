@@ -1,12 +1,34 @@
 package: Anny
 author: Moshe Swed
 version: 1.0
-rv: 4.0
+rv: 2025
+openrv: 4.0.0
 requires: ''
 
 modes:
   - file: anny
+    menu: Anny
     load: immediate
 
+  files: 
+    annotations.py 
+    color_picker.py 
+    inspector.py 
+    resources_rc.py 
+    rv_stubs.py 
+    stroke_ellipse.py 
+    stroke_freenhand.py 
+    stroke_line.py 
+    stroke_rect.py 
+    stroke_text.py 
+    style.py 
+    text_editor.py 
+    ui_inspector.py 
+    utils.py 
+
 description: |
-  <p>A better annotation tools for RV</p> 
+  <p>A better annotation tools for RV
+
+  Shows a simple inspector where the user can select different tools to draw on frames
+
+</p> 
