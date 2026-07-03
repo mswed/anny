@@ -49,7 +49,7 @@ RV sync uses RV paint nodes to draw and serialize strokes. Anny stroke system is
 
 ## Installation 
 Anny is installed like any RV package. 
-1. Download the rvpkg file 
+1. [Download latest rvpkg file](https://github.com/mswed/anny/releases/latest) 
 2. In RV go to RV -> Preferences -> Packages 
 3. Click Add package 
 4. Navigate to where you downloaded the package and select it 
