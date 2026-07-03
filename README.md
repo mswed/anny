@@ -59,4 +59,23 @@ Anny is installed like any RV package.
  
 
 ## Development 
-The setup a development en
+The simplest way to work on Anny is directly in your RV install packages directory. 
+
+macOS: /Library/Application Support/RV
+Linux: ~/.rv
+Windows: $APPDATA/RV
+
+
+However if you'd like more control you can point your RV_SUPPORT_PATH env variable to a dev area, and either work there or symlink the Python directory to your dev area. You can then use a virtual environment running python 3.11.8 with PySide6 an PyOpenGL to get auto complete. 
+
+## Contributing
+
+Anny is MIT licensed, so you're free to use, modify, and adapt it however you like.
+
+That said — if you fix a bug or add something useful, I'd genuinely love it if you
+opened a pull request rather than quietly keeping it to yourself. It's more fun to
+improve one good tool together than to end up with five slightly different versions.
+No formal process, no contribution guidelines to wade through: open an issue if
+something's broken, or send a PR if you've already fixed it. Either is very welcome.
+
+Made with 😮‍💨 for VFX
