@@ -82,7 +82,7 @@ class Point:
 
     """
 
-    def __init__(self, x: float, y: float, source: Optional[str] = None) -> None:
+    def __init__(self, x: float, y: float, source: Optional[Source] = None) -> None:
         self.x = x
         self.y = y
         self.source = source
@@ -170,7 +170,7 @@ class ImagePoint(Point):
 
     """
 
-    def __init__(self, x: float, y: float, source: Optional[str] = None) -> None:
+    def __init__(self, x: float, y: float, source: Optional[Source] = None) -> None:
         super().__init__(x, y, source)
 
     @property
@@ -184,11 +184,11 @@ class ImagePoint(Point):
 
         """
         if self.source:
-            return crv.imageToEventSpace(self.source, (self.x, self.y))
+            return crv.imageToEventSpace(self.source.name, (self.x, self.y))
 
     @property
     def screen_x(self) -> Optional[float]:
-        """Point x in screen space
+        """Point x in screen space times the device pixel aspect so ratina displays also work
 
         Returns
         -------
@@ -196,11 +196,12 @@ class ImagePoint(Point):
             x coordinate of point in screen space if we are able to convert to screen space. None otherwise
 
         """
-        return self.screenspace[0] if self.screenspace else None
+        ratio = crv.devicePixelRatio() or 1.0
+        return self.screenspace[0] * ratio if self.screenspace else None
 
     @property
     def screen_y(self) -> Optional[float]:
-        """Point y in screen space
+        """Point y in screen space times the device pixel aspect so ratina displays also work
 
         Returns
         -------
@@ -208,7 +209,8 @@ class ImagePoint(Point):
             y coordinate of point in screen space if we are able to convert to screen space. None otherwise
 
         """
-        return self.screenspace[1] if self.screenspace else None
+        ratio = crv.devicePixelRatio() or 1.0
+        return self.screenspace[1] * ratio if self.screenspace else None
 
     def to_screenspace(self) -> Optional[ScreenPoint]:
         """Convert the point to an screen space point
@@ -263,7 +265,7 @@ class ScreenPoint(Point):
 
     """
 
-    def __init__(self, x: float, y: float, source: Optional[str] = None) -> None:
+    def __init__(self, x: float, y: float, source: Optional[Source] = None) -> None:
         super().__init__(x, y, source)
 
     @property
@@ -277,7 +279,7 @@ class ScreenPoint(Point):
 
         """
         if self.source:
-            return crv.eventToImageSpace(self.source, (self.x, self.y))
+            return crv.eventToImageSpace(self.source.name, (self.x, self.y))
 
     @property
     def image_x(self):
@@ -309,7 +311,7 @@ class ScreenPoint(Point):
         Returns
         -------
         ImagePoint
-            The point in image space if we are able to calcualte. None otherwise
+            The point in image space if we are able to calculate. None otherwise
 
         """
         if self.image_x and self.image_y:
@@ -553,6 +555,11 @@ class Color(NamedTuple):
     g: float
     b: float
     a: float
+
+
+class Source(NamedTuple):
+    name: str
+    node: str
 
 
 SourceName = NewType("SourceName", str)

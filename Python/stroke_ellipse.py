@@ -2,7 +2,7 @@ import math
 from OpenGL import GL
 
 from annotations import Stroke
-from utils import ImagePoint, SourceName
+from utils import ImagePoint, Source
 
 
 class EllipseStroke(Stroke):
@@ -10,7 +10,7 @@ class EllipseStroke(Stroke):
         self,
         start: ImagePoint,
         end: ImagePoint,
-        source: SourceName,
+        source: Source,
         width: float = 1,
         color: tuple = (1, 0, 0, 1),
         opacity: float = 1,
