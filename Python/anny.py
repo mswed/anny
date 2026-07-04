@@ -66,27 +66,22 @@ class AnnyMode(MinorMode):
                 ),
             ],
             None,
-            None,
+            [
+                (
+                    "Anny",
+                    [
+                        ("Show UI", self.show_ui, "=", None),
+                        ("Next Annotation", self.next_annotation, "'", None),
+                        ("Previous Annotation", self.previous_annotation, ";", None),
+                        ("_", None),
+                        ("Export Frame", self.export_annotation, None, None),
+                        ("Export All Frames", self.export_all_annotations, None, None),
+                    ],
+                )
+            ],
             "py-anny-mode",  # Needed to set the mode to override other mode binding
             -10,  # set the override value (default is 0)
         )
-
-        # Bind the Anny menu outside of init in case it works better on MacOS
-        anny_menu = [
-            (
-                "Anny",
-                [
-                    ("Show UI", self.show_ui, "=", None),
-                    ("Next Annotation", self.next_annotation, "'", None),
-                    ("Previous Annotation", self.previous_annotation, ";", None),
-                    ("_", None),
-                    ("Export Frame", self.export_annotation, None, None),
-                    ("Export All Frames", self.export_all_annotations, None, None),
-                ],
-            )
-        ]
-
-        crv.defineModeMenu("py-anny-mode", anny_menu)
 
     def show_ui(self, event: Event):
         """Show the Anny UI and bind the select tool to start
