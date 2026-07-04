@@ -22,7 +22,7 @@ class Vector:
         return f"<{self.__class__.__name__}> x: {self.x} y: {self.y}"
 
     @property
-    def magnitude(self):
+    def magnitude(self) -> Optional[float]:
         # Magnitude
         m = math.sqrt(self.x**2 + self.y**2)
         if m == 0:

@@ -3,7 +3,6 @@ from PySide6.QtCore import Qt
 from typing import Optional
 from pathlib import Path
 import rv.commands as crv
-from pprint import pprint
 
 from ui_inspector import Ui_Inspector
 from style import ANNY_STYLESHEET
@@ -238,11 +237,7 @@ class Inspector(QtWidgets.QDialog):
         self.mode.clear_frame()
 
     def get_save_path(self, save_type="file") -> Optional[Path]:
-        dialog = QtWidgets.QFileDialog(
-            self,
-            "Export Annotation",
-            "/home/mswed/Desktop/",
-        )
+        dialog = QtWidgets.QFileDialog(self, "Export Annotation", str(Path.home()))
         dialog.setOption(QtWidgets.QFileDialog.DontUseNativeDialog, True)
         if save_type == "file":
             dialog.setFileMode(QtWidgets.QFileDialog.AnyFile)
@@ -253,5 +248,4 @@ class Inspector(QtWidgets.QDialog):
 
         if dialog.exec():
             files = dialog.selectedFiles()
-            print("selected", files)
             return Path(files[0]) if files else None
