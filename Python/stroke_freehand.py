@@ -3,7 +3,7 @@ import math
 from OpenGL import GL
 
 from annotations import Stroke
-from utils import ImagePoint, ScreenPoint, SourceName, RectEdges, Color, QuadCorners
+from utils import ImagePoint, ScreenPoint, Source, RectEdges, Color, QuadCorners
 
 
 class FreehandStroke(Stroke):
@@ -18,7 +18,7 @@ class FreehandStroke(Stroke):
         self,
         start: ImagePoint,
         end: ImagePoint,
-        source: SourceName,
+        source: Source,
         width: float = 1,
         color: tuple = (1, 0, 0, 1),
         opacity: float = 1,
@@ -33,8 +33,8 @@ class FreehandStroke(Stroke):
             The first point in the stroke
         end : ImagePoint
             The last point in the storke. On init this should match start
-        source : SourceName
-            The name of the source the stroke is attached to
+        source : Source
+            The source the stroke is attached to
         width : float
             The line width
         color : tuple

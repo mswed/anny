@@ -8,7 +8,7 @@ from annotations import Stroke
 from utils import (
     ImagePoint,
     ScreenPoint,
-    SourceName,
+    Source,
     LineVerts,
     TickVerts,
     ArrowVerts,
@@ -33,7 +33,7 @@ class LineStroke(Stroke):
         self,
         start: ImagePoint,
         end: ImagePoint,
-        source: SourceName,
+        source: Source,
         width: float = 1.0,
         color: tuple = (1, 0, 0, 1),
         opacity: float = 1.0,
@@ -53,8 +53,8 @@ class LineStroke(Stroke):
             The first point in the stroke
         end : ImagePoint
             The last point in the stroke
-        source : SourceName
-            The name of the source the stroke is attached to
+        source : Source
+            The source the stroke is attached to
         width : float
             The outline width
         color : tuple

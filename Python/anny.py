@@ -1,10 +1,10 @@
 from __future__ import annotations
 import os
-from sys import set_coroutine_origin_tracking_depth
 from rv.rvtypes import MinorMode
 import rv.commands as crv
+from rv.qtutils import sessionWindow
 from typing import Optional, TYPE_CHECKING
-from utils import SourceName, SourceNode, ImagePoint
+from utils import ImagePoint, Source
 from pprint import pprint
 
 from inspector import Inspector
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 class AnnyMode(MinorMode):
     def __init__(self) -> None:
         MinorMode.__init__(self)
-        self.inspector = Inspector(mode=self)
+        self.inspector = Inspector(mode=self, parent=sessionWindow())
         self.annotations = AnnotationLayer()
         self.current_stroke = None
         self.drag_start_pos = None
@@ -224,15 +224,13 @@ class AnnyMode(MinorMode):
         # Get frame (we store the annotation against the frame)
         frame = crv.frame()
 
-        source = self.get_source_name(event)
+        source = self.get_source(event)
         if not source:
             return
 
-        source_name, source_node = source
-
         # Image space position
-        x, y = crv.eventToImageSpace(source_name, event.pointer())
-        image_point = ImagePoint(x, y, source=source_name)
+        x, y = crv.eventToImageSpace(source.name, event.pointer())
+        image_point = ImagePoint(x, y, source=source)
 
         # Deselect current stroke if needed
         if self.current_stroke:
@@ -242,7 +240,7 @@ class AnnyMode(MinorMode):
             self.drag_start_pos = None
             self.drag_type = ""
 
-        for stroke in self.annotations.sources[source_node].strokes_at_frame(frame):
+        for stroke in self.annotations.sources[source.node].strokes_at_frame(frame):
             if stroke.detect_handle_selection(image_point, "start"):
                 self.drag_type = "start"
             elif stroke.detect_handle_selection(image_point, "end"):
@@ -275,22 +273,16 @@ class AnnyMode(MinorMode):
             # We have nothing selected
             return
 
-        source = self.get_source_name(event)
+        source = self.get_source(event)
         if not source:
-            return
-
-        source_name, _ = source
-
-        if not source_name:
-            # We have no source
             return
 
         # Starting position
         starting_position = self.drag_start_pos
 
         # Current position
-        x, y = crv.eventToImageSpace(source_name, event.pointer())
-        current_position = ImagePoint(x, y, source=source_name)
+        x, y = crv.eventToImageSpace(source.name, event.pointer())
+        current_position = ImagePoint(x, y, source=source)
 
         # Calculate delta between start and current
         dx = current_position.x - starting_position.x
@@ -328,26 +320,22 @@ class AnnyMode(MinorMode):
         # Get frame (we store the annotation against the frame)
         frame = crv.frame()
 
-        source = self.get_source_name(event)
+        source = self.get_source(event)
         if not source:
             return
 
-        source_name, source_node = source
-        if not source_name:
-            return
-
         # Start pose
-        x, y = crv.eventToImageSpace(source_name, event.pointer())
-        start_pos = ImagePoint(x, y, source=source_name)
+        x, y = crv.eventToImageSpace(source.name, event.pointer())
+        start_pos = ImagePoint(x, y, source=source)
 
         # End pose (we need a seperate point so we don't point to the same object)
-        end_pos = ImagePoint(x, y, source=source_name)
+        end_pos = ImagePoint(x, y, source=source)
 
         if not self.current_stroke:
             self.current_stroke = self.active_stroke_type(
                 start=start_pos,
                 end=end_pos,
-                source=source_name,
+                source=source,
                 width=self.inspector.ui.strokeWidthField.value(),
                 opacity=self.inspector.ui.strokeOpacityField.value(),
                 color=self.inspector.current_stroke_color,
@@ -359,7 +347,7 @@ class AnnyMode(MinorMode):
                 smoothing=self.inspector.ui.strokeSmoothingField.value(),
             )
 
-            self.annotations.add_stroke(source_node, frame, self.current_stroke)
+            self.annotations.add_stroke(source, frame, self.current_stroke)
 
     def draw_update(self, event: Event):
         """
@@ -373,7 +361,7 @@ class AnnyMode(MinorMode):
         """
         if self.current_stroke:
             image_x, image_y = crv.eventToImageSpace(
-                self.current_stroke.source, event.pointer()
+                self.current_stroke.source.name, event.pointer()
             )
 
             point = ImagePoint(image_x, image_y, source=self.current_stroke.source)
@@ -391,8 +379,8 @@ class AnnyMode(MinorMode):
         """
         self.current_stroke = None
 
-    def get_source_name(self, event: Event) -> Optional[tuple[SourceName, SourceNode]]:
-        """Get the source name under the mouse. Used to convert clicks to image space
+    def get_source(self, event: Event) -> Optional[Source]:
+        """Get the source name and node under the mouse. Used to convert clicks to image space
 
         Parameters
         ----------
@@ -401,8 +389,8 @@ class AnnyMode(MinorMode):
 
         Returns
         -------
-        String
-            Source name
+        Optional[Source]
+            Source name and node
 
         """
         # We need to get the source to convert the mouse position to image space
@@ -410,7 +398,7 @@ class AnnyMode(MinorMode):
         if not source:
             return None
 
-        return SourceName(source[0]["name"]), SourceNode(source[0]["node"])
+        return Source(name=source[0]["name"], node=source[0]["node"])
 
     def delete_selected_stroke(self, event):
         frame = crv.frame()
@@ -463,8 +451,8 @@ class AnnyMode(MinorMode):
         """
         frame = crv.frame()
         source = crv.sourcesRendered()
-        source_name = source[0]["node"]
-        next_frame = self.annotations.get_next_frame(source_name, frame)
+        source_node = source[0]["node"]
+        next_frame = self.annotations.get_next_frame(source_node, frame)
         crv.setFrame(next_frame)
 
     def previous_annotation(self, event: Event):
@@ -478,8 +466,8 @@ class AnnyMode(MinorMode):
         """
         frame = crv.frame()
         source = crv.sourcesRendered()
-        source_name = source[0]["node"]
-        previous_frame = self.annotations.get_previous_frame(source_name, frame)
+        source_node = source[0]["node"]
+        previous_frame = self.annotations.get_previous_frame(source_node, frame)
         crv.setFrame(previous_frame)
 
     def export_annotation(self, event: Event):
