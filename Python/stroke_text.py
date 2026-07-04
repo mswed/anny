@@ -308,6 +308,8 @@ class TextStroke(Stroke):
                 if qt_texture:
                     tid = self._load_texture(qt_texture)
                     self._draw_text(e.inset(self.MARGIN), tid)
+                    # TODO: set up texture caching instead
+                    GL.glDeleteTextures([tid])
 
             # Selection highlighting
             if self.selected:
