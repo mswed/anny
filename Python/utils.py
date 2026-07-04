@@ -221,7 +221,7 @@ class ImagePoint(Point):
             The point in screen space if we are able to calcualte. None otherwise
 
         """
-        if self.screen_x and self.screen_y:
+        if self.screen_x is not None and self.screen_y is not None:
             return ScreenPoint(self.screen_x, self.screen_y, source=self.source)
 
     def direction_to(self, target: Point) -> ImageVector:
