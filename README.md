@@ -47,6 +47,10 @@ Add the ability to set default color, width caps and text to all annotations
 RV sync uses RV paint nodes to draw and serialize strokes. Anny stroke system is not compatible with this workflow. 
 ### Fix the creeping sense that the VFX industry is doomed 
 
+
+# Known issues 
+On macOS the Anny menu might not show up. You can, however, open the UI by hitting `=` and going between annotated frames by clicking `;` and `'`
+
 ## Installation 
 Anny is installed like any RV package. 
 1. [Download latest rvpkg file](https://github.com/mswed/anny/releases/latest) 
@@ -61,9 +65,11 @@ Anny is installed like any RV package.
 ## Development 
 The simplest way to work on Anny is directly in your RV install packages directory. 
 
+```
 macOS: /Library/Application Support/RV
 Linux: ~/.rv
 Windows: $APPDATA/RV
+```
 
 
 However if you'd like more control you can point your RV_SUPPORT_PATH env variable to a dev area, and either work there or symlink the Python directory to your dev area. You can then use a virtual environment running python 3.11.8 with PySide6 and PyOpenGL to get auto complete. 
