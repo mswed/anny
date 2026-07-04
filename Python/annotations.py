@@ -315,6 +315,9 @@ class AnnotationLayer:
         # Flip it vertically
         image = image.mirrored(False, True)
 
+        # Flatten the alpha
+        image = image.convertToFormat(QtGui.QImage.Format_RGB888)
+
         return image
 
     def render(self, event):
