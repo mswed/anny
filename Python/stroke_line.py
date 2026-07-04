@@ -572,6 +572,8 @@ class LineStroke(Stroke):
             if qt_texture:
                 tid, tw, th = self._load_texture(qt_texture)
                 self._draw_text(verts.midpoint, tw, th, tid)
+                # TODO: set up texture caching instead
+                GL.glDeleteTextures([tid])
 
         # Selection highlighting
         if self.selected:
