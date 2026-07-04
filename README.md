@@ -21,7 +21,7 @@ Anny is a ShotGrid RV annotation tool with better tools and, hopefully, better u
 
 ### Edit annotations 
 - All annotations can be moved around 
-- Straight lines and shapes start and end points can be moved independantly to edit the shape 
+- Straight lines and shapes start and end points can be moved independently to edit the shape 
 - Single annotations can be deleted from the frame 
 - All annotations can be deleted from the frame 
 
@@ -31,7 +31,7 @@ Anny is a ShotGrid RV annotation tool with better tools and, hopefully, better u
 
 ## What Anny will do later
 
-## Undo strokes 
+### Undo strokes 
 Add an undo/redo queue and hopefully bind it to ctrl + z
 
 ### Upload notes to ShotGrid
@@ -44,7 +44,7 @@ Add the ability to set default color, width caps and text to all annotations
 
 ## What Anny will likely never do
 ### Work in RV sync 
-RV sync uses RV paint nodes to draw and serialize strokes. Anny stroke system is not competable with this workflow. 
+RV sync uses RV paint nodes to draw and serialize strokes. Anny stroke system is not compatible with this workflow. 
 ### Fix the creeping sense that the VFX industry is doomed 
 
 ## Installation 
@@ -66,7 +66,7 @@ Linux: ~/.rv
 Windows: $APPDATA/RV
 
 
-However if you'd like more control you can point your RV_SUPPORT_PATH env variable to a dev area, and either work there or symlink the Python directory to your dev area. You can then use a virtual environment running python 3.11.8 with PySide6 an PyOpenGL to get auto complete. 
+However if you'd like more control you can point your RV_SUPPORT_PATH env variable to a dev area, and either work there or symlink the Python directory to your dev area. You can then use a virtual environment running python 3.11.8 with PySide6 and PyOpenGL to get auto complete. 
 
 ## Contributing
 
