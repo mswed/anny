@@ -544,7 +544,7 @@ class AnnyMode(MinorMode):
 
         """
         if batch and self.save_dir:
-            self.save_to = self.save_dir / f"annotation.{crv.frame()}.jpg"
+            self.save_to = self.save_dir / f"annotation.{crv.frame()}.png"
 
         self.capture_frame = True
         crv.redraw()
@@ -575,8 +575,14 @@ class AnnyMode(MinorMode):
         self.annotations.render(event)
         if self.capture_frame:
             image = self.annotations.capture_frame_buffer(event)
-            image.save(str(self.save_to))
-            self.capture_frame = False
+
+            if image and self.save_to is not None:
+                save_path = str(self.save_to)
+                if save_path.lower().endswith((".jpg", ".jpeg")):
+                    image.save(save_path, "JPG", 95)
+                else:
+                    image.save(save_path, "PNG")
+                self.capture_frame = False
 
             if self._export_queue:
                 self._export_queue.pop(0)
