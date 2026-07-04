@@ -189,13 +189,13 @@ class AnnotationLayer:
         """
         self.sources[source.node].clear_frame(frame)
 
-    def get_next_frame(self, source: Source, current_frame: int) -> Optional[int]:
+    def get_next_frame(self, source_node: str, current_frame: int) -> Optional[int]:
         """Get the next annotated frame
 
         Parameters
         ----------
-        source : Source
-            The source to add the stroke to uses the node not the name
+        source_node : str
+            The source node to add the stroke to uses the node not the name
         current_frame : int
             The current frame
 
@@ -205,15 +205,15 @@ class AnnotationLayer:
             Next annotated from number if one is found, else None
 
         """
-        return self.sources[source.node].next_annotated_frame(current_frame)
+        return self.sources[source_node].next_annotated_frame(current_frame)
 
-    def get_previous_frame(self, source: Source, current_frame: int) -> Optional[int]:
+    def get_previous_frame(self, source_node: str, current_frame: int) -> Optional[int]:
         """Get the previous annotated frame
 
         Parameters
         ----------
-        source : Source
-            The source to add the stroke to uses the node not the name
+        source_node : str
+            The sourcenode  to add the stroke to uses the node not the name
         current_frame : int
             The current frame
 
@@ -223,15 +223,15 @@ class AnnotationLayer:
             Previous annotated from number if one is found, else None
 
         """
-        return self.sources[source.node].previous_annotated_frame(current_frame)
+        return self.sources[source_node].previous_annotated_frame(current_frame)
 
-    def get_annotated_frames(self, source: Source) -> list:
+    def get_annotated_frames(self, source_node: str) -> list:
         """Get a sorted list of all annotated frames on the source
 
         Parameters
         ----------
-        source : Source
-            The source to add the stroke to uses the node not the name
+        source_node : str
+            The source node to add the stroke to uses the node not the name
 
         Returns
         -------
@@ -239,18 +239,18 @@ class AnnotationLayer:
             A sorted list of all annotated frames on the source
 
         """
-        return self.sources[source.node].annotated_frames
+        return self.sources[source_node].annotated_frames
 
     def get_image_boundries(
-        self, source: Source
+        self, source_node: str
     ) -> Optional[tuple[int, int, int, int]]:
         """Get the image boundries so we can capture just the image and not the
         entire viewport
 
         Parameters
         ----------
-        source : Source
-            The source to use. Uses name not node
+        source_node : str
+            The source node to use. Uses name not node
 
         Returns
         -------
@@ -258,7 +258,7 @@ class AnnotationLayer:
             The edges of the image
 
         """
-        geo = crv.imageGeometry(source.name)
+        geo = crv.imageGeometry(source_node)
         if not geo or len(geo) == 0:
             # We don't have an image
             return

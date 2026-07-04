@@ -5,7 +5,6 @@ import rv.commands as crv
 from rv.qtutils import sessionWindow
 from typing import Optional, TYPE_CHECKING
 from utils import ImagePoint, Source
-from pprint import pprint
 
 from inspector import Inspector
 from annotations import AnnotationLayer
@@ -49,6 +48,21 @@ class AnnyMode(MinorMode):
                     "key-down--delete",
                     self.delete_selected_stroke,
                     "Delete annotation",
+                ),
+                (
+                    "key-down--=",
+                    self.show_ui,
+                    "Show UI",
+                ),
+                (
+                    "key-down--'",
+                    self.next_annotation,
+                    "Next annotation",
+                ),
+                (
+                    "key-down--;",
+                    self.previous_annotation,
+                    "Previous annotation",
                 ),
             ],
             None,
