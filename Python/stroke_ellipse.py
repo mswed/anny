@@ -158,7 +158,7 @@ class EllipseStroke(Stroke):
                 self._draw_handle(start)
                 self._draw_handle(end)
 
-            # Cleanup - so we don't confuse RV
-            GL.glDisable(GL.GL_LINE_SMOOTH)
-            GL.glDisable(GL.GL_BLEND)
-            GL.glLineWidth(1.0)
+        # Cleanup - so we don't confuse RV
+        GL.glDisable(GL.GL_LINE_SMOOTH)
+        GL.glDisable(GL.GL_BLEND)
+        GL.glLineWidth(1.0)
