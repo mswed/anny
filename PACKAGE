@@ -1,6 +1,6 @@
 package: Anny
 author: Moshe Swed
-version: 1.0
+version: 1.0.1
 rv: 2025
 openrv: 4.0.0
 requires: ""
