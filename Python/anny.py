@@ -68,7 +68,7 @@ class AnnyMode(MinorMode):
             None,
             [
                 (
-                    "Anny",
+                    "Anny Tools",  # For some reason this shows up on MacOS
                     [
                         ("Show UI", self.show_ui, "=", None),
                         ("Next Annotation", self.next_annotation, "'", None),
