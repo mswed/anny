@@ -5,33 +5,33 @@ Anny is a ShotGrid RV annotation tool with better tools and, hopefully, better u
 
 ### Draw freehand 
 - Basic freehand drawing with multiple colors and line widht 
-![Freehand drawing](assets/freehand.gif)
+<!-- ![Freehand drawing](assets/freehand.gif) -->
 - Smooth the line so drawing with the mouse looks better 
-![Freehand drawing with smoothing](assets/freehand_smoothing.gif)
+<!-- ![Freehand drawing with smoothing](assets/freehand_smoothing.gif) -->
 
 ### Draw straight lines
 - Draw straight lines
 - Put an arrow, a circle or a measurement tick at the end and/or start of a line 
 - Add some text to the middle of a line 
-![Straight line drawing](assets/lines.gif)
+<!-- ![Straight line drawing](assets/lines.gif) -->
 
 ### Draw shapes
 - Draw rectangles with separate settings for stroke and fill 
 - Draw circles/ellipses 
-![Shapes drawing](assets/shapes.gif)
+<!-- ![Shapes drawing](assets/shapes.gif) -->
 
 ### Draw text 
 - Drag to set a text container 
 - The container extends vertically as you type so you don't lose any text 
 - Text can be edited
-![Text drawing](assets/text.gif)
+<!-- ![Text drawing](assets/text.gif) -->
 
 ### Edit annotations 
 - All annotations can be moved around 
 - Straight lines and shapes start and end points can be moved independently to edit the shape 
 - Single annotations can be deleted from the frame 
 - All annotations can be deleted from the frame 
-[Editing demo](assets/editing.gif)
+<!-- [Editing demo](assets/editing.gif) -->
 
 ### Export annotations 
 - Export a single annotation as jpg or png 
