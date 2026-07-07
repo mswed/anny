@@ -6,32 +6,37 @@ Anny is a ShotGrid RV annotation tool with better tools and, hopefully, better u
 ### Draw freehand 
 - Basic freehand drawing with multiple colors and line widht 
 - Smooth the line so drawing with the mouse looks better 
-![Freehand drawing with smoothing](https://github.com/user-attachments/assets/6ba85ec4-be48-4922-acde-b6d789ad5dc8)
+
+https://github.com/user-attachments/assets/6ba85ec4-be48-4922-acde-b6d789ad5dc8
 
 ### Draw straight lines
 - Draw straight lines
 - Put an arrow, a circle or a measurement tick at the end and/or start of a line 
 - Add some text to the middle of a line 
-![Straight line drawing](https://github.com/user-attachments/assets/46db0b4b-4d02-4358-9d84-dc79d8980b2e)
+
+https://github.com/user-attachments/assets/46db0b4b-4d02-4358-9d84-dc79d8980b2e
 
 ### Draw shapes
 - Draw rectangles with separate settings for stroke and fill 
 - Draw circles/ellipses 
-![Shapes drawing](https://github.com/user-attachments/assets/6cbd4b50-d3f7-45d3-9824-b4f97ee8cdcf)
+
+https://github.com/user-attachments/assets/6cbd4b50-d3f7-45d3-9824-b4f97ee8cdcf
 
 ### Draw text 
 - Drag to set a text container 
 - The container extends vertically as you type so you don't lose any text 
 - Text can be edited
-![Text drawing](https://github.com/user-attachments/assets/3de946ce-7302-49ab-9519-0b8511f65266)
+
+https://github.com/user-attachments/assets/3de946ce-7302-49ab-9519-0b8511f65266
 
 ### Edit annotations 
 - All annotations can be moved around 
 - Straight lines and shapes start and end points can be moved independently to edit the shape 
 - Single annotations can be deleted from the frame 
 - All annotations can be deleted from the frame 
-[Editing demo](https://github.com/user-attachments/assets/d89d7640-1a9d-4510-a07c-add546137cb5)
-)
+
+https://github.com/user-attachments/assets/d89d7640-1a9d-4510-a07c-add546137cb5
+
 
 ### Export annotations 
 - Export a single annotation as jpg or png 
