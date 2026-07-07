@@ -346,6 +346,9 @@ class AnnyMode(MinorMode):
         end_pos = ImagePoint(x, y, source=source)
 
         if not self.current_stroke:
+            font = self.inspector.ui.fontCb.currentFont()
+            font.setPointSize(self.inspector.ui.fontSizeField.value())
+
             self.current_stroke = self.active_stroke_type(
                 start=start_pos,
                 end=end_pos,
@@ -359,6 +362,7 @@ class AnnyMode(MinorMode):
                 fill_color=self.inspector.current_fill_color,
                 fill_opacity=self.inspector.ui.fillOpacityField.value(),
                 smoothing=self.inspector.ui.strokeSmoothingField.value(),
+                font=font,
             )
 
             self.annotations.add_stroke(source, frame, self.current_stroke)
