@@ -225,7 +225,7 @@ class AnnotationLayer:
         """
         return self.sources[source_node].previous_annotated_frame(current_frame)
 
-    def get_annotated_frames(self, source_node: str) -> list:
+    def get_annotated_frames(self, source: Source) -> list:
         """Get a sorted list of all annotated frames on the source
 
         Parameters
@@ -239,7 +239,7 @@ class AnnotationLayer:
             A sorted list of all annotated frames on the source
 
         """
-        return self.sources[source_node].annotated_frames
+        return self.sources[source.name].annotated_frames
 
     def get_image_boundries(
         self, source_node: str
