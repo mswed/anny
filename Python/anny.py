@@ -181,6 +181,7 @@ class AnnyMode(MinorMode):
         if "color" in props:
             # Update color
             r, g, b, a = self.current_stroke.color
+            self.inspector.current_stroke_color = (r, g, b, a)
             self.inspector.ui.strokeColorBtn.setStyleSheet(
                 f"background-color: rgba({int(r * 255)}, {int(g * 255)}, {int(b * 255)}, 255); border: none;"
             )
@@ -203,6 +204,7 @@ class AnnyMode(MinorMode):
         if "fill_color" in props:
             # Update fill color
             r, g, b, a = self.current_stroke.fill_color
+            self.inspector.current_fill_color = (r, g, b, a)
             self.inspector.ui.fillColorBtn.setStyleSheet(
                 f"background-color: rgba({int(r * 255)}, {int(g * 255)}, {int(b * 255)}, 255); border: none;"
             )
