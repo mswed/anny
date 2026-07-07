@@ -4,32 +4,43 @@ Anny is a ShotGrid RV annotation tool with better tools and, hopefully, better u
 ## What Anny can do 
 
 ### Draw freehand 
+- Basic freehand drawing with multiple colors and line widht 
+![Freehand drawing](assets/freehand.gif)
 - Smooth the line so drawing with the mouse looks better 
+![Freehand drawing with smoothing](assets/freehand_smoothing.gif)
 
 ### Draw straight lines
+- Draw straight lines
 - Put an arrow, a circle or a measurement tick at the end and/or start of a line 
 - Add some text to the middle of a line 
+![Straight line drawing](assets/lines.gif)
 
 ### Draw shapes
 - Draw rectangles with separate settings for stroke and fill 
 - Draw circles/ellipses 
+![Shapes drawing](assets/shapes.gif)
 
 ### Draw text 
 - Drag to set a text container 
 - The container extends vertically as you type so you don't lose any text 
 - Text can be edited
+![Text drawing](assets/text.gif)
 
 ### Edit annotations 
 - All annotations can be moved around 
 - Straight lines and shapes start and end points can be moved independently to edit the shape 
 - Single annotations can be deleted from the frame 
 - All annotations can be deleted from the frame 
+[Editing demo](assets/editing.gif)
 
 ### Export annotations 
 - Export a single annotation as jpg or png 
 - Export all annotations to a user specified folder 
 
 ## What Anny will do later
+
+### Copy/Paste strokes 
+Move annotations to different frames or copy paste to keep the stroke's setting 
 
 ### Undo strokes 
 Add an undo/redo queue and hopefully bind it to ctrl + z
@@ -47,9 +58,6 @@ Add the ability to set default color, width caps and text to all annotations
 RV sync uses RV paint nodes to draw and serialize strokes. Anny stroke system is not compatible with this workflow. 
 ### Fix the creeping sense that the VFX industry is doomed 
 
-
-# Known issues 
-On macOS the Anny menu might not show up. You can, however, open the UI by hitting `=` and going between annotated frames by clicking `;` and `'`
 
 ## Installation 
 Anny is installed like any RV package. 
