@@ -13,6 +13,7 @@ from stroke_freehand import FreehandStroke
 from stroke_ellipse import EllipseStroke
 from stroke_rect import RectStroke
 from stroke_line import LineStroke
+from pprint import pprint
 
 if TYPE_CHECKING:
     from rv_stubs import Event
@@ -94,6 +95,59 @@ class AnnyMode(MinorMode):
         # Bind the select tool for start
         self.bind_select_tool()
         self.inspector.show()
+
+        import sgtk
+
+        print(">>>", sgtk.platform.current_engine())
+        crv.sendInternalEvent("external-sgtk-initialize")
+
+        import sgtk
+
+        engine = sgtk.platform.current_engine()
+        source = crv.sourcesRendered()[0]
+        source_name = source["node"]
+        info = crv.getStringProperty(f"{source_name}.tracking.info")
+        sg_data = {}
+        for i in range(0, len(info) - 1, 2):
+            sg_data[info[i]] = info[i + 1]
+        pprint(sg_data)
+
+        project_id = int(sg_data["project"].split("|")[0].split("_")[1])
+        subject = "Moshe's note it is!"
+        shot_id = int(sg_data["shot"].split("|")[0].split("_")[1])
+        version_id = int(sg_data["id"])
+        note_links = [
+            {"type": "Shot", "id": shot_id},
+            {"type": "Version", "id": version_id},
+        ]
+        user = engine.context.user
+        content = "This is some note text"
+        pprint("--------- info --------------")
+        print(project_id)
+        print(subject)
+        print(note_links)
+        print(user)
+        print(content)
+        print("------------------------------")
+        data = {
+            "project": {"type": "Project", "id": project_id},
+            "subject": subject,
+            "note_links": note_links,
+            "user": user,
+            "content": content,
+        }
+        sg = engine.shotgun
+        note = sg.create("Note", data)
+        img = "/home/mswed/arrow.png"
+        success = False
+        for _ in range(4):
+            try:
+                success = sg.upload("Note", note["id"], img, field_name="attachments")
+                if success:
+                    break
+            except Exception as e:
+                print(e)
+                pass
 
     def bind_draw_tool(self):
         """
