@@ -97,6 +97,7 @@ class AnnyMode(MinorMode):
             -10,  # set the override value (default is 0)
         )
 
+    # --- UI ---
     def show_ui(self, event: Event):
         """Show the Anny UI and bind the select tool to start
 
@@ -185,7 +186,7 @@ class AnnyMode(MinorMode):
             for w in widgets:
                 getattr(self.inspector.ui, w).setEnabled(is_enabled)
 
-    def update_ui_values(self):
+    def _update_ui_values(self):
         """
         Update the UI with the selected stroke info
         """
@@ -248,102 +249,79 @@ class AnnyMode(MinorMode):
         else:
             self.inspector.ui.strokeSmoothingField.setEnabled(False)
 
-    def select_start(self, event: Event):
-        """Select a stroke
+    # --- Binding ---
+    def set_active_tool(self, tool_id: int):
+        """
+        Set the tool type we're using and bind it to mouse events based on the stroke_types dict
 
         Parameters
         ----------
-        event : Event
-            The event that called the selection process (mouse click in this case)
+        tool_id : int
+            The tool id (0 is select)
 
         """
-        # Get frame (we store the annotation against the frame)
-        frame = crv.frame()
 
-        source = self.get_source(event)
-        if not source:
-            return
-
-        # Image space position
-        x, y = crv.eventToImageSpace(source.name, event.pointer())
-        image_point = ImagePoint(x, y, source=source)
-
-        # Deselect current stroke if needed
+        # Clear the current stroke
         if self.current_stroke:
             self.current_stroke.selected = False
-            self.current_stroke.editing = False
             self.current_stroke = None
             self.drag_start_pos = None
-            self.drag_type = ""
 
-        for stroke in self.annotations.sources[source.node].strokes_at_frame(frame):
-            if stroke.detect_handle_selection(image_point, "start"):
-                self.drag_type = "start"
-            elif stroke.detect_handle_selection(image_point, "end"):
-                self.drag_type = "end"
-            elif stroke.detect_selection(image_point):
-                self.drag_type = "stroke"
-            else:
-                continue
+        if tool_id == 0:
+            # We are selecting
+            self._bind_select_tool()
+        else:
+            self.active_stroke_type = self.stroke_types.get(tool_id, LineStroke)
+            self._bind_draw_tool()
+            self._update_ui_states(self.active_stroke_type.editable_properties)
 
-            if self.drag_type != "":
-                self.current_stroke = stroke
-                self.current_stroke.selected = True
-                self.drag_start_pos = image_point
-
-                self.update_ui_states(self.current_stroke.editable_properties)
-                self.update_ui_values()
-
-                break
-
-    def select_update(self, event: Event):
-        """Draging after a stroke selection moves the stroke
-
-        Parameters
-        ----------
-        event : Event
-            The user is dragging the stroke
-
+    def _bind_draw_tool(self):
         """
-        if not self.current_stroke or not self.drag_start_pos:
-            # We have nothing selected
-            return
-
-        source = self.get_source(event)
-        if not source:
-            return
-
-        # Starting position
-        starting_position = self.drag_start_pos
-
-        # Current position
-        x, y = crv.eventToImageSpace(source.name, event.pointer())
-        current_position = ImagePoint(x, y, source=source)
-
-        # Calculate delta between start and current
-        dx = current_position.x - starting_position.x
-        dy = current_position.y - starting_position.y
-
-        # Move to new location
-        self.current_stroke.move(dx, dy, move_type=self.drag_type)
-
-        # Update our start position so the next move works
-        self.drag_start_pos.x = current_position.x
-        self.drag_start_pos.y = current_position.y
-
-        crv.redraw()
-
-    def select_end(self, event: Event):
-        """When we're done dragging a stroke we disable the drag_start_pos attr
-
-        Parameters
-        ----------
-        event : Event
-            The user stopped dragging
-
+        Bind the mouse actions to the draw tool
         """
-        self.drag_start_pos = None
+        crv.bind(
+            "py-anny-mode", "global", "pointer-1--push", self.draw_start, "Start draw"
+        )
+        crv.bind("py-anny-mode", "global", "pointer-1--drag", self.draw_update, "Draw")
+        crv.bind(
+            "py-anny-mode", "global", "pointer-1--release", self.draw_end, "End draw"
+        )
 
+    def _bind_select_tool(self):
+        """
+        Bind the mouse actions to the select tool
+        """
+        crv.bind(
+            "py-anny-mode", "global", "pointer-1--push", self.select_start, "Select"
+        )
+        crv.bind(
+            "py-anny-mode", "global", "pointer-1--drag", self.select_update, "Move"
+        )
+        crv.bind(
+            "py-anny-mode", "global", "pointer-1--release", self.select_end, "Release"
+        )
+
+    def unbind(self):
+        """
+        Unbind all mouse actions so other modes can take over
+        """
+        crv.unbind(
+            "py-anny-mode",
+            "global",
+            "pointer-1--push",
+        )
+        crv.unbind(
+            "py-anny-mode",
+            "global",
+            "pointer-1--drag",
+        )
+        crv.unbind(
+            "py-anny-mode",
+            "global",
+            "pointer-1--release",
+        )
+
+    # --- Drawing ---
     def draw_start(self, event: Event):
         """The start of the stroke drawing process
 
@@ -356,7 +334,7 @@ class AnnyMode(MinorMode):
         # Get frame (we store the annotation against the frame)
         frame = crv.frame()
 
-        source = self.get_source(event)
+        source = self._get_source(event)
         if not source:
             return
 
@@ -419,26 +397,102 @@ class AnnyMode(MinorMode):
         """
         self.current_stroke = None
 
-    def get_source(self, event: Event) -> Optional[Source]:
-        """Get the source name and node under the mouse. Used to convert clicks to image space
+    # --- Selection and Editing ---
+    def select_start(self, event: Event):
+        """Select a stroke
 
         Parameters
         ----------
         event : Event
-            The rv event that called the function. In our case a mouse click
-
-        Returns
-        -------
-        Optional[Source]
-            Source name and node
+            The event that called the selection process (mouse click in this case)
 
         """
-        # We need to get the source to convert the mouse position to image space
-        source = crv.sourceAtPixel(event.pointer())
-        if not source:
-            return None
+        # Get frame (we store the annotation against the frame)
+        frame = crv.frame()
 
-        return Source(name=source[0]["name"], node=source[0]["node"])
+        source = self._get_source(event)
+        if not source:
+            return
+
+        # Image space position
+        x, y = crv.eventToImageSpace(source.name, event.pointer())
+        image_point = ImagePoint(x, y, source=source)
+
+        # Deselect current stroke if needed
+        if self.current_stroke:
+            self.current_stroke.selected = False
+            self.current_stroke.editing = False
+            self.current_stroke = None
+            self.drag_start_pos = None
+            self.drag_type = ""
+
+        for stroke in self.annotations.sources[source.node].strokes_at_frame(frame):
+            if stroke.detect_handle_selection(image_point, "start"):
+                self.drag_type = "start"
+            elif stroke.detect_handle_selection(image_point, "end"):
+                self.drag_type = "end"
+            elif stroke.detect_selection(image_point):
+                self.drag_type = "stroke"
+            else:
+                continue
+
+            if self.drag_type != "":
+                self.current_stroke = stroke
+                self.current_stroke.selected = True
+                self.drag_start_pos = image_point
+
+                self._update_ui_states(self.current_stroke.editable_properties)
+                self._update_ui_values()
+
+                break
+
+    def select_update(self, event: Event):
+        """Draging after a stroke selection moves the stroke
+
+        Parameters
+        ----------
+        event : Event
+            The user is dragging the stroke
+
+        """
+        if not self.current_stroke or not self.drag_start_pos:
+            # We have nothing selected
+            return
+
+        source = self._get_source(event)
+        if not source:
+            return
+
+        # Starting position
+        starting_position = self.drag_start_pos
+
+        # Current position
+        x, y = crv.eventToImageSpace(source.name, event.pointer())
+        current_position = ImagePoint(x, y, source=source)
+
+        # Calculate delta between start and current
+        dx = current_position.x - starting_position.x
+        dy = current_position.y - starting_position.y
+
+        # Move to new location
+        self.current_stroke.move(dx, dy, move_type=self.drag_type)
+
+        # Update our start position so the next move works
+        self.drag_start_pos.x = current_position.x
+        self.drag_start_pos.y = current_position.y
+
+        crv.redraw()
+
+    def select_end(self, event: Event):
+        """When we're done dragging a stroke we disable the drag_start_pos attr
+
+        Parameters
+        ----------
+        event : Event
+            The user stopped dragging
+
+        """
+        self.drag_start_pos = None
 
     def delete_selected_stroke(self, event):
         frame = crv.frame()
@@ -461,26 +515,7 @@ class AnnyMode(MinorMode):
         self.current_stroke = None
         crv.redraw()
 
-    def unbind(self):
-        """
-        Unbind all mouse actions so other modes can take over
-        """
-        crv.unbind(
-            "py-anny-mode",
-            "global",
-            "pointer-1--push",
-        )
-        crv.unbind(
-            "py-anny-mode",
-            "global",
-            "pointer-1--drag",
-        )
-        crv.unbind(
-            "py-anny-mode",
-            "global",
-            "pointer-1--release",
-        )
-
+    # --- Navigation ---
     def next_annotation(self, event: Event):
         """Go to the next annotated frame
 
@@ -511,6 +546,7 @@ class AnnyMode(MinorMode):
         previous_frame = self.annotations.get_previous_frame(source_node, frame)
         crv.setFrame(previous_frame)
 
+    # --- Exporting ---
     def export_annotation(self, event: Event):
         """Export a single annotated frame
 
@@ -520,14 +556,50 @@ class AnnyMode(MinorMode):
             The export annotation menu item has been clicked
 
         """
-        self.save_to = self.inspector.get_save_path()
-        if self.save_to:
-            # Cancel any batch exports
-            self._export_queue = []
-            self._capture_current_frame(batch=False)
+        save_path = self.inspector.get_save_path()
+        if save_path:
+            self.exporter.queue_frame(save_path, callback=self.on_export_complete)
 
     def export_all_annotations(self, event):
-        """Export a all annotated frames. Due to the way RV processes it's loop
+        """
+        Shows a dialog allowing the user to select an export dir
+        Parameters
+        ----------
+        event : Event
+            The export all annotation menu item has been clicked
+
+        """
+        save_dir = self.inspector.get_save_path("directory")
+        source = Source(crv.sourcesRendered()[0])
+        name = self._get_annotation_name(source)
+        frames = self.annotations.get_annotated_frames(source)
+        if save_dir:
+            self.exporter.queue_all(
+                save_dir=save_dir,
+                file_name=name,
+                frames=frames,
+                callback=self.on_export_complete,
+            )
+
+    def on_export_complete(self, frames):
+        log.info("Export is done!")
+        self.inspector.show_message("Frame export completed!")
+
+    def export_annotations_to_temp(self):
+        """
+        Sets the export dir to the systems temp directory
+
+        Parameters
+        ----------
+        event : Event
+            The export all annotation menu item has been clicked
+
+        """
+        self.save_dir = Path(tempfile.gettempdir())
+        self.export_annotations_to_temp()
+
+    def _export_annotations_to_dir(self):
+        """Export a all annotated frames to a directory. Due to the way RV processes it's loop
         we can not simply loop over the frame list. Instead we create a queue and
         advance through it one frame at a time
 
@@ -597,10 +669,43 @@ class AnnyMode(MinorMode):
             The viewport frame has changed
 
         """
-        if self._export_queue and crv.frame() == self._export_queue[0]:
-            # We are expporting a frame AND the current frame matches the one we want to export
-            self._capture_current_frame()
+        self.exporter.on_frame_changed()
 
+    # --- Production Integration ---
+    def initialize_integration(self, event: Event):
+        log.debug("Source load completed initializing SG")
+        if self.shotgrid.has_sgtk():
+            self.shotgrid.initialize()
+
+    def create_sg_note(self, event: Event):
+        pass
+
+    def upload_to_sg(self, annotated_frames):
+        print(annotated_frames)
+
+    # --- Helpers ---
+    def _get_source(self, event: Event) -> Optional[Source]:
+        """Get the source name and node under the mouse. Used to convert clicks to image space
+
+        Parameters
+        ----------
+        event : Event
+            The rv event that called the function. In our case a mouse click
+
+        Returns
+        -------
+        Optional[Source]
+            Source name and node
+
+        """
+        # We need to get the source to convert the mouse position to image space
+        source = crv.sourceAtPixel(event.pointer())
+        if not source:
+            return None
+
+        return Source(source[0])
+
+    # --- Rendering ---
     def render(self, event: Event):
         """Render all of the annotations in the layer and if the frame is marked for
         capture save it
