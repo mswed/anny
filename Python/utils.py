@@ -2,6 +2,7 @@ from __future__ import annotations
 import math
 from typing import Optional, NamedTuple, NewType, Self
 import rv.commands as crv
+from pprint import pprint
 
 
 class Vector:

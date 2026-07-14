@@ -6,6 +6,7 @@ from rv.qtutils import sessionWindow
 from typing import Optional, TYPE_CHECKING
 from utils import ImagePoint, Source
 
+from sg_integration import ShotGrid
 from inspector import Inspector
 from annotations import AnnotationLayer
 from stroke_text import TextStroke
@@ -22,6 +23,7 @@ if TYPE_CHECKING:
 class AnnyMode(MinorMode):
     def __init__(self) -> None:
         MinorMode.__init__(self)
+        self.shotgrid = ShotGrid()
         self.inspector = Inspector(mode=self, parent=sessionWindow())
         self.annotations = AnnotationLayer()
         self.current_stroke = None
@@ -45,6 +47,11 @@ class AnnyMode(MinorMode):
             [
                 ("render", self.render, "Render overlay"),
                 ("frame-changed", self.on_frame_changed, "Save frame"),
+                (
+                    "source-group-complete",
+                    self.initialize_integration,
+                    "Try to initialize SG integration",
+                ),
                 (
                     "key-down--delete",
                     self.delete_selected_stroke,
@@ -76,7 +83,13 @@ class AnnyMode(MinorMode):
                         ("Previous Annotation", self.previous_annotation, ";", None),
                         ("_", None),
                         ("Export Frame", self.export_annotation, None, None),
-                        ("Export All Frames", self.export_all_annotations, None, None),
+                        (
+                            "Export All Frames",
+                            self.export_all_annotations,
+                            None,
+                            None,
+                        ),
+                        ("SG note", self.create_sg_note, None, None),
                     ],
                 )
             ],
@@ -93,119 +106,72 @@ class AnnyMode(MinorMode):
             The RV event that called the action
         """
         # Bind the select tool for start
-        self.bind_select_tool()
+        self._bind_select_tool()
         self.inspector.show()
 
-        import sgtk
+        # import sgtk
+        #
+        # print(">>>", sgtk.platform.current_engine())
+        # crv.sendInternalEvent("external-sgtk-initialize")
+        #
+        # import sgtk
+        #
+        # engine = sgtk.platform.current_engine()
+        # source = Source(crv.sourcesRendered()[0])
+        # print(source.name)
+        # print(source.node)
+        # print(source.sg_data)
+        # source_name = source["node"]
+        # pprint(crv.properties(source_name))
+        #
+        # info = crv.getStringProperty(f"{source_name}.media.name")
+        # print(">>>>", info)
+        # info = crv.getStringProperty(f"{source_name}.media.movie")
+        # print(">>>>", info)
+        # info = crv.getStringProperty(f"{source_name}.tracking.info")
+        # sg_data = {}
+        # for i in range(0, len(info) - 1, 2):
+        #     sg_data[info[i]] = info[i + 1]
+        # pprint(sg_data)
+        #
+        # project_id = int(sg_data["project"].split("|")[0].split("_")[1])
+        # subject = "Moshe's note it is!"
+        # shot_id = int(sg_data["shot"].split("|")[0].split("_")[1])
+        # version_id = int(sg_data["id"])
+        # note_links = [
+        #     {"type": "Shot", "id": shot_id},
+        #     {"type": "Version", "id": version_id},
+        # ]
+        # user = engine.context.user
+        # content = "This is some note text"
+        # pprint("--------- info --------------")
+        # print(project_id)
+        # print(subject)
+        # print(note_links)
+        # print(user)
+        # print(content)
+        # print("------------------------------")
+        # data = {
+        #     "project": {"type": "Project", "id": project_id},
+        #     "subject": subject,
+        #     "note_links": note_links,
+        #     "user": user,
+        #     "content": content,
+        # }
+        # sg = engine.shotgun
+        # note = sg.create("Note", data)
+        # img = "/home/mswed/arrow.png"
+        # success = False
+        # for _ in range(4):
+        #     try:
+        #         success = sg.upload("Note", note["id"], img, field_name="attachments")
+        #         if success:
+        #             break
+        #     except Exception as e:
+        #         print(e)
+        #         pass
 
-        print(">>>", sgtk.platform.current_engine())
-        crv.sendInternalEvent("external-sgtk-initialize")
-
-        import sgtk
-
-        engine = sgtk.platform.current_engine()
-        source = crv.sourcesRendered()[0]
-        source_name = source["node"]
-        info = crv.getStringProperty(f"{source_name}.tracking.info")
-        sg_data = {}
-        for i in range(0, len(info) - 1, 2):
-            sg_data[info[i]] = info[i + 1]
-        pprint(sg_data)
-
-        project_id = int(sg_data["project"].split("|")[0].split("_")[1])
-        subject = "Moshe's note it is!"
-        shot_id = int(sg_data["shot"].split("|")[0].split("_")[1])
-        version_id = int(sg_data["id"])
-        note_links = [
-            {"type": "Shot", "id": shot_id},
-            {"type": "Version", "id": version_id},
-        ]
-        user = engine.context.user
-        content = "This is some note text"
-        pprint("--------- info --------------")
-        print(project_id)
-        print(subject)
-        print(note_links)
-        print(user)
-        print(content)
-        print("------------------------------")
-        data = {
-            "project": {"type": "Project", "id": project_id},
-            "subject": subject,
-            "note_links": note_links,
-            "user": user,
-            "content": content,
-        }
-        sg = engine.shotgun
-        note = sg.create("Note", data)
-        img = "/home/mswed/arrow.png"
-        success = False
-        for _ in range(4):
-            try:
-                success = sg.upload("Note", note["id"], img, field_name="attachments")
-                if success:
-                    break
-            except Exception as e:
-                print(e)
-                pass
-
-    def bind_draw_tool(self):
-        """
-        Bind the mouse actions to the draw tool
-        """
-        crv.bind(
-            "py-anny-mode", "global", "pointer-1--push", self.draw_start, "Start draw"
-        )
-        crv.bind("py-anny-mode", "global", "pointer-1--drag", self.draw_update, "Draw")
-        crv.bind(
-            "py-anny-mode", "global", "pointer-1--release", self.draw_end, "End draw"
-        )
-
-    def bind_select_tool(self):
-        """
-        Bind the mouse actions to the select tool
-        """
-        crv.bind(
-            "py-anny-mode", "global", "pointer-1--push", self.select_start, "Select"
-        )
-        crv.bind(
-            "py-anny-mode", "global", "pointer-1--drag", self.select_update, "Move"
-        )
-        crv.bind(
-            "py-anny-mode", "global", "pointer-1--release", self.select_end, "Release"
-        )
-
-    def set_active_tool(self, tool_id: int):
-        """
-        Set the tool type we're using and bind it to mouse events based on the stroke_types dict
-
-        Parameters
-        ----------
-        tool_id : int
-            The tool id (0 is select)
-
-        """
-
-        # Clear the current stroke
-        if self.current_stroke:
-            self.current_stroke.selected = False
-            self.current_stroke = None
-            self.drag_start_pos = None
-
-        if tool_id == 0:
-            # We are selecting
-            self.bind_select_tool()
-        else:
-            self.active_stroke_type = self.stroke_types.get(tool_id, LineStroke)
-            self.bind_draw_tool()
-            self.update_ui_states(self.active_stroke_type.editable_properties)
-
-    def update_ui(self):
-        stroke = self.current_stroke or self.active_stroke_type
-        if not stroke:
-            return
-
-    def update_ui_states(self, stroke_props: list[str]):
+    def _update_ui_states(self, stroke_props: list[str]):
         """Enable and/or disable ui features based on the stroke type
 
         Parameters
@@ -594,6 +560,14 @@ class AnnyMode(MinorMode):
             # We need to move to the target frame
             crv.setFrame(target)
 
+    def _get_annotation_name(self, source: Source):
+        if self.shotgrid.is_initialized() and source is not None:
+            # Grab the annotation name from SG
+            print("source is", source)
+            return f"anny_{source.version_name}"
+
+        return "annotation"
+
     def _capture_current_frame(self, batch: bool = True):
         """Mark the frame to be captured. The actual capturing happens in the render event.
         If it's a batch capture also set file name
@@ -604,8 +578,9 @@ class AnnyMode(MinorMode):
             True if we're capturing multiple frames else False
 
         """
-        if batch and self.save_dir:
-            self.save_to = self.save_dir / f"annotation.{crv.frame()}.png"
+        if batch and self.save_dir is not None:
+            name = self._get_annotation_name()
+            self.save_to = self.save_dir / f"annotation_{name}.{crv.frame()}.png"
 
         self.capture_frame = True
         crv.redraw()
