@@ -455,7 +455,7 @@ class AnnyMode(MinorMode):
         frame = crv.frame()
         current_sources = crv.sourcesRendered()
         for source in current_sources:
-            s = Source(source["name"], source["node"])
+            s = Source(source)
             self.annotations.clear_frame(s, frame)
 
         self.current_stroke = None
@@ -541,8 +541,11 @@ class AnnyMode(MinorMode):
         if self.save_dir:
             os.makedirs(self.save_dir, exist_ok=True)
             current_source = crv.sourcesRendered()
-            source = Source(current_source[0]["name"], current_source[0]["node"])
-            self._export_queue = self.annotations.get_annotated_frames(source)
+            self._export_source = Source(current_source[0])
+            self._export_queue = self.annotations.get_annotated_frames(
+                self._export_source
+            )
+            self.exported_files = []
             self._advance_export()
 
     def _advance_export(self):

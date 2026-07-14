@@ -558,9 +558,43 @@ class Color(NamedTuple):
     a: float
 
 
-class Source(NamedTuple):
-    name: str
-    node: str
+class Source:
+    def __init__(self, source: dict) -> None:
+        self.node = source.get("node")
+        self.name = source.get("name")
+        self._sg_data = {}
+
+    @property
+    def sg_data(self):
+        print("sg data called")
+        pprint(self._sg_data)
+        print("---------------")
+        if not self._sg_data:
+            data = crv.getStringProperty(f"{self.node}.tracking.info")
+            for i in range(0, len(data) - 1, 2):
+                self._sg_data[data[i]] = data[i + 1]
+
+        print("collecting sg data")
+        pprint(self._sg_data)
+        return self._sg_data
+
+    @property
+    def version_id(self):
+        vid = self._sg_data.get("id", None)
+        if vid:
+            return int(vid)
+
+    @property
+    def version_name(self):
+        return self._sg_data.get("name")
+
+
+class Note(NamedTuple):
+    project: dict
+    subject: str
+    note_links: list
+    user: dict
+    content: str
 
 
 SourceName = NewType("SourceName", str)

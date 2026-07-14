@@ -239,7 +239,7 @@ class AnnotationLayer:
             A sorted list of all annotated frames on the source
 
         """
-        return self.sources[source.name].annotated_frames
+        return self.sources[source.node].annotated_frames
 
     def get_image_boundries(
         self, source_node: str
