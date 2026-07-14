@@ -20,7 +20,7 @@ class SourceAnnotations:
         self.frames: dict[int, list[Stroke]] = defaultdict(list)
 
     @property
-    def annotated_frames(self) -> list:
+    def annotated_frames(self) -> list[int]:
         """A sorted list of frames with strokes
 
         Returns
@@ -280,7 +280,7 @@ class AnnotationLayer:
             int(bounds.height),
         )
 
-    def capture_frame_buffer(self, event) -> Optional[QtGui.QImage]:
+    def capture_frame_buffer(self, event) -> QtGui.QImage:
         """Capture the current frame as a QImage
 
         Parameters

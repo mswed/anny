@@ -563,7 +563,7 @@ class AnnyMode(MinorMode):
         if save_path:
             self.exporter.queue_frame(save_path, callback=self.on_export_complete)
 
-    def export_all_annotations(self, event):
+    def export_all_annotations(self, event: Event):
         """
         Shows a dialog allowing the user to select an export dir
         Parameters
@@ -584,83 +584,37 @@ class AnnyMode(MinorMode):
                 callback=self.on_export_complete,
             )
 
-    def on_export_complete(self, frames):
-        log.info("Export is done!")
+    def on_export_complete(self, frames: list):
+        """Called when the exported is finished exporting frames. Shows a confirmation dialog
+
+        Parameters
+        ----------
+        frames : list
+            List of frames that were exported
+
+        """
         self.inspector.show_message("Frame export completed!")
 
-    def export_annotations_to_temp(self):
-        """
-        Sets the export dir to the systems temp directory
+    def _get_annotation_name(self, source: Source) -> str:
+        """Get the base file name for an annotation export
 
         Parameters
         ----------
-        event : Event
-            The export all annotation menu item has been clicked
+        source : Source
+            The annotation source
+
+        Returns
+        -------
+        str
+
+            any_annotation if we don't have a shotgrid source or anny_shotgrid_version_name
 
         """
-        self.save_dir = Path(tempfile.gettempdir())
-        self.export_annotations_to_temp()
-
-    def _export_annotations_to_dir(self):
-        """Export a all annotated frames to a directory. Due to the way RV processes it's loop
-        we can not simply loop over the frame list. Instead we create a queue and
-        advance through it one frame at a time
-
-        Parameters
-        ----------
-        event : Event
-            The export all annotation menu item has been clicked
-
-        """
-        if self.save_dir:
-            os.makedirs(self.save_dir, exist_ok=True)
-            current_source = crv.sourcesRendered()
-            self._export_source = Source(current_source[0])
-            self._export_queue = self.annotations.get_annotated_frames(
-                self._export_source
-            )
-            self.exported_files = []
-            self._advance_export()
-
-    def _advance_export(self):
-        """Advance in the export queue. If we are already on the correct frame we simply capture item
-        otherwise we move to the target frame which will trigger a render
-        """
-        if not self._export_queue:
-            return
-
-        target = self._export_queue[0]
-        if crv.frame() == target:
-            # We are already on the right frame, just capture
-            self._capture_current_frame()
-        else:
-            # We need to move to the target frame
-            crv.setFrame(target)
-
-    def _get_annotation_name(self, source: Source):
         if self.shotgrid.is_initialized() and source is not None:
             # Grab the annotation name from SG
-            print("source is", source)
             return f"anny_{source.version_name}"
 
-        return "annotation"
-
-    def _capture_current_frame(self, batch: bool = True):
-        """Mark the frame to be captured. The actual capturing happens in the render event.
-        If it's a batch capture also set file name
-
-        Parameters
-        ----------
-        batch : bool
-            True if we're capturing multiple frames else False
-
-        """
-        if batch and self.save_dir is not None:
-            name = self._get_annotation_name()
-            self.save_to = self.save_dir / f"annotation_{name}.{crv.frame()}.png"
-
-        self.capture_frame = True
-        crv.redraw()
+        return "anny_annotation"
 
     def on_frame_changed(self, event: Event):
         """When the frame changes check if we need to capture it
@@ -715,7 +669,7 @@ class AnnyMode(MinorMode):
         Parameters
         ----------
         event : Event
-            [TODO:description]
+            RV's internal render event. RV calls it regularly, but we also force it using redraw() during export
 
         """
         self.annotations.render(event)
