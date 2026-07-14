@@ -1,5 +1,8 @@
 from __future__ import annotations
 import os
+import tempfile
+from pathlib import Path
+import logging
 from rv.rvtypes import MinorMode
 import rv.commands as crv
 from rv.qtutils import sessionWindow
@@ -9,6 +12,7 @@ from utils import ImagePoint, Source
 from sg_integration import ShotGrid
 from inspector import Inspector
 from annotations import AnnotationLayer
+from exporter import Exporter
 from stroke_text import TextStroke
 from stroke_freehand import FreehandStroke
 from stroke_ellipse import EllipseStroke
@@ -19,6 +23,9 @@ from pprint import pprint
 if TYPE_CHECKING:
     from rv_stubs import Event
 
+log = logging.getLogger(__name__)
+log.setLevel("DEBUG")
+
 
 class AnnyMode(MinorMode):
     def __init__(self) -> None:
@@ -26,6 +33,7 @@ class AnnyMode(MinorMode):
         self.shotgrid = ShotGrid()
         self.inspector = Inspector(mode=self, parent=sessionWindow())
         self.annotations = AnnotationLayer()
+        self.exporter = Exporter()
         self.current_stroke = None
         self.drag_start_pos = None
         self.drag_type = ""
@@ -36,11 +44,6 @@ class AnnyMode(MinorMode):
             4: EllipseStroke,
             5: TextStroke,
         }
-        self.capture_frame = False
-        self._export_queue = []
-        self.frames_to_save = 0
-        self.save_dir = None
-        self.save_to = None
 
         self.init(
             "py-anny-mode",
@@ -609,7 +612,6 @@ class AnnyMode(MinorMode):
             The export all annotation menu item has been clicked
 
         """
-        self.save_dir = self.inspector.get_save_path("directory")
         if self.save_dir:
             os.makedirs(self.save_dir, exist_ok=True)
             current_source = crv.sourcesRendered()
@@ -717,23 +719,9 @@ class AnnyMode(MinorMode):
 
         """
         self.annotations.render(event)
-        if self.capture_frame:
+        if self.exporter.capture_pending:
             image = self.annotations.capture_frame_buffer(event)
-
-            if image and self.save_to is not None:
-                save_path = str(self.save_to)
-                if save_path.lower().endswith((".jpg", ".jpeg")):
-                    image.save(save_path, "JPG", 95)
-                else:
-                    image.save(save_path, "PNG")
-                self.capture_frame = False
-
-            if self._export_queue:
-                self._export_queue.pop(0)
-                self._advance_export()
-            else:
-                self.save_dir = None
-                self.save_to = None
+            self.exporter.save_annotated_frame(image)
 
 
 def createMode():

@@ -249,3 +249,7 @@ class Inspector(QtWidgets.QDialog):
         if dialog.exec():
             files = dialog.selectedFiles()
             return Path(files[0]) if files else None
+
+    def show_message(self, message, message_type="information"):
+        if message_type == "information":
+            QtWidgets.QMessageBox.information(self, "Info!", message)
