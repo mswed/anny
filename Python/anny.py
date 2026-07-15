@@ -79,8 +79,7 @@ class AnnyMode(MinorMode):
                     ],
                 )
             ],
-            "py-anny-mode",  # Needed to set the mode to override other mode binding
-            -10,  # set the override value (default is 0)
+            "z",  # Set the binding priority so they take over, but still allow the timeline to scrub
         )
 
     def show_ui(self, event: Event):
@@ -579,6 +578,10 @@ class AnnyMode(MinorMode):
             [TODO:description]
 
         """
+        # We first reject the event so the UI render can work
+        event.reject()
+
+        # Then we render
         self.annotations.render(event)
         if self.capture_frame:
             image = self.annotations.capture_frame_buffer(event)
