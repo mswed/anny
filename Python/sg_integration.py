@@ -8,6 +8,12 @@ class ShotGrid:
         self.engine = None
         self.sg = None
 
+    @property
+    def user(self) -> dict:
+        if self.engine:
+            return self.engine.context.user
+        return {}
+
     def has_sgtk(self):
         spec = find_spec("sgtk")
         if spec:

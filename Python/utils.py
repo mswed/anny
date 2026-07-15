@@ -1,8 +1,7 @@
 from __future__ import annotations
 import math
-from typing import Optional, NamedTuple, NewType, Self
+from typing import Optional, NamedTuple, Self, TypedDict
 import rv.commands as crv
-from pprint import pprint
 
 
 class Vector:
@@ -565,37 +564,67 @@ class Source:
         self._sg_data = {}
 
     @property
-    def sg_data(self):
-        print("sg data called")
-        pprint(self._sg_data)
-        print("---------------")
+    def sg_data(self) -> dict[str, str]:
+        """Get the source SG data as storked in source.tracking.info, stores it in the class
+        and returns it
+
+        Returns
+        -------
+        Dict[str, str]
+            The SG data if availabe else empty dict
+
+        """
         if not self._sg_data:
             data = crv.getStringProperty(f"{self.node}.tracking.info")
             for i in range(0, len(data) - 1, 2):
                 self._sg_data[data[i]] = data[i + 1]
 
-        print("collecting sg data")
-        pprint(self._sg_data)
         return self._sg_data
 
     @property
-    def version_id(self):
-        vid = self._sg_data.get("id", None)
+    def version_id(self) -> Optional[int]:
+        """Get the shotgrid version if if available
+
+        Returns
+        -------
+        Optional[int]
+            The version number
+
+        """
+        vid = self.sg_data.get("id", None)
         if vid:
             return int(vid)
 
     @property
-    def version_name(self):
-        return self._sg_data.get("name")
+    def version_name(self) -> str:
+        """Get the shotgrid version name if available, else 'annotation'
+
+        Returns
+        -------
+        str
+            The name of the SG version or 'annotation'
+
+        """
+        return self.sg_data.get("name", "annotation")
+
+    @property
+    def project_id(self) -> Optional[int]:
+        project_id = self.sg_data.get("project", None)
+        if project_id:
+            project_id = project_id.split("|")[0].split("_")[1]
+            return int(project_id)
+
+    @property
+    def shot_id(self) -> Optional[int]:
+        shot_id = self.sg_data.get("shot", None)
+        if shot_id:
+            shot_id = shot_id.split("|")[0].split("_")[1]
+            return int(shot_id)
 
 
-class Note(NamedTuple):
+class Note(TypedDict):
     project: dict
     subject: str
     note_links: list
     user: dict
     content: str
-
-
-SourceName = NewType("SourceName", str)
-SourceNode = NewType("SourceNode", str)

@@ -7,7 +7,7 @@ from rv.rvtypes import MinorMode
 import rv.commands as crv
 from rv.qtutils import sessionWindow
 from typing import Optional, TYPE_CHECKING
-from utils import ImagePoint, Source
+from utils import ImagePoint, Note, Source
 
 from sg_integration import ShotGrid
 from inspector import Inspector
@@ -138,7 +138,6 @@ class AnnyMode(MinorMode):
         #     sg_data[info[i]] = info[i + 1]
         # pprint(sg_data)
         #
-        # project_id = int(sg_data["project"].split("|")[0].split("_")[1])
         # subject = "Moshe's note it is!"
         # shot_id = int(sg_data["shot"].split("|")[0].split("_")[1])
         # version_id = int(sg_data["id"])
@@ -634,7 +633,36 @@ class AnnyMode(MinorMode):
             self.shotgrid.initialize()
 
     def create_sg_note(self, event: Event):
-        pass
+        source = Source(crv.sourcesRendered()[0])
+
+        # We first create the SG note
+        note_links = [
+            {"type": "Shot", "id": source.shot_id},
+            {"type": "Version", "id": source.version_id},
+        ]
+
+        note: Note = {
+            "project": {"type": "Project", "id": source.project_id},
+            "subject": "Temp subject",
+            "note_links": note_links,
+            "user": self.shotgrid.user,
+            "content": "Note body",
+        }
+
+        self.shotgrid.create_note(note)
+
+        # # We first need to export all of the annotations
+        # save_dir = self.inspector.get_save_path("directory")
+        # name = self._get_annotation_name(source)
+        # frames = self.annotations.get_annotated_frames(source)
+        # if save_dir:
+        #     self.exporter.queue_all(
+        #         save_dir=save_dir,
+        #         file_name=name,
+        #         frames=frames,
+        #         callback=self.on_export_complete,
+        #     )
+        # pass
 
     def upload_to_sg(self, annotated_frames):
         print(annotated_frames)
