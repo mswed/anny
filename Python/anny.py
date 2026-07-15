@@ -397,6 +397,12 @@ class AnnyMode(MinorMode):
             The mouse click is released
 
         """
+        if self.current_stroke:
+            if not self.current_stroke.is_valid:
+                frame = crv.frame()
+                source = self.current_stroke.source
+                self.annotations.delete_stroke(source, frame, self.current_stroke)
+
         self.current_stroke = None
 
     def get_source(self, event: Event) -> Optional[Source]:
