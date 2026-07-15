@@ -38,6 +38,7 @@ class AnnyMode(MinorMode):
         self.frames_to_save = 0
         self.save_dir = None
         self.save_to = None
+        self._capture_armed = False
 
         self.init(
             "py-anny-mode",
@@ -79,8 +80,7 @@ class AnnyMode(MinorMode):
                     ],
                 )
             ],
-            "py-anny-mode",  # Needed to set the mode to override other mode binding
-            -10,  # set the override value (default is 0)
+            "z",  # Set the binding priority so they take over, but still allow the timeline to scrub
         )
 
     def show_ui(self, event: Event):
@@ -397,6 +397,12 @@ class AnnyMode(MinorMode):
             The mouse click is released
 
         """
+        if self.current_stroke:
+            if not self.current_stroke.is_valid:
+                frame = crv.frame()
+                source = self.current_stroke.source
+                self.annotations.delete_stroke(source, frame, self.current_stroke)
+
         self.current_stroke = None
 
     def get_source(self, event: Event) -> Optional[Source]:
@@ -579,24 +585,38 @@ class AnnyMode(MinorMode):
             [TODO:description]
 
         """
+        # We first reject the event so the UI render can work
+        event.reject()
+
+        # Then we render
         self.annotations.render(event)
+
+        # When a captrure is requeted we save the image
         if self.capture_frame:
-            image = self.annotations.capture_frame_buffer(event)
+            if self._capture_armed:
+                # We are capturing the frame
+                image = self.annotations.capture_frame_buffer(event)
 
-            if image and self.save_to is not None:
-                save_path = str(self.save_to)
-                if save_path.lower().endswith((".jpg", ".jpeg")):
-                    image.save(save_path, "JPG", 95)
+                if image and self.save_to is not None:
+                    save_path = str(self.save_to)
+                    if save_path.lower().endswith((".jpg", ".jpeg")):
+                        image.save(save_path, "JPG", 95)
+                    else:
+                        image.save(save_path, "PNG")
+                    self.capture_frame = False
+
+                if self._export_queue:
+                    self._export_queue.pop(0)
+                    self._advance_export()
                 else:
-                    image.save(save_path, "PNG")
-                self.capture_frame = False
+                    self.save_dir = None
+                    self.save_to = None
 
-            if self._export_queue:
-                self._export_queue.pop(0)
-                self._advance_export()
+                self._capture_armed = False
             else:
-                self.save_dir = None
-                self.save_to = None
+                # We have a render delay arm the capture and queue a render
+                self._capture_armed = True
+                crv.redraw()
 
 
 def createMode():

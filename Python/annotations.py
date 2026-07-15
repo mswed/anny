@@ -5,7 +5,6 @@ from OpenGL import GL
 from PySide6 import QtGui
 import rv.commands as crv
 from utils import ImagePoint, ScreenPoint, RectEdges, Source, Color
-from pprint import pprint
 
 
 class SourceAnnotations:
@@ -82,7 +81,7 @@ class SourceAnnotations:
             The frame to remove the strokes from
 
         """
-        self.frames[frame] = []
+        self.frames.pop(frame, None)
 
     def next_annotated_frame(self, current_frame: int) -> Optional[int]:
         """Search forward for the next frame that has annotations on it
@@ -176,6 +175,9 @@ class AnnotationLayer:
         """
 
         self.sources[source.node].remove(frame, stroke)
+        if not self.sources[source.node].strokes_at_frame(frame):
+            # The frame no longer has any annotations clear it
+            self.clear_frame(source, frame)
 
     def clear_frame(self, source: Source, frame: int):
         """Delete all annotations on the frame
@@ -239,7 +241,7 @@ class AnnotationLayer:
             A sorted list of all annotated frames on the source
 
         """
-        return self.sources[source.name].annotated_frames
+        return self.sources[source.node].annotated_frames
 
     def get_image_boundries(
         self, source_node: str
@@ -401,6 +403,19 @@ class Stroke:
     # ############################################################################
     # PUBLIC INTERFACE
     # ############################################################################
+
+    @property
+    def is_valid(self) -> bool:
+        """Checks if the storke is valid so we can delete it if not
+
+        Returns
+        -------
+        bool
+            True if start and end are different False otherwise (the stroke has no length)
+        """
+
+        return self.start != self.end
+
     @property
     def color(self) -> Color:
         """Get the stroke's color
