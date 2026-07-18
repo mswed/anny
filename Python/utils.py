@@ -93,6 +93,13 @@ class Point:
     def __sub__(self, vector: Vector):
         return self.__class__(self.x - vector.x, self.y - vector.y, source=self.source)
 
+    def __eq__(self, other: object) -> bool:
+        if type(self) is not type(other):
+            # We can only compare the same type of point
+            return NotImplemented
+
+        return self.x == other.x and self.y == other.y
+
     def __iter__(self):
         yield self.x
         yield self.y
