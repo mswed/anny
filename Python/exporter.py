@@ -21,7 +21,10 @@ class Exporter:
         self._exported_files = []
         self._on_export_complete = None
 
+        # Two step capture process, first we mark for capture
+        # Then we arm the capture after the first render
         self.capture_pending = False
+        self.capture_armed = False
 
     def queue_frame(
         self, path: Path, callback: Optional[Callable[[list[str]], None]] = None

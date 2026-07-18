@@ -18,7 +18,6 @@ from stroke_freehand import FreehandStroke
 from stroke_ellipse import EllipseStroke
 from stroke_rect import RectStroke
 from stroke_line import LineStroke
-from pprint import pprint
 
 if TYPE_CHECKING:
     from rv_stubs import Event
@@ -712,35 +711,18 @@ class AnnyMode(MinorMode):
         # Then we render
         self.annotations.render(event)
         if self.exporter.capture_pending:
-            image = self.annotations.capture_frame_buffer(event)
-            self.exporter.save_annotated_frame(image)
-
-        # When a captrure is requeted we save the image
-        if self.capture_frame:
-            if self._capture_armed:
-                # We are capturing the frame
+            # A capture was requested
+            if self.exporter.capture_armed:
+                # We have armed the capture. I.e. we gave RV
+                # a chance to render the frame
                 image = self.annotations.capture_frame_buffer(event)
-
-                if image and self.save_to is not None:
-                    save_path = str(self.save_to)
-                    if save_path.lower().endswith((".jpg", ".jpeg")):
-                        image.save(save_path, "JPG", 95)
-                    else:
-                        image.save(save_path, "PNG")
-                    self.capture_frame = False
-
-                if self._export_queue:
-                    self._export_queue.pop(0)
-                    self._advance_export()
-                else:
-                    self.save_dir = None
-                    self.save_to = None
-
-                self._capture_armed = False
+                self.exporter.save_annotated_frame(image)
+                self.exporter.capture_armed = False
             else:
-                # We have a render delay arm the capture and queue a render
-                self._capture_armed = True
-                crv.redraw()
+                # The capture was not armed, RV might not be in sync
+                # with our capture. Arm it an queue a render
+                self.exporter.capture_armed = True
+                crv.redraw
 
 
 def createMode():
