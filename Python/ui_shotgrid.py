@@ -1,0 +1,156 @@
+# -*- coding: utf-8 -*-
+
+################################################################################
+## Form generated from reading UI file 'shotgrid.ui'
+##
+## Created by: Qt User Interface Compiler version 6.11.1
+##
+## WARNING! All changes made in this file will be lost when recompiling UI file!
+################################################################################
+
+from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
+    QMetaObject, QObject, QPoint, QRect,
+    QSize, QTime, QUrl, Qt)
+from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
+    QFont, QFontDatabase, QGradient, QIcon,
+    QImage, QKeySequence, QLinearGradient, QPainter,
+    QPalette, QPixmap, QRadialGradient, QTransform)
+from PySide6.QtWidgets import (QApplication, QComboBox, QDialog, QFormLayout,
+    QGridLayout, QLabel, QPushButton, QSizePolicy,
+    QVBoxLayout, QWidget)
+
+from text_editor import TextEditWithCommit
+import resources_rc
+
+class Ui_Shotgrid(object):
+    def setupUi(self, Shotgrid):
+        if not Shotgrid.objectName():
+            Shotgrid.setObjectName(u"Shotgrid")
+        Shotgrid.resize(348, 577)
+        self.verticalLayout = QVBoxLayout(Shotgrid)
+        self.verticalLayout.setObjectName(u"verticalLayout")
+        self.mainLayout = QVBoxLayout()
+        self.mainLayout.setObjectName(u"mainLayout")
+        self.mainLayout.setContentsMargins(8, 8, 8, 8)
+        self.gridLayout = QGridLayout()
+        self.gridLayout.setObjectName(u"gridLayout")
+        self.artistNameLabel = QLabel(Shotgrid)
+        self.artistNameLabel.setObjectName(u"artistNameLabel")
+
+        self.gridLayout.addWidget(self.artistNameLabel, 2, 1, 1, 1)
+
+        self.versionNameLabel = QLabel(Shotgrid)
+        self.versionNameLabel.setObjectName(u"versionNameLabel")
+        font = QFont()
+        font.setPointSize(12)
+        self.versionNameLabel.setFont(font)
+
+        self.gridLayout.addWidget(self.versionNameLabel, 1, 0, 1, 1)
+
+        self.shotNameLabel = QLabel(Shotgrid)
+        self.shotNameLabel.setObjectName(u"shotNameLabel")
+        font1 = QFont()
+        font1.setPointSize(14)
+        font1.setBold(True)
+        self.shotNameLabel.setFont(font1)
+
+        self.gridLayout.addWidget(self.shotNameLabel, 0, 0, 1, 1)
+
+        self.artistLabel = QLabel(Shotgrid)
+        self.artistLabel.setObjectName(u"artistLabel")
+
+        self.gridLayout.addWidget(self.artistLabel, 2, 0, 1, 1)
+
+        self.statusLabel = QLabel(Shotgrid)
+        self.statusLabel.setObjectName(u"statusLabel")
+
+        self.gridLayout.addWidget(self.statusLabel, 3, 0, 1, 1)
+
+        self.statusCb = QComboBox(Shotgrid)
+        self.statusCb.setObjectName(u"statusCb")
+
+        self.gridLayout.addWidget(self.statusCb, 3, 1, 1, 1)
+
+
+        self.mainLayout.addLayout(self.gridLayout)
+
+        self.textField = TextEditWithCommit(Shotgrid)
+        self.textField.setObjectName(u"textField")
+        self.textField.setLineWrapColumnOrWidth(0)
+
+        self.mainLayout.addWidget(self.textField)
+
+        self.formLayout = QFormLayout()
+        self.formLayout.setObjectName(u"formLayout")
+        self.toLabel = QLabel(Shotgrid)
+        self.toLabel.setObjectName(u"toLabel")
+
+        self.formLayout.setWidget(0, QFormLayout.ItemRole.LabelRole, self.toLabel)
+
+        self.toComboBox = QComboBox(Shotgrid)
+        self.toComboBox.setObjectName(u"toComboBox")
+
+        self.formLayout.setWidget(0, QFormLayout.ItemRole.FieldRole, self.toComboBox)
+
+        self.ccLabel = QLabel(Shotgrid)
+        self.ccLabel.setObjectName(u"ccLabel")
+
+        self.formLayout.setWidget(1, QFormLayout.ItemRole.LabelRole, self.ccLabel)
+
+        self.ccCb = QComboBox(Shotgrid)
+        self.ccCb.setObjectName(u"ccCb")
+
+        self.formLayout.setWidget(1, QFormLayout.ItemRole.FieldRole, self.ccCb)
+
+        self.tagsLabel = QLabel(Shotgrid)
+        self.tagsLabel.setObjectName(u"tagsLabel")
+
+        self.formLayout.setWidget(2, QFormLayout.ItemRole.LabelRole, self.tagsLabel)
+
+        self.tagsCb = QComboBox(Shotgrid)
+        self.tagsCb.setObjectName(u"tagsCb")
+
+        self.formLayout.setWidget(2, QFormLayout.ItemRole.FieldRole, self.tagsCb)
+
+        self.noteTypeLabel = QLabel(Shotgrid)
+        self.noteTypeLabel.setObjectName(u"noteTypeLabel")
+
+        self.formLayout.setWidget(3, QFormLayout.ItemRole.LabelRole, self.noteTypeLabel)
+
+        self.noteTypeCb = QComboBox(Shotgrid)
+        self.noteTypeCb.setObjectName(u"noteTypeCb")
+
+        self.formLayout.setWidget(3, QFormLayout.ItemRole.FieldRole, self.noteTypeCb)
+
+
+        self.mainLayout.addLayout(self.formLayout)
+
+        self.submitBtn = QPushButton(Shotgrid)
+        self.submitBtn.setObjectName(u"submitBtn")
+
+        self.mainLayout.addWidget(self.submitBtn)
+
+
+        self.verticalLayout.addLayout(self.mainLayout)
+
+
+        self.retranslateUi(Shotgrid)
+
+        QMetaObject.connectSlotsByName(Shotgrid)
+    # setupUi
+
+    def retranslateUi(self, Shotgrid):
+        Shotgrid.setWindowTitle(QCoreApplication.translate("Shotgrid", u"Anny", None))
+        self.artistNameLabel.setText(QCoreApplication.translate("Shotgrid", u"Artist Name", None))
+        self.versionNameLabel.setText(QCoreApplication.translate("Shotgrid", u"Version Name", None))
+        self.shotNameLabel.setText(QCoreApplication.translate("Shotgrid", u"Shot Name", None))
+        self.artistLabel.setText(QCoreApplication.translate("Shotgrid", u"Artist", None))
+        self.statusLabel.setText(QCoreApplication.translate("Shotgrid", u"Status", None))
+        self.textField.setPlaceholderText(QCoreApplication.translate("Shotgrid", u"Write your note here", None))
+        self.toLabel.setText(QCoreApplication.translate("Shotgrid", u"To:", None))
+        self.ccLabel.setText(QCoreApplication.translate("Shotgrid", u"CC:", None))
+        self.tagsLabel.setText(QCoreApplication.translate("Shotgrid", u"Tags:", None))
+        self.noteTypeLabel.setText(QCoreApplication.translate("Shotgrid", u"Type:", None))
+        self.submitBtn.setText(QCoreApplication.translate("Shotgrid", u"Submit", None))
+    # retranslateUi
+

@@ -1,6 +1,7 @@
 from importlib.util import find_spec
 import time
 from utils import Note, SGResult
+from pprint import pprint
 
 try:
     from tank_vendor.shotgun_api3 import ShotgunError
@@ -38,6 +39,7 @@ class ShotGrid:
 
             self.engine = sgtk.platform.current_engine()
             self.sg = self.engine.shotgun
+            print("SG initialized")
 
     def get_active_users(self) -> SGResult:
         if self.sg is None:
@@ -62,6 +64,37 @@ class ShotGrid:
             return {"ok": False, "message": str(e), "data": []}
 
         return {"ok": True, "message": "", "data": groups}
+
+    def get_tags(self) -> SGResult:
+        if self.sg is None:
+            return {"ok": False, "message": "No ShotGrid connection found", "data": []}
+
+        try:
+            tags = self.sg.find("Tag", [], ["name"])
+        except ShotgunError as e:
+            return {"ok": False, "message": str(e), "data": []}
+
+        return {"ok": True, "message": "", "data": tags}
+
+    def get_status_list(self, entity_type, project_id):
+        if self.sg is None:
+            return {"ok": False, "message": "No ShotGrid connection found", "data": []}
+
+        try:
+            schema = self.sg.schema_field_read(
+                entity_type, "sg_status_list", {"type": "Project", "id": project_id}
+            )
+            sg_status_list = schema.get("sg_status_list", {})
+            properties = sg_status_list.get("properties", {})
+            active_values = properties.get("display_values", {}).get("value", {})
+            hidden_values = properties.get("hidden_values", {}).get("value", [])
+            for v in hidden_values:
+                active_values.pop(v)
+
+            return {"ok": True, "message": "", "data": active_values}
+
+        except ShotgunError as e:
+            return {"ok": False, "message": str(e), "data": []}
 
     def create_note(self, note: Note) -> SGResult:
         if self.sg is None:

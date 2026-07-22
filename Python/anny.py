@@ -112,6 +112,7 @@ class AnnyMode(MinorMode):
         """
         # Bind the select tool for start
         self._bind_select_tool()
+        self.inspector.set_sg_tab_visibility(self.shotgrid.is_initialized())
         self.inspector.show()
 
         # import sgtk
@@ -639,8 +640,12 @@ class AnnyMode(MinorMode):
             self.shotgrid.initialize()
 
     def create_sg_note_and_upload(self, Event):
-        pprint(self.shotgrid.get_active_users())
-        pprint(self.shotgrid.get_groups())
+        # pprint(self.shotgrid.get_active_users())
+        # pprint(self.shotgrid.get_groups())
+        # pprint(self.shotgrid.get_tags())
+        source = Source(crv.sourcesRendered()[0])
+        pprint(self.shotgrid.get_status_list("Version", source.project_id))
+        return
         source = Source(crv.sourcesRendered()[0])
         note = self._create_sg_note(source)
         if not note["ok"]:

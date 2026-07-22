@@ -5,6 +5,7 @@ from pathlib import Path
 import rv.commands as crv
 
 from ui_inspector import Ui_Inspector
+from ui_shotgrid import Ui_Shotgrid
 from style import ANNY_STYLESHEET
 import resources_rc
 from color_picker import ColorPickerDrowpdown
@@ -24,13 +25,28 @@ class Inspector(QtWidgets.QDialog):
     def __init__(self, mode, parent=None) -> None:
         super().__init__(parent)
         self.mode = mode
+
+        # Set up tab system
+        layout = QtWidgets.QVBoxLayout(self)
+        self.tabs = QtWidgets.QTabWidget()
+        layout.addWidget(self.tabs)
+
+        # --- Annotations Tab ---
+        annotation_widget = QtWidgets.QWidget()
         self.ui = Ui_Inspector()
+        self.ui.setupUi(annotation_widget)
+        self.tabs.addTab(annotation_widget, "Annotate")
         self.current_stroke_color = (1.0, 0.0, 0.0, 1.0)
         self.current_fill_color = (0.0, 0.0, 0.0, 1.0)
         self.start_cap = None
         self.end_cap = None
 
-        self.ui.setupUi(self)
+        # --- Shotgrid Tab ---
+        sg_widget = QtWidgets.QWidget()
+        self.sg_ui = Ui_Shotgrid()
+        self.sg_ui.setupUi(sg_widget)
+        self.tabs.addTab(sg_widget, "ShotGrid Note")
+
         # Set the overall style
         self.setStyle(QtWidgets.QStyleFactory.create("Fusion"))
         # Override some settings to make it nicer
@@ -71,6 +87,7 @@ class Inspector(QtWidgets.QDialog):
 
         # Default to the select tool
         self.ui.selectBtn.setChecked(True)
+        self.resize(380, 660)
 
     def closeEvent(self, arg__1: QtGui.QCloseEvent) -> None:
         self.mode.unbind()
@@ -235,6 +252,9 @@ class Inspector(QtWidgets.QDialog):
 
     def clear_frame(self):
         self.mode.clear_frame()
+
+    def set_sg_tab_visibility(self, status):
+        self.tabs.setTabVisible(1, status)
 
     def get_save_path(self, save_type="file") -> Optional[Path]:
         dialog = QtWidgets.QFileDialog(self, "Export Annotation", str(Path.home()))
