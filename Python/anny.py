@@ -8,7 +8,7 @@ from rv.rvtypes import MinorMode
 import rv.commands as crv
 from rv.qtutils import sessionWindow
 from typing import Any, Optional, TYPE_CHECKING
-from utils import ImagePoint, Note, Source
+from utils import ImagePoint, Note, Source, SGResult
 
 from sg_integration import ShotGrid
 from inspector import Inspector
@@ -19,6 +19,7 @@ from stroke_freehand import FreehandStroke
 from stroke_ellipse import EllipseStroke
 from stroke_rect import RectStroke
 from stroke_line import LineStroke
+from pprint import pprint
 
 if TYPE_CHECKING:
     from rv_stubs import Event
@@ -634,13 +635,12 @@ class AnnyMode(MinorMode):
 
     # --- Production Integration ---
     def initialize_integration(self, event: Event):
-        log.debug("Source load completed initializing SG")
         if self.shotgrid.has_sgtk():
             self.shotgrid.initialize()
 
     def create_sg_note_and_upload(self, Event):
-        self.shotgrid.get_active_users()
-        return
+        pprint(self.shotgrid.get_active_users())
+        pprint(self.shotgrid.get_groups())
         source = Source(crv.sourcesRendered()[0])
         note = self._create_sg_note(source)
         if not note["ok"]:
@@ -650,9 +650,9 @@ class AnnyMode(MinorMode):
             )
             return
 
-        self._export_annotations_to_sg(source, note["message"]["id"])
+        self._export_annotations_to_sg(source, note["data"][0]["id"])
 
-    def _create_sg_note(self, source) -> dict[Any, Any]:
+    def _create_sg_note(self, source) -> SGResult:
 
         note_links = [
             {"type": "Shot", "id": source.shot_id},
@@ -715,7 +715,7 @@ class AnnyMode(MinorMode):
     def _format_errors(self, results):
         error_details = ["Details", "-----"]
         for r in results:
-            error_details.append(r["message"][0])
+            error_details.append(r["message"])
 
         return "\n".join(error_details)
 

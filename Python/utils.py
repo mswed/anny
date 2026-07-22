@@ -635,3 +635,9 @@ class Note(TypedDict):
     note_links: list
     user: dict
     content: str
+
+
+class SGResult(TypedDict):
+    ok: bool
+    message: str
+    data: list

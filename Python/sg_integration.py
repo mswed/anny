@@ -1,8 +1,6 @@
 from importlib.util import find_spec
-from typing import Optional, Any
 import time
-from utils import Note
-from pprint import pprint
+from utils import Note, SGResult
 
 try:
     from tank_vendor.shotgun_api3 import ShotgunError
@@ -41,31 +39,43 @@ class ShotGrid:
             self.engine = sgtk.platform.current_engine()
             self.sg = self.engine.shotgun
 
-    def get_active_users(self) -> dict[str, Any]:
+    def get_active_users(self) -> SGResult:
         if self.sg is None:
-            return {"ok": False, "message": "No ShotGrid connection found"}
+            return {"ok": False, "message": "No ShotGrid connection found", "data": []}
 
-        users = self.sg.find(
-            "HumanUser", [["sg_status_list", "is", "act"]], ["name", "login"]
-        )
-        groups = self.sg.find("Group", [], ["code"])
+        try:
+            users = self.sg.find(
+                "HumanUser", [["sg_status_list", "is", "act"]], ["name", "login"]
+            )
+        except ShotgunError as e:
+            return {"ok": False, "message": str(e), "data": []}
 
-        pprint(users)
-        pprint(groups)
+        return {"ok": True, "message": "", "data": users}
 
-    def create_note(self, note: Note) -> dict:
+    def get_groups(self) -> SGResult:
         if self.sg is None:
-            return {"ok": False, "message": "No ShotGrid connection found"}
+            return {"ok": False, "message": "No ShotGrid connection found", "data": []}
+
+        try:
+            groups = self.sg.find("Group", [], ["code"])
+        except ShotgunError as e:
+            return {"ok": False, "message": str(e), "data": []}
+
+        return {"ok": True, "message": "", "data": groups}
+
+    def create_note(self, note: Note) -> SGResult:
+        if self.sg is None:
+            return {"ok": False, "message": "No ShotGrid connection found", "data": []}
 
         try:
             res = self.sg.create("Note", note)
-            return {"ok": True, "message": res}
+            return {"ok": True, "message": "", "data": [res]}
         except ShotgunError as e:
-            return {"ok": False, "message": str(e)}
+            return {"ok": False, "message": str(e), "data": []}
 
-    def upload_annotation(self, note_id: int, path: str) -> dict[str, Any]:
+    def upload_annotation(self, note_id: int, path: str) -> SGResult:
         if not self.sg:
-            return {"ok": False, "message": "No ShotGrid connection found"}
+            return {"ok": False, "message": "No ShotGrid connection found", "data": []}
 
         errors = []
         for attempt in range(4):
@@ -76,10 +86,14 @@ class ShotGrid:
                     path,
                     field_name="attachments",
                 )
-                return {"ok": True, "message": f"{path} uploaded succesfully"}
+                return {
+                    "ok": True,
+                    "message": f"{path} uploaded succesfully",
+                    "data": [],
+                }
             except ShotgunError as e:
                 errors.append(str(e))
                 if attempt < 3:
                     time.sleep(2**attempt)
 
-        return {"ok": False, "message": [errors[-1]]}
+        return {"ok": False, "message": errors[-1], "data": []}
