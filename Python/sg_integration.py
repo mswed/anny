@@ -1,6 +1,12 @@
 from importlib.util import find_spec
-from typing import Optional
+from typing import Optional, Any
+import time
 from utils import Note
+
+try:
+    from tank_vendor.shotgun_api3 import ShotgunError
+except ImportError:
+    ShotgunError = Exception
 
 
 class ShotGrid:
@@ -34,29 +40,33 @@ class ShotGrid:
             self.engine = sgtk.platform.current_engine()
             self.sg = self.engine.shotgun
 
-    def create_note(self, note: Note) -> Optional[dict]:
+    def create_note(self, note: Note) -> dict:
         if self.sg is None:
-            return
+            return {"ok": False, "message": "No ShotGrid connection found"}
 
         try:
-            res: dict = self.sg.create("Note", note)
-            return res
-        except Exception as e:
-            print(e)
-            return None
+            res = self.sg.create("Note", note)
+            return {"ok": True, "message": res}
+        except ShotgunError as e:
+            return {"ok": False, "message": str(e)}
 
-    def upload_annotation(self, note, path):
+    def upload_annotation(self, note_id: int, path: str) -> dict[str, Any]:
         if not self.sg:
-            return
+            return {"ok": False, "message": "No ShotGrid connection found"}
 
-        success = False
-        for _ in range(4):
+        errors = []
+        for attempt in range(4):
             try:
-                success = self.sg.upload(
-                    "Note", note["id"], path, field_name="attachments"
+                self.sg.upload(
+                    "Note",
+                    note_id,
+                    path,
+                    field_name="attachments",
                 )
-                if success:
-                    break
-            except Exception as e:
-                print(e)
-                pass
+                return {"ok": True, "message": f"{path} uploaded succesfully"}
+            except ShotgunError as e:
+                errors.append(str(e))
+                if attempt < 3:
+                    time.sleep(2**attempt)
+
+        return {"ok": False, "message": [errors[-1]]}

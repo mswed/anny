@@ -253,3 +253,7 @@ class Inspector(QtWidgets.QDialog):
     def show_message(self, message, message_type="information"):
         if message_type == "information":
             QtWidgets.QMessageBox.information(self, "Info!", message)
+        if message_type == "warning":
+            QtWidgets.QMessageBox.warning(self, "Error!", message)
+        elif message_type == "critical":
+            QtWidgets.QMessageBox.critical(self, "Error!", message)

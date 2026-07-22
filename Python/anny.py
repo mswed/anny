@@ -1,12 +1,13 @@
 from __future__ import annotations
 import os
+import shutil
 import tempfile
 from pathlib import Path
 import logging
 from rv.rvtypes import MinorMode
 import rv.commands as crv
 from rv.qtutils import sessionWindow
-from typing import Optional, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING
 from utils import ImagePoint, Note, Source
 
 from sg_integration import ShotGrid
@@ -92,7 +93,7 @@ class AnnyMode(MinorMode):
                             None,
                             None,
                         ),
-                        ("SG note", self.create_sg_note, None, None),
+                        ("SG note", self.create_sg_note_and_upload, None, None),
                     ],
                 )
             ],
@@ -637,10 +638,20 @@ class AnnyMode(MinorMode):
         if self.shotgrid.has_sgtk():
             self.shotgrid.initialize()
 
-    def create_sg_note(self, event: Event):
+    def create_sg_note_and_upload(self, Event):
         source = Source(crv.sourcesRendered()[0])
+        note = self._create_sg_note(source)
+        if not note["ok"]:
+            self.inspector.show_message(
+                f"Failed to create note\n\n{note.get('message')}",
+                message_type="critical",
+            )
+            return
 
-        # We first create the SG note
+        self._export_annotations_to_sg(source, note["message"]["id"])
+
+    def _create_sg_note(self, source) -> dict[Any, Any]:
+
         note_links = [
             {"type": "Shot", "id": source.shot_id},
             {"type": "Version", "id": source.version_id},
@@ -654,23 +665,57 @@ class AnnyMode(MinorMode):
             "content": "Note body",
         }
 
-        self.shotgrid.create_note(note)
+        return self.shotgrid.create_note(note)
 
-        # # We first need to export all of the annotations
-        # save_dir = self.inspector.get_save_path("directory")
-        # name = self._get_annotation_name(source)
-        # frames = self.annotations.get_annotated_frames(source)
-        # if save_dir:
-        #     self.exporter.queue_all(
-        #         save_dir=save_dir,
-        #         file_name=name,
-        #         frames=frames,
-        #         callback=self.on_export_complete,
-        #     )
-        # pass
+    def _export_annotations_to_sg(self, source, note_id: int):
+        temp_dir = Path(tempfile.mkdtemp(prefix="anny_"))
 
-    def upload_to_sg(self, annotated_frames):
-        print(annotated_frames)
+        # We nest the callback so that it can has the proper context
+        # for clearing the temp dir and the note id
+        def _on_complete(files):
+            try:
+                self._upload_to_sg(files, note_id)
+            finally:
+                shutil.rmtree(temp_dir, ignore_errors=True)
+
+        name = self._get_annotation_name(source)
+        frames = self.annotations.get_annotated_frames(source)
+
+        self.exporter.queue_all(
+            save_dir=temp_dir, file_name=name, frames=frames, callback=_on_complete
+        )
+
+    def _upload_to_sg(self, files, note_id):
+        results = []
+        for f in files:
+            res = self.shotgrid.upload_annotation(note_id, f)
+            results.append(res)
+
+        failed = [r for r in results if not r["ok"]]
+        uploaded = len(files) - len(failed)
+
+        if uploaded == 0:
+            # All of the uploads failed
+            self.inspector.show_message(
+                f"Note created but could not upload annotations\n\n{self._format_errors(failed)}",
+                message_type="critical",
+            )
+        elif failed:
+            # Some of the uploads failes
+            self.inspector.show_message(
+                f"Note created. {uploaded} out of {len(files)} annotations uploaded\n\n{self._format_errors(failed)}",
+                message_type="warning",
+            )
+
+        else:
+            self.inspector.show_message(f"Note create with {uploaded} annotations")
+
+    def _format_errors(self, results):
+        error_details = ["Details", "-----"]
+        for r in results:
+            error_details.append(r["message"][0])
+
+        return "\n".join(error_details)
 
     # --- Helpers ---
     def _get_source(self, event: Event) -> Optional[Source]:
