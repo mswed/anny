@@ -639,6 +639,8 @@ class AnnyMode(MinorMode):
             self.shotgrid.initialize()
 
     def create_sg_note_and_upload(self, Event):
+        self.shotgrid.get_active_users()
+        return
         source = Source(crv.sourcesRendered()[0])
         note = self._create_sg_note(source)
         if not note["ok"]:

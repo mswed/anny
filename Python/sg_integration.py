@@ -2,6 +2,7 @@ from importlib.util import find_spec
 from typing import Optional, Any
 import time
 from utils import Note
+from pprint import pprint
 
 try:
     from tank_vendor.shotgun_api3 import ShotgunError
@@ -39,6 +40,18 @@ class ShotGrid:
 
             self.engine = sgtk.platform.current_engine()
             self.sg = self.engine.shotgun
+
+    def get_active_users(self) -> dict[str, Any]:
+        if self.sg is None:
+            return {"ok": False, "message": "No ShotGrid connection found"}
+
+        users = self.sg.find(
+            "HumanUser", [["sg_status_list", "is", "act"]], ["name", "login"]
+        )
+        groups = self.sg.find("Group", [], ["code"])
+
+        pprint(users)
+        pprint(groups)
 
     def create_note(self, note: Note) -> dict:
         if self.sg is None:
