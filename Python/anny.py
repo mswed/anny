@@ -1,11 +1,11 @@
 from __future__ import annotations
-import os
 import shutil
 import tempfile
 from pathlib import Path
 import logging
 from rv.rvtypes import MinorMode
 import rv.commands as crv
+import rv.extra_commands as erv
 from rv.qtutils import sessionWindow
 from typing import Any, Optional, TYPE_CHECKING
 from utils import ImagePoint, Note, Source, SGResult
@@ -98,7 +98,7 @@ class AnnyMode(MinorMode):
                     ],
                 )
             ],
-            "z",  # Set the binding priority so they take over, but still allow the timeline to scrub
+            # "z",  # Set the binding priority so they take over, but still allow the timeline to scrub
         )
 
     # --- UI ---
@@ -114,67 +114,6 @@ class AnnyMode(MinorMode):
         self._bind_select_tool()
         self.inspector.set_sg_tab_visibility(self.shotgrid.is_initialized())
         self.inspector.show()
-
-        # import sgtk
-        #
-        # print(">>>", sgtk.platform.current_engine())
-        # crv.sendInternalEvent("external-sgtk-initialize")
-        #
-        # import sgtk
-        #
-        # engine = sgtk.platform.current_engine()
-        # source = Source(crv.sourcesRendered()[0])
-        # print(source.name)
-        # print(source.node)
-        # print(source.sg_data)
-        # source_name = source["node"]
-        # pprint(crv.properties(source_name))
-        #
-        # info = crv.getStringProperty(f"{source_name}.media.name")
-        # print(">>>>", info)
-        # info = crv.getStringProperty(f"{source_name}.media.movie")
-        # print(">>>>", info)
-        # info = crv.getStringProperty(f"{source_name}.tracking.info")
-        # sg_data = {}
-        # for i in range(0, len(info) - 1, 2):
-        #     sg_data[info[i]] = info[i + 1]
-        # pprint(sg_data)
-        #
-        # subject = "Moshe's note it is!"
-        # shot_id = int(sg_data["shot"].split("|")[0].split("_")[1])
-        # version_id = int(sg_data["id"])
-        # note_links = [
-        #     {"type": "Shot", "id": shot_id},
-        #     {"type": "Version", "id": version_id},
-        # ]
-        # user = engine.context.user
-        # content = "This is some note text"
-        # pprint("--------- info --------------")
-        # print(project_id)
-        # print(subject)
-        # print(note_links)
-        # print(user)
-        # print(content)
-        # print("------------------------------")
-        # data = {
-        #     "project": {"type": "Project", "id": project_id},
-        #     "subject": subject,
-        #     "note_links": note_links,
-        #     "user": user,
-        #     "content": content,
-        # }
-        # sg = engine.shotgun
-        # note = sg.create("Note", data)
-        # img = "/home/mswed/arrow.png"
-        # success = False
-        # for _ in range(4):
-        #     try:
-        #         success = sg.upload("Note", note["id"], img, field_name="attachments")
-        #         if success:
-        #             break
-        #     except Exception as e:
-        #         print(e)
-        #         pass
 
     def _update_ui_states(self, stroke_props: list[str]):
         """Enable and/or disable ui features based on the stroke type
@@ -338,7 +277,7 @@ class AnnyMode(MinorMode):
         # Get frame (we store the annotation against the frame)
         frame = crv.frame()
 
-        source = self._get_source(event)
+        source = self._get_source_from_mouse(event)
         if not source:
             return
 
@@ -420,7 +359,7 @@ class AnnyMode(MinorMode):
         # Get frame (we store the annotation against the frame)
         frame = crv.frame()
 
-        source = self._get_source(event)
+        source = self._get_source_from_mouse(event)
         if not source:
             return
 
@@ -469,7 +408,7 @@ class AnnyMode(MinorMode):
             # We have nothing selected
             return
 
-        source = self._get_source(event)
+        source = self._get_source_from_mouse(event)
         if not source:
             return
 
@@ -635,22 +574,68 @@ class AnnyMode(MinorMode):
         self.exporter.on_frame_changed()
 
     # --- Production Integration ---
-    def initialize_integration(self, event: Event):
+    def initialize_integration(self, event: Event) -> None:
+        """Initialize SG integration on source load. If we have SGTK access
+        we initialize the connection
+
+        Parameters
+        ----------
+        event : Event
+            source-group-complete RV event, indicating the source has finished loading
+        """
         if self.shotgrid.has_sgtk():
             self.shotgrid.initialize()
+            self.update_sg_fields()
 
-    def create_sg_note_and_upload(self, Event):
-        # pprint(self.shotgrid.get_active_users())
-        # pprint(self.shotgrid.get_groups())
-        # pprint(self.shotgrid.get_tags())
-        source = Source(crv.sourcesRendered()[0])
-        pprint(self.shotgrid.get_status_list("Version", source.project_id))
-        return
-        source = Source(crv.sourcesRendered()[0])
+    def update_sg_fields(self, attempts_left=10):
+        # Get the source and check for SG data
+        source = self._get_source_from_render()
+        if not source:
+            return
+
+        pprint(source.sg_data)
+        shot_name = source.shot_name
+        version_name = source.version_name
+        version_status = source.version_status
+        artist_name = source.artist_name
+        project_id = source.project_id
+        users = self.shotgrid.users
+        tags = self.shotgrid.tags
+        if project_id:
+            status_list = self.shotgrid.get_active_status_list("Version", project_id)
+            status_list = status_list["data"]
+        else:
+            status_list = []
+
+        note_types = self.shotgrid.get_field_valid_values("Note", "sg_note_type")
+        note_types = note_types["data"]
+
+        self.inspector.update_note_data(
+            shot_name,
+            version_name,
+            artist_name,
+            version_status,
+            status_list,
+            note_types,
+        )
+
+        self.inspector.update_sg_lists(users, tags)
+        # print("------------------")
+        #
+        # if status == "ready":
+        #     pprint(source.sg_data)
+        #     return
+        #
+        # if status == "none":
+        #     print("we do not have SG data yet")
+        #     return
+
+    def create_sg_note_and_upload(self):
+        source = self._get_source_from_render()
         note = self._create_sg_note(source)
         if not note["ok"]:
             self.inspector.show_message(
-                f"Failed to create note\n\n{note.get('message')}",
+                f"Failed to create note\n\n{self._format_errors([note])}",
                 message_type="critical",
             )
             return
@@ -664,14 +649,18 @@ class AnnyMode(MinorMode):
             {"type": "Version", "id": source.version_id},
         ]
 
+        user_first_name = self.shotgrid.user.get("name").split(" ")[0]
         note: Note = {
             "project": {"type": "Project", "id": source.project_id},
-            "subject": "Temp subject",
+            "subject": f"{user_first_name}'s note on {self.inspector.sg_ui.versionNameLabel.text()}",
             "note_links": note_links,
             "user": self.shotgrid.user,
-            "content": "Note body",
+            "content": self.inspector.sg_ui.textField.toPlainText(),
+            "addressings_to": [self.inspector.sg_ui.toComboBox.currentData()],
+            "addressings_cc": [self.inspector.sg_ui.ccCb.currentData()],
+            "tags": [self.inspector.sg_ui.tagsCb.currentData()],
+            "sg_note_type": self.inspector.sg_ui.noteTypeCb.currentText(),
         }
-
         return self.shotgrid.create_note(note)
 
     def _export_annotations_to_sg(self, source, note_id: int):
@@ -725,7 +714,7 @@ class AnnyMode(MinorMode):
         return "\n".join(error_details)
 
     # --- Helpers ---
-    def _get_source(self, event: Event) -> Optional[Source]:
+    def _get_source_from_mouse(self, event: Event) -> Optional[Source]:
         """Get the source name and node under the mouse. Used to convert clicks to image space
 
         Parameters
@@ -744,7 +733,24 @@ class AnnyMode(MinorMode):
         if not source:
             return None
 
-        return Source(source[0])
+        return Source(source[0]["node"], source[0]["name"])
+
+    def _get_source_from_group(self, source_group) -> Optional[Source]:
+        try:
+            source_group = source_group.split(";")[0]
+            # Get the RV source node
+            source = erv.nodesInGroupOfType(source_group, "RVFileSource")[0]
+
+            return Source(node=source)
+        except IndexError:
+            return None
+
+    def _get_source_from_render(self) -> Optional[Source]:
+        try:
+            source = crv.sourcesRendered()[0]
+            return Source(node=source["node"], name=source["name"])
+        except IndexError:
+            return None
 
     # --- Rendering ---
     def render(self, event: Event):

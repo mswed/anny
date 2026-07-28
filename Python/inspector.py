@@ -25,10 +25,14 @@ class Inspector(QtWidgets.QDialog):
     def __init__(self, mode, parent=None) -> None:
         super().__init__(parent)
         self.mode = mode
+        self.sg_update_requested = True
 
         # Set up tab system
         layout = QtWidgets.QVBoxLayout(self)
         self.tabs = QtWidgets.QTabWidget()
+        self.ANNOTATION_TAB = 0
+        self.SG_TAB = 1
+        self.tabs.currentChanged.connect(self._on_tab_changed)
         layout.addWidget(self.tabs)
 
         # --- Annotations Tab ---
@@ -94,6 +98,47 @@ class Inspector(QtWidgets.QDialog):
 
         return super().closeEvent(arg__1)
 
+    def _on_tab_changed(self, tab):
+        if tab == 1:
+            self.mode.update_sg_fields()
+
+    def update_note_data(
+        self, shot_name, version_name, artist_name, status, status_list, note_types
+    ):
+        self.sg_ui.shotNameLabel.setText(shot_name)
+        self.sg_ui.versionNameLabel.setText(version_name)
+        self.sg_ui.artistNameLabel.setText(artist_name)
+        self.sg_ui.statusCb.clear()
+        if status_list:
+            for i in status_list:
+                code = i[0]
+                name = i[1]
+                self.sg_ui.statusCb.addItem(f"{code} - {name}", code)
+            self.sg_ui.statusCb.setCurrentIndex(self.sg_ui.statusCb.findData(status))
+
+        if note_types:
+            for t in note_types:
+                self.sg_ui.noteTypeCb.addItem(t)
+
+    def update_sg_lists(self, users, tags):
+        if not self.sg_update_requested:
+            return
+
+        self.sg_ui.toComboBox.clear()
+        self.sg_ui.ccCb.clear()
+
+        for u in users:
+            self.sg_ui.toComboBox.addItem(f"{u.get('name')}({u.get('login')})", u)
+            self.sg_ui.ccCb.addItem(f"{u.get('name')}({u.get('login')})", u)
+
+        for t in tags:
+            self.sg_ui.tagsCb.addItem(t.get("name"), t)
+
+        self.sg_update_requested = False
+
+    def submit_note_to_sg(self):
+        self.mode.create_sg_note_and_upload()
+
     def on_tool_changed(self, tool_id):
         self.mode.set_active_tool(tool_id)
         if tool_id == 0:
@@ -122,6 +167,9 @@ class Inspector(QtWidgets.QDialog):
         self.ui.fontSizeField.valueChanged.connect(self.update_font)
 
         self.ui.clearFrameBtn.clicked.connect(self.clear_frame)
+
+        # SG integration
+        self.sg_ui.submitBtn.clicked.connect(self.submit_note_to_sg)
 
     def show_color_picker(self):
         # We have more thatn one color selector, figure out which was clicked
@@ -253,7 +301,7 @@ class Inspector(QtWidgets.QDialog):
     def clear_frame(self):
         self.mode.clear_frame()
 
-    def set_sg_tab_visibility(self, status):
+    def set_sg_tab_visibility(self, status: bool) -> None:
         self.tabs.setTabVisible(1, status)
 
     def get_save_path(self, save_type="file") -> Optional[Path]:

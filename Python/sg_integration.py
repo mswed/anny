@@ -13,6 +13,9 @@ class ShotGrid:
     def __init__(self) -> None:
         self.engine = None
         self.sg = None
+        self.users = None
+        self.groups = Note
+        self.tags = None
 
     @property
     def user(self) -> dict:
@@ -39,7 +42,18 @@ class ShotGrid:
 
             self.engine = sgtk.platform.current_engine()
             self.sg = self.engine.shotgun
-            print("SG initialized")
+            users = self.get_active_users()
+            if users["ok"]:
+                self.users = users["data"]
+            groups = self.get_groups()
+            if groups["ok"]:
+                self.groups = groups["data"]
+            tags = self.get_tags()
+            if tags["ok"]:
+                self.tags = tags["data"]
+
+            schema = self.sg.schema_field_read("Note")
+            pprint(schema)
 
     def get_active_users(self) -> SGResult:
         if self.sg is None:
@@ -76,7 +90,7 @@ class ShotGrid:
 
         return {"ok": True, "message": "", "data": tags}
 
-    def get_status_list(self, entity_type, project_id):
+    def get_active_status_list(self, entity_type: str, project_id: int) -> SGResult:
         if self.sg is None:
             return {"ok": False, "message": "No ShotGrid connection found", "data": []}
 
@@ -91,8 +105,58 @@ class ShotGrid:
             for v in hidden_values:
                 active_values.pop(v)
 
+            # Convert the dict to a list so we maintain our standard SG Result dict
+            active_values = [(k, v) for k, v in active_values.items()]
+
             return {"ok": True, "message": "", "data": active_values}
 
+        except ShotgunError as e:
+            return {"ok": False, "message": str(e), "data": []}
+
+    def get_field_valid_values(self, entity_type: str, field_name: str) -> SGResult:
+        """Get valid dropdown values for a ShotGrid field
+
+        Parameters
+        ----------
+        entity_type : str
+            The entity we're looking at
+        field_name : str
+            The field we're interested in
+
+        Returns
+        -------
+        SGResult
+            ok: True if we got the field valid values, else False
+            message: empty if we got the values, else error message
+            data: list of valid values if any were found, else empty list
+
+
+        """
+        if self.sg is None:
+            return {"ok": False, "message": "No ShotGrid connection found", "data": []}
+
+        try:
+            print("----------------------")
+            schema = self.sg.schema_field_read(entity_type)
+            for k in schema.keys():
+                print(k)
+            print("searching scheme for", field_name)
+            field = schema.get(field_name)
+            print("found field?")
+            pprint(field)
+            if field is None:
+                return {
+                    "ok": False,
+                    "message": f"Field {field_name} not found on {entity_type}",
+                    "data": [],
+                }
+
+            properties = field.get("properties")
+            valid_values = properties.get("valid_values", {}).get("value", [])
+            pprint(valid_values)
+            return {"ok": True, "message": "", "data": valid_values}
+
+            print("----------------------")
         except ShotgunError as e:
             return {"ok": False, "message": str(e), "data": []}
 

@@ -565,10 +565,31 @@ class Color(NamedTuple):
 
 
 class Source:
-    def __init__(self, source: dict) -> None:
-        self.node = source.get("node")
-        self.name = source.get("name")
+    def __init__(self, node: str, name: Optional[str] = None) -> None:
+        self.node = node
+        self.name = name
         self._sg_data = {}
+
+    @property
+    def sg_data_status(self) -> str:
+        """The shotgrid node stores its state in tracking.infoStatus. We check this to see
+        if the source has any SG data that we can pull. The status can be good pending or none
+
+        Returns
+        -------
+        str
+            ready, pending or none, depending on the state
+        """
+        try:
+            status = crv.getStringProperty(f"{self.node}.tracking.infoStatus")
+        except Exception as e:
+            # We don't have this attribute at all
+            return "none"
+        if not status:
+            # The status is empty
+            return "none"
+
+        return "ready" if status[-1].strip() == "good" else "pending"
 
     @property
     def sg_data(self) -> dict[str, str]:
@@ -590,7 +611,7 @@ class Source:
 
     @property
     def version_id(self) -> Optional[int]:
-        """Get the shotgrid version if if available
+        """Get the shotgrid version id if available
 
         Returns
         -------
@@ -615,6 +636,20 @@ class Source:
         return self.sg_data.get("name", "annotation")
 
     @property
+    def version_status(self) -> Optional[str]:
+        """Get the shotgrid version status if available
+
+        Returns
+        -------
+        Optional[str]
+            The shot version status
+
+        """
+        status = self.sg_data.get("status", None)
+        if status:
+            return status
+
+    @property
     def project_id(self) -> Optional[int]:
         project_id = self.sg_data.get("project", None)
         if project_id:
@@ -627,6 +662,22 @@ class Source:
         if shot_id:
             shot_id = shot_id.split("|")[0].split("_")[1]
             return int(shot_id)
+
+    @property
+    def shot_name(self) -> Optional[str]:
+        shot_name = self.sg_data.get("shot", None)
+        if shot_name:
+            shot_name = shot_name.split("|")[1].partition("_")
+            if shot_name:
+                return shot_name[2]
+
+    @property
+    def artist_name(self) -> Optional[str]:
+        user_name = self.sg_data.get("humanUser", None)
+        if user_name:
+            user_name = user_name.split("|")[1].partition("_")
+            if user_name:
+                return user_name[2]
 
 
 class Note(TypedDict):
