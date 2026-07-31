@@ -24,6 +24,8 @@ from pprint import pprint
 if TYPE_CHECKING:
     from rv_stubs import Event
 
+from ui_test import Window
+
 log = logging.getLogger(__name__)
 log.setLevel("DEBUG")
 
@@ -94,7 +96,7 @@ class AnnyMode(MinorMode):
                             None,
                             None,
                         ),
-                        ("SG note", self.create_sg_note_and_upload, None, None),
+                        ("Flow", self.flow_layout, None, None),
                     ],
                 )
             ],
@@ -102,6 +104,10 @@ class AnnyMode(MinorMode):
         )
 
     # --- UI ---
+    def flow_layout(self, event):
+        self.window = Window()
+        self.window.show()
+
     def show_ui(self, event: Event):
         """Show the Anny UI and bind the select tool to start
 

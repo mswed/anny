@@ -1,5 +1,8 @@
 <RCC>
   <qresource>
+    <file>icons/hashtag-solid-full.svg</file>
+    <file>icons/user-group-solid-full.svg</file>
+    <file>icons/user-solid-full.svg</file>
     <file>icons/down-arrow.svg</file>
     <file>icons/up-arrow.svg</file>
     <file>icons/font-solid-full.svg</file>
