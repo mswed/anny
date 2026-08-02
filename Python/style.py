@@ -197,4 +197,12 @@ ANNY_STYLESHEET = """
         background-color: #332e2b;
         color: #d8d2cc;
     }
+
+    /* --- MultiSelect override. This needs to live in the MultiSelect componennt, but does not seem to work --- */
+    MultiSelect {
+        background-color: #262220;
+        border: 1px solid #555;
+        border-radius: 4px;
+        padding: 2px;
+    }
 """

@@ -14,15 +14,16 @@ class PillBadge(QFrame):
         self.color = color
 
         layout = QHBoxLayout(self)
-        layout.setSpacing(15)
-        layout.setContentsMargins(15, 5, 15, 5)
+        layout.setSpacing(6)
+        layout.setContentsMargins(10, 3, 8, 3)
 
         self.setObjectName("PillBadge")
+        self.setFixedHeight(24)
         self.setStyleSheet(
             f"""
             #PillBadge {{
                 background-color: {self.color};
-                border-radius: 15px
+                border-radius: 12px;
             }}
             """
         )
@@ -42,8 +43,10 @@ class PillBadge(QFrame):
         middle.setStyleSheet("color: white; background: transparent;")
 
         # Set the close button
-        self.delete_btn = QPushButton("X")
-        self.delete_btn.setMaximumWidth(15)
+        icon_path = "/home/mswed/Documents/coding/anny/icons/xmark-solid-full.svg"
+        self.close_icon = self._build_icon(icon_path)
+        self.delete_btn = QPushButton()
+        self.delete_btn.setFixedSize(16, 16)
         self.delete_btn.setObjectName("PillCloseBtn")
         self.delete_btn.setStyleSheet(
             f"""
@@ -62,12 +65,24 @@ class PillBadge(QFrame):
 
     def enterEvent(self, event: QEnterEvent) -> None:
         self.delete_btn.setEnabled(True)
+        self.delete_btn.setIcon(self.close_icon)
 
     def leaveEvent(self, event: QEvent, /) -> None:
         self.delete_btn.setEnabled(False)
+        self.delete_btn.setIcon(QIcon())
 
     def _on_delete_clicked(self):
         self.deleteRequested.emit(self)
+
+    def _build_icon(self, path):
+        icon = QIcon(path)
+        icon_size = QSize(16, 16)
+        pixmap = icon.pixmap(icon_size)
+        tinted_icon = self._tint(pixmap, "white")
+
+        final_icon = QIcon(tinted_icon)
+
+        return final_icon
 
     @staticmethod
     def _tint(pixmap: QPixmap, color: str) -> QPixmap:

@@ -101,9 +101,6 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="1">
-        <widget class="QComboBox" name="toComboBox"/>
-       </item>
        <item row="1" column="0">
         <widget class="QLabel" name="ccLabel">
          <property name="text">
@@ -111,18 +108,12 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
-        <widget class="QComboBox" name="ccCb"/>
-       </item>
        <item row="2" column="0">
         <widget class="QLabel" name="tagsLabel">
          <property name="text">
           <string>Tags:</string>
          </property>
         </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QComboBox" name="tagsCb"/>
        </item>
        <item row="3" column="0">
         <widget class="QLabel" name="noteTypeLabel">
@@ -133,6 +124,15 @@
        </item>
        <item row="3" column="1">
         <widget class="QComboBox" name="noteTypeCb"/>
+       </item>
+       <item row="0" column="1">
+        <widget class="MultiSelect" name="toMs"/>
+       </item>
+       <item row="1" column="1">
+        <widget class="MultiSelect" name="ccMs"/>
+       </item>
+       <item row="2" column="1">
+        <widget class="MultiSelect" name="tagsMs"/>
        </item>
       </layout>
      </item>
@@ -152,6 +152,11 @@
    <class>TextEditWithCommit</class>
    <extends>QTextEdit</extends>
    <header>text_editor</header>
+  </customwidget>
+  <customwidget>
+   <class>MultiSelect</class>
+   <extends>QLineEdit</extends>
+   <header>multi_select</header>
   </customwidget>
  </customwidgets>
  <resources>

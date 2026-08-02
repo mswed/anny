@@ -1,7 +1,6 @@
 from importlib.util import find_spec
 import time
 from utils import Note, SGResult
-from pprint import pprint
 
 try:
     from tank_vendor.shotgun_api3 import ShotgunError
@@ -51,9 +50,6 @@ class ShotGrid:
             tags = self.get_tags()
             if tags["ok"]:
                 self.tags = tags["data"]
-
-            schema = self.sg.schema_field_read("Note")
-            pprint(schema)
 
     def get_active_users(self) -> SGResult:
         if self.sg is None:
@@ -136,14 +132,8 @@ class ShotGrid:
             return {"ok": False, "message": "No ShotGrid connection found", "data": []}
 
         try:
-            print("----------------------")
             schema = self.sg.schema_field_read(entity_type)
-            for k in schema.keys():
-                print(k)
-            print("searching scheme for", field_name)
             field = schema.get(field_name)
-            print("found field?")
-            pprint(field)
             if field is None:
                 return {
                     "ok": False,
@@ -153,10 +143,8 @@ class ShotGrid:
 
             properties = field.get("properties")
             valid_values = properties.get("valid_values", {}).get("value", [])
-            pprint(valid_values)
             return {"ok": True, "message": "", "data": valid_values}
 
-            print("----------------------")
         except ShotgunError as e:
             return {"ok": False, "message": str(e), "data": []}
 

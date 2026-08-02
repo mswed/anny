@@ -124,15 +124,42 @@ class Inspector(QtWidgets.QDialog):
         if not self.sg_update_requested:
             return
 
-        self.sg_ui.toComboBox.clear()
-        self.sg_ui.ccCb.clear()
+        icons = {
+            "HumanUser": "/home/mswed/Documents/coding/anny/icons/user-solid-full.svg",
+            "Group": "/home/mswed/Documents/coding/anny/icons/user-group-solid-full.svg",
+            "Tag": "/home/mswed/Documents/coding/anny/icons/hashtag-solid-full.svg",
+        }
 
-        for u in users:
-            self.sg_ui.toComboBox.addItem(f"{u.get('name')}({u.get('login')})", u)
-            self.sg_ui.ccCb.addItem(f"{u.get('name')}({u.get('login')})", u)
+        self.sg_ui.toMs.clear()
+        self.sg_ui.ccMs.clear()
+        self.sg_ui.tagsMs.clear()
 
-        for t in tags:
-            self.sg_ui.tagsCb.addItem(t.get("name"), t)
+        self.sg_ui.toMs.configure(
+            model=users,
+            record_name=self.display_name,
+            record_id=self.record_id,
+            record_type="type",
+            icons=icons,
+            placeholder="Who MUST know about this note?",
+        )
+
+        self.sg_ui.ccMs.configure(
+            model=users,
+            record_name=self.display_name,
+            record_id=self.record_id,
+            record_type="type",
+            icons=icons,
+            placeholder="Who should know about this note?",
+        )
+
+        self.sg_ui.tagsMs.configure(
+            model=tags,
+            record_name="name",
+            record_id="id",
+            record_type="type",
+            icons=icons,
+            placeholder="Add some tags!",
+        )
 
         self.sg_update_requested = False
 
@@ -325,3 +352,14 @@ class Inspector(QtWidgets.QDialog):
             QtWidgets.QMessageBox.warning(self, "Error!", message)
         elif message_type == "critical":
             QtWidgets.QMessageBox.critical(self, "Error!", message)
+
+    @staticmethod
+    def display_name(data):
+        if data.get("type") == "HumanUser":
+            return f"{data['name']} ({data['login']})"
+        else:
+            return data["name"]
+
+    @staticmethod
+    def record_id(data):
+        return f"{data['id']}-{data['type']}"

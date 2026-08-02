@@ -686,6 +686,10 @@ class Note(TypedDict):
     note_links: list
     user: dict
     content: str
+    addressing_to: list
+    adressing_cc: list
+    tags: list
+    sg_note_type: str
 
 
 class SGResult(TypedDict):

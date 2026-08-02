@@ -19,7 +19,6 @@ from stroke_freehand import FreehandStroke
 from stroke_ellipse import EllipseStroke
 from stroke_rect import RectStroke
 from stroke_line import LineStroke
-from pprint import pprint
 
 if TYPE_CHECKING:
     from rv_stubs import Event
@@ -599,7 +598,6 @@ class AnnyMode(MinorMode):
         if not source:
             return
 
-        pprint(source.sg_data)
         shot_name = source.shot_name
         version_name = source.version_name
         version_status = source.version_status
@@ -626,15 +624,6 @@ class AnnyMode(MinorMode):
         )
 
         self.inspector.update_sg_lists(users, tags)
-        # print("------------------")
-        #
-        # if status == "ready":
-        #     pprint(source.sg_data)
-        #     return
-        #
-        # if status == "none":
-        #     print("we do not have SG data yet")
-        #     return
 
     def create_sg_note_and_upload(self):
         source = self._get_source_from_render()
@@ -662,9 +651,9 @@ class AnnyMode(MinorMode):
             "note_links": note_links,
             "user": self.shotgrid.user,
             "content": self.inspector.sg_ui.textField.toPlainText(),
-            "addressings_to": [self.inspector.sg_ui.toComboBox.currentData()],
-            "addressings_cc": [self.inspector.sg_ui.ccCb.currentData()],
-            "tags": [self.inspector.sg_ui.tagsCb.currentData()],
+            "addressings_to": self.inspector.sg_ui.toMs.selected_data(),
+            "addressings_cc": self.inspector.sg_ui.ccMs.selected_data(),
+            "tags": self.inspector.sg_ui.tagsMs.selected_data(),
             "sg_note_type": self.inspector.sg_ui.noteTypeCb.currentText(),
         }
         return self.shotgrid.create_note(note)

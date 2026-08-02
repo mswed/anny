@@ -40,8 +40,14 @@ class Window(QWidget):
         }
 
         layout = QVBoxLayout(self)
-        multi = MultiSelect(
-            model, self.display_name, self.record_id, "type", icons=icons
+        multi = MultiSelect()
+        multi.configure(
+            model=model,
+            record_name=self.display_name,
+            record_id=self.record_id,
+            record_type="type",
+            icons=icons,
+            placeholder="Search peopls and groups",
         )
         layout.addWidget(multi)
         btn = QPushButton("Submit")

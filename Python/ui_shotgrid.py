@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QDialog, QFormLayout,
     QGridLayout, QLabel, QPushButton, QSizePolicy,
     QVBoxLayout, QWidget)
 
+from multi_select import MultiSelect
 from text_editor import TextEditWithCommit
 import resources_rc
 
@@ -87,30 +88,15 @@ class Ui_Shotgrid(object):
 
         self.formLayout.setWidget(0, QFormLayout.ItemRole.LabelRole, self.toLabel)
 
-        self.toComboBox = QComboBox(Shotgrid)
-        self.toComboBox.setObjectName(u"toComboBox")
-
-        self.formLayout.setWidget(0, QFormLayout.ItemRole.FieldRole, self.toComboBox)
-
         self.ccLabel = QLabel(Shotgrid)
         self.ccLabel.setObjectName(u"ccLabel")
 
         self.formLayout.setWidget(1, QFormLayout.ItemRole.LabelRole, self.ccLabel)
 
-        self.ccCb = QComboBox(Shotgrid)
-        self.ccCb.setObjectName(u"ccCb")
-
-        self.formLayout.setWidget(1, QFormLayout.ItemRole.FieldRole, self.ccCb)
-
         self.tagsLabel = QLabel(Shotgrid)
         self.tagsLabel.setObjectName(u"tagsLabel")
 
         self.formLayout.setWidget(2, QFormLayout.ItemRole.LabelRole, self.tagsLabel)
-
-        self.tagsCb = QComboBox(Shotgrid)
-        self.tagsCb.setObjectName(u"tagsCb")
-
-        self.formLayout.setWidget(2, QFormLayout.ItemRole.FieldRole, self.tagsCb)
 
         self.noteTypeLabel = QLabel(Shotgrid)
         self.noteTypeLabel.setObjectName(u"noteTypeLabel")
@@ -121,6 +107,21 @@ class Ui_Shotgrid(object):
         self.noteTypeCb.setObjectName(u"noteTypeCb")
 
         self.formLayout.setWidget(3, QFormLayout.ItemRole.FieldRole, self.noteTypeCb)
+
+        self.toMs = MultiSelect(Shotgrid)
+        self.toMs.setObjectName(u"toMs")
+
+        self.formLayout.setWidget(0, QFormLayout.ItemRole.FieldRole, self.toMs)
+
+        self.ccMs = MultiSelect(Shotgrid)
+        self.ccMs.setObjectName(u"ccMs")
+
+        self.formLayout.setWidget(1, QFormLayout.ItemRole.FieldRole, self.ccMs)
+
+        self.tagsMs = MultiSelect(Shotgrid)
+        self.tagsMs.setObjectName(u"tagsMs")
+
+        self.formLayout.setWidget(2, QFormLayout.ItemRole.FieldRole, self.tagsMs)
 
 
         self.mainLayout.addLayout(self.formLayout)

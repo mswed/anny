@@ -1,6 +1,6 @@
 from typing import Callable, Optional
-from PySide6.QtCore import QModelIndex, QTimer, Qt
-from PySide6.QtGui import QStandardItem, QStandardItemModel
+from PySide6.QtCore import QEvent, QModelIndex, QTimer, Qt, QObject
+from PySide6.QtGui import QStandardItem, QStandardItemModel, QResizeEvent
 from PySide6.QtWidgets import QCompleter, QLineEdit, QSizePolicy, QWidget
 from flowLayout import FlowLayout
 from pill_badge import PillBadge
@@ -9,35 +9,38 @@ from pill_badge import PillBadge
 class MultiSelect(QWidget):
     def __init__(
         self,
+        parent=None,
+    ):
+        super().__init__(parent)
+        self._record_name_fn = str
+        self._record_id_fn = lambda x: None
+        self._record_type_fn = lambda x: None
+        self._icons = None
+        self._build_ui()
+
+    def configure(
+        self,
         model: list,
         record_name: str | Callable,
         record_id: str | Callable,
         record_type: str | Callable,
         icons: Optional[dict] = None,
         placeholder="Search people and groups",
-        parent=None,
     ):
-        super().__init__(parent)
         self._record_name_fn = self._as_accessor(record_name)
         self._record_id_fn = self._as_accessor(record_id)
         self._record_type_fn = self._as_accessor(record_type)
         self._icons = icons
-        self._placeholder = placeholder
-        self._model = model
+        self.placeholder = placeholder
+        self._set_placeholder()
+        self._populate_model(model)
 
-        self._completer_model = QStandardItemModel(self)
-        for record in self._model:
-            item = self._create_record(record)
-            self._completer_model.appendRow(item)
-
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        self.main_layout = FlowLayout(self)
-        self.text_field = QLineEdit()
-        self.completer = QCompleter(self._completer_model, self)
-        self._setup_selection_box()
-
-        self.main_layout.addWidget(self.text_field)
-        self.main_layout.stretch_widget = self.text_field
+    def clear(self):
+        self._completer_model.clear()
+        for i in range(self.main_layout.count()):
+            w = self.main_layout.itemAt(i).widget()
+            if isinstance(w, PillBadge):
+                self._remove_pill(w)
 
     def selected_data(self):
         result = []
@@ -46,8 +49,57 @@ class MultiSelect(QWidget):
             if isinstance(w, PillBadge):
                 result.append(w.pill_data)
 
-        print(result)
         return result
+
+    def _populate_model(self, model):
+        self._completer_model.clear()
+        for record in model:
+            item = self._create_record(record)
+            self._completer_model.appendRow(item)
+
+    def _build_ui(self):
+        self.setObjectName("MultiSelect")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setStyleSheet("""
+            #MultiSelect {
+                background-color: #262220;
+                border: 1px solid #555;
+                border-radius: 4px;
+                padding: 2px;
+            }
+        """)
+        # To avoid a changing field height we set the minimum
+        # height to the height of a single pill + the margines
+        self.setMinimumHeight(24 + 8)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.main_layout = FlowLayout(self)
+        self.main_layout.setContentsMargins(6, 4, 6, 4)
+        self.text_field = QLineEdit()
+        # For now we match the pills height so things look right
+        # TODO: If we reach a library stage we need to fix the way the layout
+        # TODO: places items so they can be centered vertically
+        self.text_field.setFixedHeight(24)
+        self.text_field.setMinimumWidth(10)
+        self._completer_model = QStandardItemModel(self)
+        self.completer = QCompleter(self._completer_model, self)
+        self.completer.popup().installEventFilter(self)
+        self._setup_selection_box()
+
+        self.main_layout.addWidget(self.text_field)
+        self.main_layout.stretch_widget = self.text_field
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        # An event filter to snap the drowpdown menu into place
+        if watched is self.completer.popup() and event.type() == QEvent.Type.Show:
+            # We are showing the drop down, reposition
+            global_pos = self.mapToGlobal(self.rect().bottomLeft())
+            dropdown = self.completer.popup()
+            if dropdown:
+                dropdown.move(global_pos)
+                # Make sure it's the same width as the widget so it looks right
+                dropdown.setFixedWidth(self.width())
+
+        return super().eventFilter(watched, event)
 
     def _create_record(self, data: dict) -> QStandardItem:
         display = self._record_name_fn(data)
@@ -75,7 +127,14 @@ class MultiSelect(QWidget):
         self._remove_record(record_id)
 
         # Use a timer to clear the field once we're done
-        QTimer.singleShot(0, self.text_field.clear)
+        QTimer.singleShot(0, self._set_placeholder)
+
+    def _set_placeholder(self):
+        self.text_field.clear()
+        if self.main_layout.count() == 1:
+            self.text_field.setPlaceholderText(self.placeholder)
+        else:
+            self.text_field.setPlaceholderText("")
 
     def _create_pill(self, text, data):
         record_type = self._record_type_fn(data)
@@ -86,6 +145,7 @@ class MultiSelect(QWidget):
 
         pill = PillBadge(text, icon, data=data)
         pill.deleteRequested.connect(self._remove_pill)
+
         return pill
 
     def _remove_record(self, target_id):
@@ -105,11 +165,11 @@ class MultiSelect(QWidget):
         pill.deleteLater()
         self.main_layout.invalidate()
 
-        # Return the pill data to the dropdown
+        # Return the pill data to the dropdown and fix the text field
         self._restore_record(pill.pill_data)
+        self._set_placeholder()
 
     def _setup_selection_box(self):
-        self.text_field.setPlaceholderText(self._placeholder)
         self.completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
         self.completer.setFilterMode(Qt.MatchFlag.MatchContains)
         self.completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)

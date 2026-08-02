@@ -189,8 +189,11 @@ class FlowLayout(QLayout):
             The height of the layout
 
         """
-        x = rect.x()
-        y = rect.y()
+        # We need to take margins into account (which the sample implementation does not do)
+        left, top, right, bottom = self.getContentsMargins()
+        effective = rect.adjusted(left, top, -right, -bottom)
+        x = effective.x()
+        y = effective.y()
 
         line_height = 0
 
@@ -217,16 +220,22 @@ class FlowLayout(QLayout):
 
         for item in self._items_list:
             hint = item.sizeHint()
+
             # We first grab the widget's actual width
-            natural_width = hint.width()
+            if item.widget() is self.stretch_widget:
+                # This is our stretch widget which we want to fit
+                # at the end of the layout based on its minumal size (for now)
+                natural_width = item.minimumSize().width()
+            else:
+                natural_width = hint.width()
 
             # Calculate the x of the next widget
             next_x = x + natural_width + space_x
-            if next_x - space_x > rect.right() and line_height > 0:
+            if next_x - space_x > effective.right() and line_height > 0:
                 # We have reached our width limit, create a new line and
                 # recalculate the next x position. But we only do so if we
                 # already placed an item on this line (our height isn't 0)
-                x = rect.x()
+                x = effective.x()
                 y = y + line_height + space_y
                 # We also reset the height of this new row
                 line_height = 0
@@ -234,7 +243,7 @@ class FlowLayout(QLayout):
             # We now calculate the placement width
             placement_width = natural_width
             if item.widget() is self.stretch_widget:
-                placement_width = max(natural_width, rect.right() - x)
+                placement_width = max(natural_width, effective.right() - x)
 
             if not test_only:
                 # We are not just checking the size of the layout
@@ -246,4 +255,4 @@ class FlowLayout(QLayout):
             line_height = max(line_height, hint.height())
 
         # Return the overall height of the layout
-        return y + line_height - rect.y()
+        return (y + line_height) - rect.y() + bottom
