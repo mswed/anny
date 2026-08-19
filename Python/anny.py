@@ -613,17 +613,18 @@ class AnnyMode(MinorMode):
 
         note_types = self.shotgrid.get_field_valid_values("Note", "sg_note_type")
         note_types = note_types["data"]
+        user_first_name = self.shotgrid.user.get("name").split(" ")[0]
 
-        self.inspector.update_note_data(
+        self.inspector.update_version_data(
             shot_name,
             version_name,
             artist_name,
             version_status,
             status_list,
-            note_types,
         )
 
-        self.inspector.update_sg_lists(users, tags)
+        self.inspector.update_note_subject(user_first_name, version_name)
+        self.inspector.update_note_options(users, tags, note_types)
 
     def create_sg_note_and_upload(self):
         source = self._get_source_from_render()
@@ -644,10 +645,9 @@ class AnnyMode(MinorMode):
             {"type": "Version", "id": source.version_id},
         ]
 
-        user_first_name = self.shotgrid.user.get("name").split(" ")[0]
         note: Note = {
             "project": {"type": "Project", "id": source.project_id},
-            "subject": f"{user_first_name}'s note on {self.inspector.sg_ui.versionNameLabel.text()}",
+            "subject": self.inspector.sg_ui.subjectField.text(),
             "note_links": note_links,
             "user": self.shotgrid.user,
             "content": self.inspector.sg_ui.textField.toPlainText(),

@@ -12,9 +12,9 @@ class ShotGrid:
     def __init__(self) -> None:
         self.engine = None
         self.sg = None
-        self.users = None
-        self.groups = Note
-        self.tags = None
+        self.users = []
+        self.groups = []
+        self.tags = []
 
     @property
     def user(self) -> dict:

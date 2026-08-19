@@ -87,25 +87,120 @@ class Inspector(QtWidgets.QDialog):
         )
 
         # Connections
-        self.setup_connections()
+        self._setup_connections()
 
         # Default to the select tool
         self.ui.selectBtn.setChecked(True)
         self.resize(380, 660)
 
+    def _setup_connections(self) -> None:
+        """Connect UI to actions"""
+
+        self.tool_group.idClicked.connect(self._on_tool_changed)
+        self.ui.strokeWidthField.valueChanged.connect(self._update_stroke_width)
+        self.ui.strokeOpacityField.valueChanged.connect(self._update_stroke_opacity)
+        self.ui.strokeColorBtn.clicked.connect(self._show_color_picker)
+        self.ui.startCapCb.currentIndexChanged.connect(self._update_start_cap)
+        self.ui.endCapCb.currentIndexChanged.connect(self._update_end_cap)
+        self.ui.strokeSmoothingField.valueChanged.connect(self._update_stroke_smoothing)
+        self.ui.fillColorBtn.clicked.connect(self._show_color_picker)
+        self.ui.fillOpacityField.valueChanged.connect(self._update_fill_opacity)
+
+        # Text field has two connections one for updates and one for losing focus
+        self.ui.textField.textChanged.connect(self._update_text)
+        self.ui.textField.editingFinished.connect(self._commit_edit)
+
+        self.ui.fontCb.currentFontChanged.connect(self._update_font)
+        self.ui.fontSizeField.valueChanged.connect(self._update_font)
+
+        self.ui.clearFrameBtn.clicked.connect(self._clear_frame)
+
+        # SG integration
+        self.sg_ui.submitBtn.clicked.connect(self._submit_note_to_sg)
+
+    # --- OVERRIDES ---
+
     def closeEvent(self, arg__1: QtGui.QCloseEvent) -> None:
+        """When the inspector closes we release Anny's bindings
+
+        Parameters
+        ----------
+        arg__1 : QtGui.QCloseEvent
+            The close event
+
+        Returns
+        -------
+        None
+            The return value from the default Qt close event
+        """
         self.mode.unbind()
 
         return super().closeEvent(arg__1)
 
-    def _on_tab_changed(self, tab):
-        if tab == 1:
-            self.mode.update_sg_fields()
+    # --- PUBLIC API ---
 
-    def update_note_data(
-        self, shot_name, version_name, artist_name, status, status_list, note_types
+    def get_save_path(self, save_type="file") -> Optional[Path]:
+        dialog = QtWidgets.QFileDialog(self, "Export Annotation", str(Path.home()))
+        dialog.setOption(QtWidgets.QFileDialog.DontUseNativeDialog, True)
+        if save_type == "file":
+            dialog.setFileMode(QtWidgets.QFileDialog.AnyFile)
+            dialog.setAcceptMode(QtWidgets.QFileDialog.AcceptSave)
+        else:
+            dialog.setFileMode(QtWidgets.QFileDialog.Directory)
+        dialog.setNameFilter("Images (*.jpg *.png)")
+
+        if dialog.exec():
+            files = dialog.selectedFiles()
+            return Path(files[0]) if files else None
+
+    def show_message(self, message, message_type="information"):
+        if message_type == "information":
+            QtWidgets.QMessageBox.information(self, "Info!", message)
+        if message_type == "warning":
+            QtWidgets.QMessageBox.warning(self, "Error!", message)
+        elif message_type == "critical":
+            QtWidgets.QMessageBox.critical(self, "Error!", message)
+
+    def set_sg_tab_visibility(self, status: bool) -> None:
+        """Hide or show the Shotgrid tab
+
+        Parameters
+        ----------
+        status : bool
+            True of showing the tab False otherwise
+
+        """
+        self.tabs.setTabVisible(self.SG_TAB, status)
+
+    def update_note_subject(self, user_first_name, version_name):
+        subject = f"{user_first_name}'s note on {version_name}"
+        self.sg_ui.subjectField.setText(subject)
+
+    def update_version_data(
+        self,
+        entity_name: str,
+        version_name: str,
+        artist_name: str,
+        status: str,
+        status_list: list,
     ):
-        self.sg_ui.shotNameLabel.setText(shot_name)
+        """Update the UI with data from the SG version
+
+        Parameters
+        ----------
+        entity_name : str
+            The type of the entity the version was created against (Shot or Asset for now)
+        version_name : str
+            The namge of the SG version
+        artist_name : str
+            The name of the artist who created the version
+        status : str
+            The status of the SG version
+        status_list : list
+            List of available version statuses (these can change per project)
+
+        """
+        self.sg_ui.entityNameLabel.setText(entity_name)
         self.sg_ui.versionNameLabel.setText(version_name)
         self.sg_ui.artistNameLabel.setText(artist_name)
         self.sg_ui.statusCb.clear()
