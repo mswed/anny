@@ -22,16 +22,18 @@ class Inspector(QtWidgets.QDialog):
         "text": ["textField", "fontCb", "fontSizeField"],
     }
 
+    ANNOTATION_TAB = 0
+    SG_TAB = 1
+
     def __init__(self, mode, parent=None) -> None:
         super().__init__(parent)
         self.mode = mode
+        # We request an update on init (if sg is available)
         self.sg_update_requested = True
 
         # Set up tab system
         layout = QtWidgets.QVBoxLayout(self)
         self.tabs = QtWidgets.QTabWidget()
-        self.ANNOTATION_TAB = 0
-        self.SG_TAB = 1
         self.tabs.currentChanged.connect(self._on_tab_changed)
         layout.addWidget(self.tabs)
 
@@ -211,24 +213,38 @@ class Inspector(QtWidgets.QDialog):
                 self.sg_ui.statusCb.addItem(f"{code} - {name}", code)
             self.sg_ui.statusCb.setCurrentIndex(self.sg_ui.statusCb.findData(status))
 
-        if note_types:
-            for t in note_types:
-                self.sg_ui.noteTypeCb.addItem(t)
+    def update_note_options(
+        self, users: list, tags: list, note_types: list[str]
+    ) -> None:
+        """Update multiselect and dropdown options for the SG note
 
-    def update_sg_lists(self, users, tags):
+        Parameters
+        ----------
+        users : list
+            List of active SG users and groups
+        tags : list
+           List of SG tags
+        note_types : list[str]
+            List of SG node types
+
+        """
         if not self.sg_update_requested:
+            # We should be using the cached list
             return
 
         icons = {
-            "HumanUser": "/home/mswed/Documents/coding/anny/icons/user-solid-full.svg",
-            "Group": "/home/mswed/Documents/coding/anny/icons/user-group-solid-full.svg",
-            "Tag": "/home/mswed/Documents/coding/anny/icons/hashtag-solid-full.svg",
+            "HumanUser": ":/icons/user-solid-full.svg",
+            "Group": ":/icons/user-group-solid-full.svg",
+            "Tag": ":/icons/hashtag-solid-full.svg",
         }
 
+        # Clear existing options
         self.sg_ui.toMs.clear()
         self.sg_ui.ccMs.clear()
         self.sg_ui.tagsMs.clear()
+        self.sg_ui.noteTypeCb.clear()
 
+        # Configure multiselects
         self.sg_ui.toMs.configure(
             model=users,
             record_name=self.display_name,
@@ -256,54 +272,42 @@ class Inspector(QtWidgets.QDialog):
             placeholder="Add some tags!",
         )
 
+        # Set up combobox
+        if note_types:
+            for t in note_types:
+                self.sg_ui.noteTypeCb.addItem(t)
+
+        # Mark the cache as current
         self.sg_update_requested = False
 
-    def submit_note_to_sg(self):
-        self.mode.create_sg_note_and_upload()
+    # --- EVENT HANDLERS ---
 
-    def on_tool_changed(self, tool_id):
+    def _on_tab_changed(self, tab: int) -> None:
+        """If we switch to the Shotgrid tab we update the UI with the versio data
+
+        Parameters
+        ----------
+        tab : int
+            The tab we're switching to
+        """
+        if tab == self.SG_TAB:
+            self.mode.update_sg_fields()
+
+    def _on_tool_changed(self, tool_id: int):
+        """Select the active tool and change to cursor to match it
+
+        Parameters
+        ----------
+        tool_id : int
+            Tool button ID
+        """
         self.mode.set_active_tool(tool_id)
         if tool_id == 0:
             crv.setCursor(Qt.CursorShape.ArrowCursor.value)
         else:
             crv.setCursor(Qt.CursorShape.CrossCursor.value)
 
-    def setup_connections(self) -> None:
-        """Connect UI to actions"""
-
-        self.tool_group.idClicked.connect(self.on_tool_changed)
-        self.ui.strokeWidthField.valueChanged.connect(self.update_stroke_width)
-        self.ui.strokeOpacityField.valueChanged.connect(self.update_stroke_opacity)
-        self.ui.strokeColorBtn.clicked.connect(self.show_color_picker)
-        self.ui.startCapCb.currentIndexChanged.connect(self.update_start_cap)
-        self.ui.endCapCb.currentIndexChanged.connect(self.update_end_cap)
-        self.ui.strokeSmoothingField.valueChanged.connect(self.update_smoothing)
-        self.ui.fillColorBtn.clicked.connect(self.show_color_picker)
-        self.ui.fillOpacityField.valueChanged.connect(self.update_fill_opacity)
-
-        # Text field has two connections one for updates and one for losingn focus
-        self.ui.textField.textChanged.connect(self.update_text)
-        self.ui.textField.editingFinished.connect(self.commit_edit)
-
-        self.ui.fontCb.currentFontChanged.connect(self.update_font)
-        self.ui.fontSizeField.valueChanged.connect(self.update_font)
-
-        self.ui.clearFrameBtn.clicked.connect(self.clear_frame)
-
-        # SG integration
-        self.sg_ui.submitBtn.clicked.connect(self.submit_note_to_sg)
-
-    def show_color_picker(self):
-        # We have more thatn one color selector, figure out which was clicked
-        sender = self.sender()
-        kind = "stroke" if sender == self.ui.strokeColorBtn else "fill"
-        menu = ColorPickerDrowpdown()
-        menu.colorSelected.connect(
-            lambda color: self.on_color_changed(color, sender=sender, kind=kind)
-        )
-        menu.exec(sender.mapToGlobal(sender.rect().bottomLeft()))
-
-    def on_color_changed(self, color: tuple, sender: QtWidgets.QPushButton, kind: str):
+    def _on_color_changed(self, color: tuple, sender: QtWidgets.QPushButton, kind: str):
         """Update the color swatch, the color of future strokes and/or the color of the currently
         selected stroke
 
@@ -346,35 +350,53 @@ class Inspector(QtWidgets.QDialog):
 
             crv.redraw()
 
-    def update_start_cap(self) -> None:
-        """Update the start of line to match the start cap selection"""
+    # --- SLOTS ---
+    def _show_color_picker(self):
+        """Show our custom color picker for the stroke or fill color"""
 
+        sender = self.sender()
+        kind = "stroke" if sender == self.ui.strokeColorBtn else "fill"
+        menu = ColorPickerDrowpdown()
+        menu.colorSelected.connect(
+            lambda color: self._on_color_changed(color, sender=sender, kind=kind)
+        )
+        menu.exec(sender.mapToGlobal(sender.rect().bottomLeft()))
+
+    def _update_stroke_width(self):
+        """Update the stroke width based on UI selection"""
         if self.mode.current_stroke:
-            self.mode.current_stroke.start_cap = self.ui.startCapCb.currentData()
+            self.mode.current_stroke.width = float(self.ui.strokeWidthField.value())
             crv.redraw()
 
-    def update_end_cap(self) -> None:
-        """Update the start of line to match the start cap selection"""
-
-        if self.mode.current_stroke:
-            self.mode.current_stroke.end_cap = self.ui.endCapCb.currentData()
-            crv.redraw()
-
-    def update_stroke_opacity(self) -> None:
+    def _update_stroke_opacity(self) -> None:
         """Update the stroke opacity based on UI selection"""
 
         if self.mode.current_stroke:
             self.mode.current_stroke.opacity = float(self.ui.strokeOpacityField.value())
             crv.redraw()
 
-    def update_smoothing(self) -> None:
+    def _update_stroke_smoothing(self) -> None:
         """Update the smoothing of a freehand stroke"""
 
         if self.mode.current_stroke:
             self.mode.current_stroke.smoothing = self.ui.strokeSmoothingField.value()
             crv.redraw()
 
-    def update_fill_opacity(self):
+    def _update_start_cap(self) -> None:
+        """Update the start of line to match the start cap selection"""
+
+        if self.mode.current_stroke:
+            self.mode.current_stroke.start_cap = self.ui.startCapCb.currentData()
+            crv.redraw()
+
+    def _update_end_cap(self) -> None:
+        """Update the start of line to match the start cap selection"""
+
+        if self.mode.current_stroke:
+            self.mode.current_stroke.end_cap = self.ui.endCapCb.currentData()
+            crv.redraw()
+
+    def _update_fill_opacity(self):
         """Update the fill opacity based on UI selection"""
         if self.mode.current_stroke:
             self.mode.current_stroke.fill_opacity = float(
@@ -382,13 +404,7 @@ class Inspector(QtWidgets.QDialog):
             )
             crv.redraw()
 
-    def update_stroke_width(self):
-        """Update the stroke width based on UI selection"""
-        if self.mode.current_stroke:
-            self.mode.current_stroke.width = float(self.ui.strokeWidthField.value())
-            crv.redraw()
-
-    def update_text(self):
+    def _update_text(self):
         """Update the text based on UI selection"""
         if (
             self.mode.current_stroke
@@ -398,7 +414,7 @@ class Inspector(QtWidgets.QDialog):
             self.mode.current_stroke.editing = True
             crv.redraw()
 
-    def commit_edit(self):
+    def _commit_edit(self):
         """Update the editing status to False on the stroke"""
         if (
             self.mode.current_stroke
@@ -407,7 +423,8 @@ class Inspector(QtWidgets.QDialog):
             self.mode.current_stroke.editing = False
             crv.redraw()
 
-    def update_font(self):
+    def _update_font(self):
+        """Update font and font size"""
 
         if (
             self.mode.current_stroke
@@ -420,34 +437,16 @@ class Inspector(QtWidgets.QDialog):
 
             crv.redraw()
 
-    def clear_frame(self):
+    def _clear_frame(self):
+        """Delete all annotations on the frame"""
         self.mode.clear_frame()
 
-    def set_sg_tab_visibility(self, status: bool) -> None:
-        self.tabs.setTabVisible(1, status)
+    def _submit_note_to_sg(self):
+        """Submit a note to SG"""
 
-    def get_save_path(self, save_type="file") -> Optional[Path]:
-        dialog = QtWidgets.QFileDialog(self, "Export Annotation", str(Path.home()))
-        dialog.setOption(QtWidgets.QFileDialog.DontUseNativeDialog, True)
-        if save_type == "file":
-            dialog.setFileMode(QtWidgets.QFileDialog.AnyFile)
-            dialog.setAcceptMode(QtWidgets.QFileDialog.AcceptSave)
-        else:
-            dialog.setFileMode(QtWidgets.QFileDialog.Directory)
-        dialog.setNameFilter("Images (*.jpg *.png)")
+        self.mode.create_sg_note_and_upload()
 
-        if dialog.exec():
-            files = dialog.selectedFiles()
-            return Path(files[0]) if files else None
-
-    def show_message(self, message, message_type="information"):
-        if message_type == "information":
-            QtWidgets.QMessageBox.information(self, "Info!", message)
-        if message_type == "warning":
-            QtWidgets.QMessageBox.warning(self, "Error!", message)
-        elif message_type == "critical":
-            QtWidgets.QMessageBox.critical(self, "Error!", message)
-
+    # --- HELPERS ---
     @staticmethod
     def display_name(data):
         if data.get("type") == "HumanUser":
