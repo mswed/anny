@@ -664,7 +664,7 @@ class Source:
             return int(shot_id)
 
     @property
-    def shot_name(self) -> Optional[str]:
+    def entity_name(self) -> Optional[str]:
         shot_name = self.sg_data.get("shot", None)
         if shot_name:
             shot_name = shot_name.split("|")[1].partition("_")
@@ -679,6 +679,19 @@ class Source:
             if user_name:
                 return user_name[2]
 
+    @property
+    def has_sg_data(self):
+        return all(
+            x is not None
+            for x in (
+                self.entity_name,
+                self.version_name,
+                self.version_status,
+                self.artist_name,
+                self.project_id,
+            )
+        )
+
 
 class Note(TypedDict):
     project: dict
@@ -686,8 +699,8 @@ class Note(TypedDict):
     note_links: list
     user: dict
     content: str
-    addressing_to: list
-    adressing_cc: list
+    addressings_to: list
+    addressings_cc: list
     tags: list
     sg_note_type: str
 

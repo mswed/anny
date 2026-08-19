@@ -42,7 +42,7 @@ class MultiSelect(QWidget):
             if isinstance(w, PillBadge):
                 self._remove_pill(w)
 
-    def selected_data(self):
+    def selected_data(self) -> list:
         result = []
         for i in range(self.main_layout.count()):
             w = self.main_layout.itemAt(i).widget()

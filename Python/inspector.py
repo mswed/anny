@@ -291,7 +291,7 @@ class Inspector(QtWidgets.QDialog):
             The tab we're switching to
         """
         if tab == self.SG_TAB:
-            self.mode.update_sg_fields()
+            self.mode.update_sg_ui()
 
     def _on_tool_changed(self, tool_id: int):
         """Select the active tool and change to cursor to match it

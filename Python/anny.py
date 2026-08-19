@@ -590,18 +590,18 @@ class AnnyMode(MinorMode):
         """
         if self.shotgrid.has_sgtk():
             self.shotgrid.initialize()
-            self.update_sg_fields()
+            self.update_sg_ui()
 
-    def update_sg_fields(self, attempts_left=10):
+    def update_sg_ui(self):
         # Get the source and check for SG data
         source = self._get_source_from_render()
         if not source:
             return
 
-        shot_name = source.shot_name
+        if not source.has_sg_data:
+            return
+
         version_name = source.version_name
-        version_status = source.version_status
-        artist_name = source.artist_name
         project_id = source.project_id
         users = self.shotgrid.users
         tags = self.shotgrid.tags
@@ -613,13 +613,13 @@ class AnnyMode(MinorMode):
 
         note_types = self.shotgrid.get_field_valid_values("Note", "sg_note_type")
         note_types = note_types["data"]
-        user_first_name = self.shotgrid.user.get("name").split(" ")[0]
+        user_first_name = self.shotgrid.user.get("name", "Unknown").split(" ")[0]
 
         self.inspector.update_version_data(
-            shot_name,
+            source.entity_name,
             version_name,
-            artist_name,
-            version_status,
+            source.artist_name,
+            source.version_status,
             status_list,
         )
 
@@ -628,17 +628,18 @@ class AnnyMode(MinorMode):
 
     def create_sg_note_and_upload(self):
         source = self._get_source_from_render()
-        note = self._create_sg_note(source)
-        if not note["ok"]:
+        note = self._build_sg_note(source)
+        create_note = self.shotgrid.create_note(note)
+        if not create_note["ok"]:
             self.inspector.show_message(
                 f"Failed to create note\n\n{self._format_errors([note])}",
                 message_type="critical",
             )
             return
 
-        self._export_annotations_to_sg(source, note["data"][0]["id"])
+        self._export_annotations_to_sg(source, create_note["data"][0]["id"])
 
-    def _create_sg_note(self, source) -> SGResult:
+    def _build_sg_note(self, source) -> Note:
 
         note_links = [
             {"type": "Shot", "id": source.shot_id},
@@ -656,7 +657,8 @@ class AnnyMode(MinorMode):
             "tags": self.inspector.sg_ui.tagsMs.selected_data(),
             "sg_note_type": self.inspector.sg_ui.noteTypeCb.currentText(),
         }
-        return self.shotgrid.create_note(note)
+
+        return note
 
     def _export_annotations_to_sg(self, source, note_id: int):
         temp_dir = Path(tempfile.mkdtemp(prefix="anny_"))
