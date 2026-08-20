@@ -19,6 +19,7 @@ from stroke_freehand import FreehandStroke
 from stroke_ellipse import EllipseStroke
 from stroke_rect import RectStroke
 from stroke_line import LineStroke
+from exceptions import NoSourceError
 
 if TYPE_CHECKING:
     from rv_stubs import Event
@@ -742,12 +743,27 @@ class AnnyMode(MinorMode):
         except IndexError:
             return None
 
-    def _get_source_from_render(self) -> Optional[Source]:
-        try:
-            source = crv.sourcesRendered()[0]
-            return Source(node=source["node"], name=source["name"])
-        except IndexError:
-            return None
+    def _get_source_from_render(self) -> Source:
+        """Get the current rendered source
+
+        Raises
+        ------
+        NoSourceError
+            If we don't have a rendered source we can not proceed, so we raise
+
+        Returns
+        -------
+        Source
+            The current rendered Source
+
+        """
+        rendered_sources = crv.sourcesRendered()
+        if not rendered_sources:
+            raise NoSourceError("No sources are currently rendered")
+
+        source = rendered_sources[0]
+        return Source(node=source["node"], name=source["name"])
+
 
     # --- Rendering ---
     def render(self, event: Event):

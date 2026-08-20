@@ -15,149 +15,180 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <layout class="QVBoxLayout" name="mainLayout">
-     <property name="leftMargin">
-      <number>8</number>
+    <widget class="QStackedWidget" name="sgStackedWidget">
+     <property name="currentIndex">
+      <number>1</number>
      </property>
-     <property name="topMargin">
-      <number>8</number>
-     </property>
-     <property name="rightMargin">
-      <number>8</number>
-     </property>
-     <property name="bottomMargin">
-      <number>8</number>
-     </property>
-     <item>
-      <layout class="QGridLayout" name="infoLayout">
-       <item row="2" column="1">
-        <widget class="QLabel" name="artistNameLabel">
-         <property name="text">
-          <string>Artist Name</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="versionNameLabel">
-         <property name="font">
-          <font>
-           <pointsize>12</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>Version Name</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="entityNameLabel">
-         <property name="font">
-          <font>
-           <pointsize>14</pointsize>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Shot Name</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="artistLabel">
-         <property name="text">
-          <string>Artist</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="statusLabel">
-         <property name="text">
-          <string>Status</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <widget class="QComboBox" name="statusCb"/>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <layout class="QHBoxLayout" name="subjectLayout">
-       <item>
-        <widget class="QLabel" name="subjectLabel">
-         <property name="text">
-          <string>Subject</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="subjectField"/>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <widget class="TextEditWithCommit" name="textField">
-       <property name="lineWrapColumnOrWidth">
-        <number>0</number>
+     <widget class="QWidget" name="versionInfoWidget">
+      <widget class="QWidget" name="">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>330</width>
+         <height>524</height>
+        </rect>
        </property>
-       <property name="placeholderText">
-        <string>Write your note here</string>
-       </property>
+       <layout class="QVBoxLayout" name="versionMainLayout">
+        <property name="leftMargin">
+         <number>8</number>
+        </property>
+        <property name="topMargin">
+         <number>8</number>
+        </property>
+        <property name="rightMargin">
+         <number>8</number>
+        </property>
+        <property name="bottomMargin">
+         <number>8</number>
+        </property>
+        <item>
+         <layout class="QGridLayout" name="infoLayout">
+          <item row="2" column="1">
+           <widget class="QLabel" name="artistNameLabel">
+            <property name="text">
+             <string>Artist Name</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="versionNameLabel">
+            <property name="font">
+             <font>
+              <pointsize>12</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Version Name</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="entityNameLabel">
+            <property name="font">
+             <font>
+              <pointsize>14</pointsize>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Shot Name</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="artistLabel">
+            <property name="text">
+             <string>Artist</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="statusLabel">
+            <property name="text">
+             <string>Status</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QComboBox" name="statusCb"/>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="subjectLayout">
+          <item>
+           <widget class="QLabel" name="subjectLabel">
+            <property name="text">
+             <string>Subject</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="subjectField"/>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="TextEditWithCommit" name="textField">
+          <property name="lineWrapColumnOrWidth">
+           <number>0</number>
+          </property>
+          <property name="placeholderText">
+           <string>Write your note here</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QFormLayout" name="detailsLayout">
+          <item row="0" column="0">
+           <widget class="QLabel" name="toLabel">
+            <property name="text">
+             <string>To:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="ccLabel">
+            <property name="text">
+             <string>CC:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="tagsLabel">
+            <property name="text">
+             <string>Tags:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="noteTypeLabel">
+            <property name="text">
+             <string>Type:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QComboBox" name="noteTypeCb"/>
+          </item>
+          <item row="0" column="1">
+           <widget class="MultiSelect" name="toMs"/>
+          </item>
+          <item row="1" column="1">
+           <widget class="MultiSelect" name="ccMs"/>
+          </item>
+          <item row="2" column="1">
+           <widget class="MultiSelect" name="tagsMs"/>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QPushButton" name="submitBtn">
+          <property name="text">
+           <string>Submit</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </widget>
-     </item>
-     <item>
-      <layout class="QFormLayout" name="detailsLayout">
-       <item row="0" column="0">
-        <widget class="QLabel" name="toLabel">
+     </widget>
+     <widget class="QWidget" name="noSGWidget">
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QLabel" name="shotgridLabel">
          <property name="text">
-          <string>To:</string>
+          <string>ShotGrid Data Not Available</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
          </property>
         </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="ccLabel">
-         <property name="text">
-          <string>CC:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="tagsLabel">
-         <property name="text">
-          <string>Tags:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="noteTypeLabel">
-         <property name="text">
-          <string>Type:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <widget class="QComboBox" name="noteTypeCb"/>
-       </item>
-       <item row="0" column="1">
-        <widget class="MultiSelect" name="toMs"/>
-       </item>
-       <item row="1" column="1">
-        <widget class="MultiSelect" name="ccMs"/>
-       </item>
-       <item row="2" column="1">
-        <widget class="MultiSelect" name="tagsMs"/>
        </item>
       </layout>
-     </item>
-     <item>
-      <widget class="QPushButton" name="submitBtn">
-       <property name="text">
-        <string>Submit</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
+     </widget>
+    </widget>
    </item>
   </layout>
  </widget>

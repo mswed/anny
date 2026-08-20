@@ -17,7 +17,8 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QComboBox, QDialog, QFormLayout,
     QGridLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QSizePolicy, QVBoxLayout, QWidget)
+    QPushButton, QSizePolicy, QStackedWidget, QVBoxLayout,
+    QWidget)
 
 from multi_select import MultiSelect
 from text_editor import TextEditWithCommit
@@ -30,17 +31,24 @@ class Ui_Shotgrid(object):
         Shotgrid.resize(348, 577)
         self.verticalLayout = QVBoxLayout(Shotgrid)
         self.verticalLayout.setObjectName(u"verticalLayout")
-        self.mainLayout = QVBoxLayout()
-        self.mainLayout.setObjectName(u"mainLayout")
-        self.mainLayout.setContentsMargins(8, 8, 8, 8)
+        self.sgStackedWidget = QStackedWidget(Shotgrid)
+        self.sgStackedWidget.setObjectName(u"sgStackedWidget")
+        self.versionInfoWidget = QWidget()
+        self.versionInfoWidget.setObjectName(u"versionInfoWidget")
+        self.widget = QWidget(self.versionInfoWidget)
+        self.widget.setObjectName(u"widget")
+        self.widget.setGeometry(QRect(0, 0, 330, 524))
+        self.versionMainLayout = QVBoxLayout(self.widget)
+        self.versionMainLayout.setObjectName(u"versionMainLayout")
+        self.versionMainLayout.setContentsMargins(8, 8, 8, 8)
         self.infoLayout = QGridLayout()
         self.infoLayout.setObjectName(u"infoLayout")
-        self.artistNameLabel = QLabel(Shotgrid)
+        self.artistNameLabel = QLabel(self.widget)
         self.artistNameLabel.setObjectName(u"artistNameLabel")
 
         self.infoLayout.addWidget(self.artistNameLabel, 2, 1, 1, 1)
 
-        self.versionNameLabel = QLabel(Shotgrid)
+        self.versionNameLabel = QLabel(self.widget)
         self.versionNameLabel.setObjectName(u"versionNameLabel")
         font = QFont()
         font.setPointSize(12)
@@ -48,7 +56,7 @@ class Ui_Shotgrid(object):
 
         self.infoLayout.addWidget(self.versionNameLabel, 1, 0, 1, 1)
 
-        self.entityNameLabel = QLabel(Shotgrid)
+        self.entityNameLabel = QLabel(self.widget)
         self.entityNameLabel.setObjectName(u"entityNameLabel")
         font1 = QFont()
         font1.setPointSize(14)
@@ -57,100 +65,115 @@ class Ui_Shotgrid(object):
 
         self.infoLayout.addWidget(self.entityNameLabel, 0, 0, 1, 1)
 
-        self.artistLabel = QLabel(Shotgrid)
+        self.artistLabel = QLabel(self.widget)
         self.artistLabel.setObjectName(u"artistLabel")
 
         self.infoLayout.addWidget(self.artistLabel, 2, 0, 1, 1)
 
-        self.statusLabel = QLabel(Shotgrid)
+        self.statusLabel = QLabel(self.widget)
         self.statusLabel.setObjectName(u"statusLabel")
 
         self.infoLayout.addWidget(self.statusLabel, 3, 0, 1, 1)
 
-        self.statusCb = QComboBox(Shotgrid)
+        self.statusCb = QComboBox(self.widget)
         self.statusCb.setObjectName(u"statusCb")
 
         self.infoLayout.addWidget(self.statusCb, 3, 1, 1, 1)
 
 
-        self.mainLayout.addLayout(self.infoLayout)
+        self.versionMainLayout.addLayout(self.infoLayout)
 
         self.subjectLayout = QHBoxLayout()
         self.subjectLayout.setObjectName(u"subjectLayout")
-        self.subjectLabel = QLabel(Shotgrid)
+        self.subjectLabel = QLabel(self.widget)
         self.subjectLabel.setObjectName(u"subjectLabel")
 
         self.subjectLayout.addWidget(self.subjectLabel)
 
-        self.subjectField = QLineEdit(Shotgrid)
+        self.subjectField = QLineEdit(self.widget)
         self.subjectField.setObjectName(u"subjectField")
 
         self.subjectLayout.addWidget(self.subjectField)
 
 
-        self.mainLayout.addLayout(self.subjectLayout)
+        self.versionMainLayout.addLayout(self.subjectLayout)
 
-        self.textField = TextEditWithCommit(Shotgrid)
+        self.textField = TextEditWithCommit(self.widget)
         self.textField.setObjectName(u"textField")
         self.textField.setLineWrapColumnOrWidth(0)
 
-        self.mainLayout.addWidget(self.textField)
+        self.versionMainLayout.addWidget(self.textField)
 
         self.detailsLayout = QFormLayout()
         self.detailsLayout.setObjectName(u"detailsLayout")
-        self.toLabel = QLabel(Shotgrid)
+        self.toLabel = QLabel(self.widget)
         self.toLabel.setObjectName(u"toLabel")
 
         self.detailsLayout.setWidget(0, QFormLayout.ItemRole.LabelRole, self.toLabel)
 
-        self.ccLabel = QLabel(Shotgrid)
+        self.ccLabel = QLabel(self.widget)
         self.ccLabel.setObjectName(u"ccLabel")
 
         self.detailsLayout.setWidget(1, QFormLayout.ItemRole.LabelRole, self.ccLabel)
 
-        self.tagsLabel = QLabel(Shotgrid)
+        self.tagsLabel = QLabel(self.widget)
         self.tagsLabel.setObjectName(u"tagsLabel")
 
         self.detailsLayout.setWidget(2, QFormLayout.ItemRole.LabelRole, self.tagsLabel)
 
-        self.noteTypeLabel = QLabel(Shotgrid)
+        self.noteTypeLabel = QLabel(self.widget)
         self.noteTypeLabel.setObjectName(u"noteTypeLabel")
 
         self.detailsLayout.setWidget(3, QFormLayout.ItemRole.LabelRole, self.noteTypeLabel)
 
-        self.noteTypeCb = QComboBox(Shotgrid)
+        self.noteTypeCb = QComboBox(self.widget)
         self.noteTypeCb.setObjectName(u"noteTypeCb")
 
         self.detailsLayout.setWidget(3, QFormLayout.ItemRole.FieldRole, self.noteTypeCb)
 
-        self.toMs = MultiSelect(Shotgrid)
+        self.toMs = MultiSelect(self.widget)
         self.toMs.setObjectName(u"toMs")
 
         self.detailsLayout.setWidget(0, QFormLayout.ItemRole.FieldRole, self.toMs)
 
-        self.ccMs = MultiSelect(Shotgrid)
+        self.ccMs = MultiSelect(self.widget)
         self.ccMs.setObjectName(u"ccMs")
 
         self.detailsLayout.setWidget(1, QFormLayout.ItemRole.FieldRole, self.ccMs)
 
-        self.tagsMs = MultiSelect(Shotgrid)
+        self.tagsMs = MultiSelect(self.widget)
         self.tagsMs.setObjectName(u"tagsMs")
 
         self.detailsLayout.setWidget(2, QFormLayout.ItemRole.FieldRole, self.tagsMs)
 
 
-        self.mainLayout.addLayout(self.detailsLayout)
+        self.versionMainLayout.addLayout(self.detailsLayout)
 
-        self.submitBtn = QPushButton(Shotgrid)
+        self.submitBtn = QPushButton(self.widget)
         self.submitBtn.setObjectName(u"submitBtn")
 
-        self.mainLayout.addWidget(self.submitBtn)
+        self.versionMainLayout.addWidget(self.submitBtn)
 
+        self.sgStackedWidget.addWidget(self.versionInfoWidget)
+        self.noSGWidget = QWidget()
+        self.noSGWidget.setObjectName(u"noSGWidget")
+        self.verticalLayout_3 = QVBoxLayout(self.noSGWidget)
+        self.verticalLayout_3.setObjectName(u"verticalLayout_3")
+        self.shotgridLabel = QLabel(self.noSGWidget)
+        self.shotgridLabel.setObjectName(u"shotgridLabel")
+        self.shotgridLabel.setAlignment(Qt.AlignCenter)
 
-        self.verticalLayout.addLayout(self.mainLayout)
+        self.verticalLayout_3.addWidget(self.shotgridLabel)
+
+        self.sgStackedWidget.addWidget(self.noSGWidget)
+
+        self.verticalLayout.addWidget(self.sgStackedWidget)
 
 
         self.retranslateUi(Shotgrid)
+
+        self.sgStackedWidget.setCurrentIndex(1)
+
 
         QMetaObject.connectSlotsByName(Shotgrid)
     # setupUi
@@ -169,5 +192,6 @@ class Ui_Shotgrid(object):
         self.tagsLabel.setText(QCoreApplication.translate("Shotgrid", u"Tags:", None))
         self.noteTypeLabel.setText(QCoreApplication.translate("Shotgrid", u"Type:", None))
         self.submitBtn.setText(QCoreApplication.translate("Shotgrid", u"Submit", None))
+        self.shotgridLabel.setText(QCoreApplication.translate("Shotgrid", u"ShotGrid Data Not Available", None))
     # retranslateUi
 

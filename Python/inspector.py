@@ -24,6 +24,8 @@ class Inspector(QtWidgets.QDialog):
 
     ANNOTATION_TAB = 0
     SG_TAB = 1
+    SG_FORM = 0
+    NO_SG = 1
 
     def __init__(self, mode, parent=None) -> None:
         super().__init__(parent)
@@ -283,7 +285,7 @@ class Inspector(QtWidgets.QDialog):
     # --- EVENT HANDLERS ---
 
     def _on_tab_changed(self, tab: int) -> None:
-        """If we switch to the Shotgrid tab we update the UI with the versio data
+        """If we switch to the Shotgrid tab we update the UI with the version data
 
         Parameters
         ----------
@@ -291,7 +293,8 @@ class Inspector(QtWidgets.QDialog):
             The tab we're switching to
         """
         if tab == self.SG_TAB:
-            self.mode.update_sg_ui()
+            self.sg_ui.sgStackedWidget.setCurrentIndex(0)
+            self.mode.try_sg_refresh()
 
     def _on_tool_changed(self, tool_id: int):
         """Select the active tool and change to cursor to match it
