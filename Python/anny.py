@@ -599,7 +599,8 @@ class AnnyMode(MinorMode):
             source-group-complete RV event, indicating the source has finished loading
         """
         if self.shotgrid.has_sgtk():
-            self.shotgrid.initialize()
+            if not self.shotgrid.is_initialized():
+                self.shotgrid.initialize()
             if self.inspector.tabs.currentIndex() == self.inspector.SG_TAB:
                 self._sg_refresh_pending = True
 
@@ -670,18 +671,18 @@ class AnnyMode(MinorMode):
 
         # Build the note dictionary  and create the note
         note = self._build_sg_note(source)
-        create_note = self.shotgrid.create_note(note)
+        created_note = self.shotgrid.create_note(note)
 
-        if not create_note["ok"]:
+        if not created_note["ok"]:
             # Creation failed. Warn and abort
             self.inspector.show_message(
-                f"Failed to create note\n\n{self._format_errors([note])}",
+                f"Failed to create note\n\n{self._format_errors([created_note])}",
                 message_type="critical",
             )
             return
 
         # Export the annotations
-        self._export_annotations_to_sg(source, create_note["data"][0]["id"])
+        self._export_annotations_to_sg(source, created_note["data"][0]["id"])
 
     def try_sg_refresh(self):
         try:
