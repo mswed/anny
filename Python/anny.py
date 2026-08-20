@@ -24,7 +24,6 @@ from exceptions import NoSourceError
 if TYPE_CHECKING:
     from rv_stubs import Event
 
-from ui_test import Window
 
 log = logging.getLogger(__name__)
 log.setLevel("DEBUG")
@@ -102,11 +101,10 @@ class AnnyMode(MinorMode):
                             None,
                             None,
                         ),
-                        ("Flow", self.flow_layout, None, None),
                     ],
                 )
             ],
-            # "z",  # Set the binding priority so they take over, but still allow the timeline to scrub
+            "z",  # Set the binding priority so they take over, but still allow the timeline to scrub
         )
 
     # --- UI ---
@@ -470,7 +468,7 @@ class AnnyMode(MinorMode):
         frame = crv.frame()
         current_sources = crv.sourcesRendered()
         for source in current_sources:
-            s = Source(source)
+            s = Source(node=source["node"], name=source["name"])
             self.annotations.clear_frame(s, frame)
 
         self.current_stroke = None
@@ -531,10 +529,16 @@ class AnnyMode(MinorMode):
 
         """
         save_dir = self.inspector.get_save_path("directory")
-        source = Source(crv.sourcesRendered()[0])
-        name = self._get_annotation_name(source)
-        frames = self.annotations.get_annotated_frames(source)
+        try:
+            source = self._get_source_from_render()
+        except NoSourceError:
+            self._show_no_source_warning()
+            return
+
         if save_dir:
+            name = self._get_annotation_name(source)
+            frames = self.annotations.get_annotated_frames(source)
+
             self.exporter.queue_all(
                 save_dir=save_dir,
                 file_name=name,
@@ -603,10 +607,7 @@ class AnnyMode(MinorMode):
         try:
             source = self._get_source_from_render()
         except NoSourceError:
-            self.inspector.show_message(
-                "No source was found!",
-                message_type="critical",
-            )
+            self._show_no_source_warning()
             self.inspector.show_sg_unavailable()
             return
 
@@ -664,10 +665,7 @@ class AnnyMode(MinorMode):
         try:
             source = self._get_source_from_render()
         except NoSourceError:
-            self.inspector.show_message(
-                "No source was found!",
-                message_type="critical",
-            )
+            self._show_no_source_warning()
             return
 
         # Build the note dictionary  and create the note
@@ -846,17 +844,7 @@ class AnnyMode(MinorMode):
         if not source:
             return None
 
-        return Source(source[0]["node"], source[0]["name"])
-
-    def _get_source_from_group(self, source_group) -> Optional[Source]:
-        try:
-            source_group = source_group.split(";")[0]
-            # Get the RV source node
-            source = erv.nodesInGroupOfType(source_group, "RVFileSource")[0]
-
-            return Source(node=source)
-        except IndexError:
-            return None
+        return Source(node=source[0]["node"], name=source[0]["name"])
 
     def _get_source_from_render(self) -> Source:
         """Get the current rendered source
@@ -879,7 +867,13 @@ class AnnyMode(MinorMode):
         source = rendered_sources[0]
         return Source(node=source["node"], name=source["name"])
 
-    def on_render_idle(self, event):
+    def _show_no_source_warning(self):
+        self.inspector.show_message(
+            "No source was found!",
+            message_type="critical",
+        )
+
+    def on_render_idle(self, event: Event):
         if self._sg_refresh_pending:
             self.try_sg_refresh()
 
@@ -911,7 +905,7 @@ class AnnyMode(MinorMode):
                 # The capture was not armed, RV might not be in sync
                 # with our capture. Arm it an queue a render
                 self.exporter.capture_armed = True
-                crv.redraw
+                crv.redraw()
 
 
 def createMode():
