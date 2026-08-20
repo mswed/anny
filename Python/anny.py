@@ -48,6 +48,7 @@ class AnnyMode(MinorMode):
             5: TextStroke,
         }
         self._capture_armed = False
+        self._sg_refresh_pending = False
 
         self.init(
             "py-anny-mode",
@@ -58,6 +59,11 @@ class AnnyMode(MinorMode):
                     "source-group-complete",
                     self.initialize_integration,
                     "Try to initialize SG integration",
+                ),
+                (
+                    "per-render-event-processing",
+                    self.on_render_idle,
+                    "test processing event",
                 ),
                 (
                     "key-down--delete",
@@ -558,7 +564,6 @@ class AnnyMode(MinorMode):
         Returns
         -------
         str
-
             any_annotation if we don't have a shotgrid source or anny_shotgrid_version_name
 
         """
@@ -591,57 +596,123 @@ class AnnyMode(MinorMode):
         """
         if self.shotgrid.has_sgtk():
             self.shotgrid.initialize()
-            self.update_sg_ui()
+            if self.inspector.tabs.currentIndex() == self.inspector.SG_TAB:
+                self._sg_refresh_pending = True
 
-    def update_sg_ui(self):
-        # Get the source and check for SG data
-        source = self._get_source_from_render()
-        if not source:
+    def _collect_sg_data(self):
+        try:
+            source = self._get_source_from_render()
+        except NoSourceError:
+            self.inspector.show_message(
+                "No source was found!",
+                message_type="critical",
+            )
+            self.inspector.show_sg_unavailable()
             return
 
-        if not source.has_sg_data:
+        if not source.has_full_sg_data:
+            # We are missing the needed fields (even if we somehow have SOME sg daa)
+            self.inspector.show_sg_unavailable()
             return
 
-        version_name = source.version_name
-        project_id = source.project_id
-        users = self.shotgrid.users
-        tags = self.shotgrid.tags
-        if project_id:
-            status_list = self.shotgrid.get_active_status_list("Version", project_id)
+        sg_data = {
+            "version_name": source.version_name,
+            "project_id": source.project_id,
+            "entity_name": source.entity_name,
+            "artist_name": source.artist_name,
+            "version_status": source.version_status,
+            "current_user": self.shotgrid.user,
+            "users": self.shotgrid.users,
+            "tags": self.shotgrid.tags,
+        }
+
+        # Active status lists are project specific for some reason
+        if source.project_id:
+            status_list = self.shotgrid.get_active_status_list(
+                "Version", source.project_id
+            )
             status_list = status_list["data"]
         else:
             status_list = []
 
+        sg_data["status_list"] = status_list
+
+        # Note types are added as values in the SG schema
         note_types = self.shotgrid.get_field_valid_values("Note", "sg_note_type")
-        note_types = note_types["data"]
-        user_first_name = self.shotgrid.user.get("name", "Unknown").split(" ")[0]
+        sg_data["note_types"] = note_types["data"]
 
-        self.inspector.update_version_data(
-            source.entity_name,
-            version_name,
-            source.artist_name,
-            source.version_status,
-            status_list,
-        )
+        return sg_data
 
-        self.inspector.update_note_subject(user_first_name, version_name)
-        self.inspector.update_note_options(users, tags, note_types)
+    def _update_sg_ui(self):
+        """Update the SG note UI with data from ShotGrid"""
+        data = self._collect_sg_data()
+        if data:
+            self.inspector.update_sg_data(data)
 
     def create_sg_note_and_upload(self):
-        source = self._get_source_from_render()
+        """
+        Create an SG note and upload its annotations.
+
+        This is a multi-step process:
+        1. Create the note in SG so we can get its ID
+        2. Export the note's annotations
+        3. Upload the annotations agains the note
+        4. Report success or faliure
+        """
+
+        # Grab the source
+        try:
+            source = self._get_source_from_render()
+        except NoSourceError:
+            self.inspector.show_message(
+                "No source was found!",
+                message_type="critical",
+            )
+            return
+
+        # Build the note dictionary  and create the note
         note = self._build_sg_note(source)
         create_note = self.shotgrid.create_note(note)
+
         if not create_note["ok"]:
+            # Creation failed. Warn and abort
             self.inspector.show_message(
                 f"Failed to create note\n\n{self._format_errors([note])}",
                 message_type="critical",
             )
             return
 
+        # Export the annotations
         self._export_annotations_to_sg(source, create_note["data"][0]["id"])
 
-    def _build_sg_note(self, source) -> Note:
+    def try_sg_refresh(self):
+        try:
+            source = self._get_source_from_render()
+        except NoSourceError:
+            return
 
+        state = source.sg_data_status
+        if state == "ready":
+            self._sg_refresh_pending = False
+            self._update_sg_ui()
+        elif state == "none":
+            self._sg_refresh_pending = False
+            self.inspector.show_sg_unavailable()
+
+    def _build_sg_note(self, source: Source) -> Note:
+        """Build the note dict in a format that SG understands
+
+        Parameters
+        ----------
+        source : Source
+            The source the note and annotations were put against
+
+        Returns
+        -------
+        Note
+            The note data in a SG friendly dict
+
+        """
         note_links = [
             {"type": "Shot", "id": source.shot_id},
             {"type": "Version", "id": source.version_id},
@@ -661,30 +732,60 @@ class AnnyMode(MinorMode):
 
         return note
 
-    def _export_annotations_to_sg(self, source, note_id: int):
-        temp_dir = Path(tempfile.mkdtemp(prefix="anny_"))
+    def _export_annotations_to_sg(self, source: Source, note_id: int):
+        """Export annotations to a temp dict
 
-        # We nest the callback so that it can has the proper context
-        # for clearing the temp dir and the note id
-        def _on_complete(files):
+        Parameters
+        ----------
+        source : Source
+            The source the annotations were put against
+        note_id : int
+            The ShotGrid note ID
+        """
+        # Collect info
+        temp_dir = Path(tempfile.mkdtemp(prefix="anny_"))
+        name = self._get_annotation_name(source)
+        frames = self.annotations.get_annotated_frames(source)
+
+        # Define the callback
+        def _on_complete(files: list[str]):
+            """The callback used by the exporter to upload the file once the export is complete.
+            Note that we are only passing the files into it, the note id and the directory are
+            derived from context (which is why this is a nested function)
+
+            Parameters
+            ----------
+            files : list[str]
+                The files to upload
+            """
             try:
                 self._upload_to_sg(files, note_id)
             finally:
                 shutil.rmtree(temp_dir, ignore_errors=True)
 
-        name = self._get_annotation_name(source)
-        frames = self.annotations.get_annotated_frames(source)
-
+        # Queue the export
         self.exporter.queue_all(
             save_dir=temp_dir, file_name=name, frames=frames, callback=_on_complete
         )
 
-    def _upload_to_sg(self, files, note_id):
+    def _upload_to_sg(self, files: list[str], note_id: int):
+        """Upload the annotated files to SG and store them in the note
+
+        Parameters
+        ----------
+        files : list[str]
+            The list of files to upload (provided by the export process)
+        note_id : int
+            The SG note id to store the annotations on
+        """
+
+        # Upload the annotations
         results = []
         for f in files:
             res = self.shotgrid.upload_annotation(note_id, f)
             results.append(res)
 
+        # Figure out which annotations failed and which uploaded
         failed = [r for r in results if not r["ok"]]
         uploaded = len(files) - len(failed)
 
@@ -764,6 +865,9 @@ class AnnyMode(MinorMode):
         source = rendered_sources[0]
         return Source(node=source["node"], name=source["name"])
 
+    def on_render_idle(self, event):
+        if self._sg_refresh_pending:
+            self.try_sg_refresh()
 
     # --- Rendering ---
     def render(self, event: Event):

@@ -176,11 +176,36 @@ class Inspector(QtWidgets.QDialog):
         """
         self.tabs.setTabVisible(self.SG_TAB, status)
 
-    def update_note_subject(self, user_first_name, version_name):
+    def show_sg_unavailable(self):
+        self.sg_ui.sgStackedWidget.setCurrentIndex(1)
+
+    def update_sg_data(self, data):
+        self._update_version_data(
+            data["entity_name"],
+            data["version_name"],
+            data["artist_name"],
+            data["version_status"],
+            data["status_list"],
+        )
+
+        # Create the subject line
+        user_first_name = data["current_user"].get("name", "Unknown").split(" ")[0]
+        self._update_note_subject(user_first_name, data["version_name"])
+
+        # Update the dropdown lists and multiselection fields
+        self._update_note_options(data["users"], data["tags"], data["note_types"])
+
+    def clear_note(self):
+        self.sg_ui.subjectField.clear()
+        self.sg_ui.textField.clear()
+        self.sg_ui.toMs.clear()
+        self.sg_ui.ccMs.clear()
+
+    def _update_note_subject(self, user_first_name, version_name):
         subject = f"{user_first_name}'s note on {version_name}"
         self.sg_ui.subjectField.setText(subject)
 
-    def update_version_data(
+    def _update_version_data(
         self,
         entity_name: str,
         version_name: str,
@@ -215,7 +240,7 @@ class Inspector(QtWidgets.QDialog):
                 self.sg_ui.statusCb.addItem(f"{code} - {name}", code)
             self.sg_ui.statusCb.setCurrentIndex(self.sg_ui.statusCb.findData(status))
 
-    def update_note_options(
+    def _update_note_options(
         self, users: list, tags: list, note_types: list[str]
     ) -> None:
         """Update multiselect and dropdown options for the SG note

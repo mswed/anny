@@ -583,7 +583,7 @@ class Source:
         try:
             status = crv.getStringProperty(f"{self.node}.tracking.infoStatus")
         except Exception as e:
-            # We don't have this attribute at all
+            # We don't have this attribute at all. i.e. not a SG version
             return "none"
         if not status:
             # The status is empty
@@ -680,7 +680,7 @@ class Source:
                 return user_name[2]
 
     @property
-    def has_sg_data(self):
+    def has_full_sg_data(self):
         return all(
             x is not None
             for x in (
