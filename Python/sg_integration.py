@@ -108,7 +108,7 @@ class ShotGrid:
             # Convert the dict to a list so we maintain our standard SG Result dict
             active_values = [(k, v) for k, v in active_values.items()]
 
-            return {"ok": True, "message": "", "data": active_values}
+            return {"ok": True, "message": "", "data": sorted(active_values)}
 
         except ShotgunError as e:
             return {"ok": False, "message": str(e), "data": []}

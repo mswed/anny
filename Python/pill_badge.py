@@ -43,7 +43,7 @@ class PillBadge(QFrame):
         middle.setStyleSheet("color: white; background: transparent;")
 
         # Set the close button
-        icon_path = "/home/mswed/Documents/coding/anny/icons/xmark-solid-full.svg"
+        icon_path = ":/icons/xmark-solid-full.svg"
         self.close_icon = self._build_icon(icon_path)
         self.delete_btn = QPushButton()
         self.delete_btn.setFixedSize(16, 16)
