@@ -625,6 +625,7 @@ class AnnyMode(MinorMode):
             "version_status": source.version_status,
             "current_user": self.shotgrid.user,
             "users": self.shotgrid.users,
+            "groups": self.shotgrid.groups,
             "tags": self.shotgrid.tags,
         }
 

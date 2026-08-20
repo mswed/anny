@@ -480,7 +480,7 @@ class Inspector(QtWidgets.QDialog):
         if data.get("type") == "HumanUser":
             return f"{data['name']} ({data['login']})"
         else:
-            return data["name"]
+            return data["code"]
 
     @staticmethod
     def record_id(data):
