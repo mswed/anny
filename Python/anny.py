@@ -906,6 +906,9 @@ class AnnyMode(MinorMode):
         )
 
     def on_render_idle(self, event: Event):
+        if self.shotgrid.has_sgtk() and not self.shotgrid.is_initialized():
+            self.shotgrid.initialize()
+
         if self._sg_refresh_pending:
             self.try_sg_refresh()
 
