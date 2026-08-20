@@ -805,7 +805,21 @@ class AnnyMode(MinorMode):
         else:
             self.inspector.show_message(f"Note create with {uploaded} annotations")
 
-    def _format_errors(self, results):
+    def _format_errors(self, results: list[SGResult]) -> str:
+        """Format a list of error dictionaries so we can display them in the
+        error message
+
+        Parameters
+        ----------
+        results : list[dict[str, Any]]
+            The results with the error
+
+        Returns
+        -------
+        str
+            A formatted string with all of the error messages
+
+        """
         error_details = ["Details", "-----"]
         for r in results:
             error_details.append(r["message"])
