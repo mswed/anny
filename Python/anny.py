@@ -108,10 +108,6 @@ class AnnyMode(MinorMode):
         )
 
     # --- UI ---
-    def flow_layout(self, event):
-        self.window = Window()
-        self.window.show()
-
     def show_ui(self, event: Event):
         """Show the Anny UI and bind the select tool to start
 
@@ -908,6 +904,8 @@ class AnnyMode(MinorMode):
     def on_render_idle(self, event: Event):
         if self.shotgrid.has_sgtk() and not self.shotgrid.is_initialized():
             self.shotgrid.initialize()
+            if self.inspector.tabs.currentIndex() == self.inspector.SG_TAB:
+                self.try_sg_refresh()
 
         if self._sg_refresh_pending:
             self.try_sg_refresh()
