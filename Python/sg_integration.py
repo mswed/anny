@@ -36,7 +36,9 @@ class ShotGrid:
         return self.engine is not None and self.sg is not None
 
     def initialize(self):
-        if self.has_sgtk():
+        if self.is_initialized():
+            return
+        try:
             import sgtk
 
             self.engine = sgtk.platform.current_engine()
@@ -50,6 +52,8 @@ class ShotGrid:
             tags = self.get_tags()
             if tags["ok"]:
                 self.tags = tags["data"]
+        except Exception as e:
+            return
 
     def get_active_users(self) -> SGResult:
         if self.sg is None:
@@ -104,7 +108,7 @@ class ShotGrid:
             # Convert the dict to a list so we maintain our standard SG Result dict
             active_values = [(k, v) for k, v in active_values.items()]
 
-            return {"ok": True, "message": "", "data": active_values}
+            return {"ok": True, "message": "", "data": sorted(active_values)}
 
         except ShotgunError as e:
             return {"ok": False, "message": str(e), "data": []}
@@ -145,6 +149,16 @@ class ShotGrid:
             valid_values = properties.get("valid_values", {}).get("value", [])
             return {"ok": True, "message": "", "data": valid_values}
 
+        except ShotgunError as e:
+            return {"ok": False, "message": str(e), "data": []}
+
+    def set_version_status(self, version_id: int, status: str):
+        if self.sg is None:
+            return {"ok": False, "message": "No ShotGrid connection found", "data": []}
+
+        try:
+            res = self.sg.update("Version", version_id, {"sg_status_list": status})
+            return {"ok": True, "message": "", "data": [res]}
         except ShotgunError as e:
             return {"ok": False, "message": str(e), "data": []}
 

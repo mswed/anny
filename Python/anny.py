@@ -108,10 +108,6 @@ class AnnyMode(MinorMode):
         )
 
     # --- UI ---
-    def flow_layout(self, event):
-        self.window = Window()
-        self.window.show()
-
     def show_ui(self, event: Event):
         """Show the Anny UI and bind the select tool to start
 
@@ -625,6 +621,7 @@ class AnnyMode(MinorMode):
             "version_status": source.version_status,
             "current_user": self.shotgrid.user,
             "users": self.shotgrid.users,
+            "groups": self.shotgrid.groups,
             "tags": self.shotgrid.tags,
         }
 
@@ -657,9 +654,10 @@ class AnnyMode(MinorMode):
 
         This is a multi-step process:
         1. Create the note in SG so we can get its ID
-        2. Export the note's annotations
-        3. Upload the annotations agains the note
-        4. Report success or faliure
+        2. Update the version status (if the user changed it)
+        3. Export the note's annotations
+        4. Upload the annotations agains the note
+        5. Report success or faliure
         """
 
         # Grab the source
@@ -668,6 +666,15 @@ class AnnyMode(MinorMode):
         except NoSourceError:
             self._show_no_source_warning()
             return
+
+        # Check if have any annotated frames
+        frames = self.annotations.get_annotated_frames(source)
+        if not frames:
+            confirmed = self.inspector.ask_for_confirmation(
+                "No annotated frames were found. Do you wish to upload the note?"
+            )
+            if not confirmed:
+                return
 
         # Build the note dictionary  and create the note
         note = self._build_sg_note(source)
@@ -681,8 +688,24 @@ class AnnyMode(MinorMode):
             )
             return
 
-        # Export the annotations
-        self._export_annotations_to_sg(source, created_note["data"][0]["id"])
+        # Update the version status if needed
+        selected_status = self.inspector.sg_ui.statusCb.currentData()
+        if source.version_status != selected_status:
+            update = self.shotgrid.set_version_status(
+                source.version_id, selected_status
+            )
+            if not update["ok"]:
+                self.inspector.show_message(
+                    "Failed to update version status",
+                    message_type="warning",
+                )
+
+        if frames:
+            # Export the annotations
+            note_id = created_note["data"][0]["id"]
+            self._export_annotations_to_sg(source, note_id, frames)
+        else:
+            self.inspector.show_message("Note created (without annotations)")
 
     def try_sg_refresh(self):
         try:
@@ -731,7 +754,9 @@ class AnnyMode(MinorMode):
 
         return note
 
-    def _export_annotations_to_sg(self, source: Source, note_id: int):
+    def _export_annotations_to_sg(
+        self, source: Source, note_id: int, frames: list[int]
+    ):
         """Export annotations to a temp dict
 
         Parameters
@@ -740,11 +765,12 @@ class AnnyMode(MinorMode):
             The source the annotations were put against
         note_id : int
             The ShotGrid note ID
+        frames : list[int]
+            A list of annotated frame numbers
         """
         # Collect info
         temp_dir = Path(tempfile.mkdtemp(prefix="anny_"))
         name = self._get_annotation_name(source)
-        frames = self.annotations.get_annotated_frames(source)
 
         # Define the callback
         def _on_complete(files: list[str]):
@@ -802,7 +828,8 @@ class AnnyMode(MinorMode):
             )
 
         else:
-            self.inspector.show_message(f"Note create with {uploaded} annotations")
+            self.inspector.show_message(f"Note created with {uploaded} annotations")
+            self.inspector.clear_note()
 
     def _format_errors(self, results: list[SGResult]) -> str:
         """Format a list of error dictionaries so we can display them in the
@@ -875,6 +902,11 @@ class AnnyMode(MinorMode):
         )
 
     def on_render_idle(self, event: Event):
+        if self.shotgrid.has_sgtk() and not self.shotgrid.is_initialized():
+            self.shotgrid.initialize()
+            if self.inspector.tabs.currentIndex() == self.inspector.SG_TAB:
+                self.try_sg_refresh()
+
         if self._sg_refresh_pending:
             self.try_sg_refresh()
 

@@ -165,6 +165,18 @@ class Inspector(QtWidgets.QDialog):
         elif message_type == "critical":
             QtWidgets.QMessageBox.critical(self, "Error!", message)
 
+    def ask_for_confirmation(self, message):
+        reply = QtWidgets.QMessageBox.question(
+            self,
+            "Question!",
+            message,
+            buttons=QtWidgets.QMessageBox.StandardButton.Yes
+            | QtWidgets.QMessageBox.StandardButton.No,
+            defaultButton=QtWidgets.QMessageBox.StandardButton.No,
+        )
+
+        return reply == QtWidgets.QMessageBox.StandardButton.Yes
+
     def set_sg_tab_visibility(self, status: bool) -> None:
         """Hide or show the Shotgrid tab
 
@@ -193,7 +205,9 @@ class Inspector(QtWidgets.QDialog):
         self._update_note_subject(user_first_name, data["version_name"])
 
         # Update the dropdown lists and multiselection fields
-        self._update_note_options(data["users"], data["tags"], data["note_types"])
+        self._update_note_options(
+            data["users"] + data["groups"], data["tags"], data["note_types"]
+        )
 
     def clear_note(self):
         self.sg_ui.subjectField.clear()
@@ -480,7 +494,7 @@ class Inspector(QtWidgets.QDialog):
         if data.get("type") == "HumanUser":
             return f"{data['name']} ({data['login']})"
         else:
-            return data["name"]
+            return data["code"]
 
     @staticmethod
     def record_id(data):

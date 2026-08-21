@@ -227,7 +227,7 @@ class AnnotationLayer:
         """
         return self.sources[source_node].previous_annotated_frame(current_frame)
 
-    def get_annotated_frames(self, source: Source) -> list:
+    def get_annotated_frames(self, source: Source) -> list[int]:
         """Get a sorted list of all annotated frames on the source
 
         Parameters
