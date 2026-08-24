@@ -1,4 +1,5 @@
 from PySide6 import QtGui, QtWidgets
+from PySide6 import QtCore
 from PySide6.QtCore import Qt
 from typing import Optional
 from pathlib import Path
@@ -9,6 +10,28 @@ from ui_shotgrid import Ui_Shotgrid
 from style import ANNY_STYLESHEET
 import resources_rc
 from color_picker import ColorPickerDrowpdown
+
+
+class BusyOverlay(QtWidgets.QWidget):
+    def __init__(self, parent: QtWidgets.QWidget):
+        super().__init__(parent)
+
+        self.setStyleSheet("background-color: rgba(38, 34, 32, 200)")
+        layout = QtWidgets.QVBoxLayout(self)
+        font = QtGui.QFont("Arial", 24)
+        font.setBold(True)
+        self.label = QtWidgets.QLabel("Exporting annotations...")
+        self.label.setAlignment(QtCore.Qt.AlignCenter)
+        self.label.setFont(font)
+        layout.addWidget(self.label)
+        self.hide
+
+    def show_over(self, text=None):
+        self.resize(self.parent().size())
+        self.raise_()
+        if text is not None:
+            self.label.setText(text)
+        self.show()
 
 
 class Inspector(QtWidgets.QDialog):
@@ -54,6 +77,9 @@ class Inspector(QtWidgets.QDialog):
         self.sg_ui = Ui_Shotgrid()
         self.sg_ui.setupUi(sg_widget)
         self.tabs.addTab(sg_widget, "ShotGrid Note")
+
+        # --- Busy Overlay ---
+        self.busy_overlay = BusyOverlay(self)
 
         # Set the overall style
         self.setStyle(QtWidgets.QStyleFactory.create("Fusion"))

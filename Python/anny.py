@@ -489,7 +489,7 @@ class AnnyMode(MinorMode):
         self.current_stroke = None
         crv.redraw()
 
-    def _enter_text_editing(self, stroke):
+    def _enter_text_editing(self, stroke: TextStroke):
         # Update the tools UI to trigger the bindings
         self.inspector.select_tool(0)
 
@@ -547,6 +547,7 @@ class AnnyMode(MinorMode):
         """
         save_path = self.inspector.get_save_path()
         if save_path:
+            self.inspector.busy_overlay.show_over()
             self.exporter.queue_frame(save_path, callback=self.on_export_complete)
 
     def export_all_annotations(self, event: Event):
@@ -569,6 +570,7 @@ class AnnyMode(MinorMode):
             name = self._get_annotation_name(source)
             frames = self.annotations.get_annotated_frames(source)
 
+            self.inspector.busy_overlay.show_over()
             self.exporter.queue_all(
                 save_dir=save_dir,
                 file_name=name,
@@ -586,6 +588,7 @@ class AnnyMode(MinorMode):
 
         """
         self.inspector.show_message("Frame export completed!")
+        self.inspector.busy_overlay.hide()
 
     def _get_annotation_name(self, source: Source) -> str:
         """Get the base file name for an annotation export
@@ -710,6 +713,11 @@ class AnnyMode(MinorMode):
             if not confirmed:
                 return
 
+        # Tell they user we're doing something
+        self.inspector.busy_overlay.show_over(
+            "Exporting annotations and uploading to ShotGrid"
+        )
+
         # Build the note dictionary  and create the note
         note = self._build_sg_note(source)
         created_note = self.shotgrid.create_note(note)
@@ -740,6 +748,7 @@ class AnnyMode(MinorMode):
             self._export_annotations_to_sg(source, note_id, frames)
         else:
             self.inspector.show_message("Note created (without annotations)")
+            self.inspector.busy_overlay.hide()
 
     def try_sg_refresh(self):
         try:
@@ -821,6 +830,7 @@ class AnnyMode(MinorMode):
                 self._upload_to_sg(files, note_id)
             finally:
                 shutil.rmtree(temp_dir, ignore_errors=True)
+                self.inspector.busy_overlay.hide()
 
         # Queue the export
         self.exporter.queue_all(

@@ -15,6 +15,7 @@ class ShotGrid:
         self.users = []
         self.groups = []
         self.tags = []
+        self._sgtk_warning = True
 
     @property
     def user(self) -> dict:
@@ -27,9 +28,11 @@ class ShotGrid:
         if spec:
             return True
 
-        print(
-            "SGTK module not found. Make sure you've enabled the shotgrid mode under packages"
-        )
+        if self._sgtk_warning:
+            print(
+                "SGTK module not found. Make sure you've enabled the shotgrid mode under packages"
+            )
+            self._sgtk_warning = False
         return False
 
     def is_initialized(self):
