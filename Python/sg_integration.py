@@ -106,9 +106,9 @@ class ShotGrid:
                 active_values.pop(v)
 
             # Convert the dict to a list so we maintain our standard SG Result dict
-            active_values = [(k, v) for k, v in active_values.items()]
+            active_values = sorted(active_values.items(), key=lambda s: s[1])
 
-            return {"ok": True, "message": "", "data": sorted(active_values)}
+            return {"ok": True, "message": "", "data": active_values}
 
         except ShotgunError as e:
             return {"ok": False, "message": str(e), "data": []}

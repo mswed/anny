@@ -251,7 +251,7 @@ class Inspector(QtWidgets.QDialog):
             for i in status_list:
                 code = i[0]
                 name = i[1]
-                self.sg_ui.statusCb.addItem(f"{code} - {name}", code)
+                self.sg_ui.statusCb.addItem(name, code)
             self.sg_ui.statusCb.setCurrentIndex(self.sg_ui.statusCb.findData(status))
 
     def _update_note_options(
