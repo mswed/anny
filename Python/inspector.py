@@ -143,6 +143,26 @@ class Inspector(QtWidgets.QDialog):
 
     # --- PUBLIC API ---
 
+    def select_tool(self, tool_id: int):
+        # Get the current button and check it
+        button = self.tool_group.button(tool_id)
+        if button:
+            button.setChecked(True)
+
+        # Change the cursor to match the tool
+        if tool_id == 0:
+            crv.setCursor(Qt.CursorShape.ArrowCursor.value)
+        else:
+            crv.setCursor(Qt.CursorShape.CrossCursor.value)
+
+        # Tell Anny to bind the tool
+        self.mode.set_active_tool(tool_id)
+
+    def focus_text_field(self):
+        self.raise_()
+        self.activateWindow()
+        self.ui.textField.setFocus()
+
     def get_save_path(self, save_type="file") -> Optional[Path]:
         dialog = QtWidgets.QFileDialog(self, "Export Annotation", str(Path.home()))
         dialog.setOption(QtWidgets.QFileDialog.DontUseNativeDialog, True)
@@ -343,11 +363,7 @@ class Inspector(QtWidgets.QDialog):
         tool_id : int
             Tool button ID
         """
-        self.mode.set_active_tool(tool_id)
-        if tool_id == 0:
-            crv.setCursor(Qt.CursorShape.ArrowCursor.value)
-        else:
-            crv.setCursor(Qt.CursorShape.CrossCursor.value)
+        self.select_tool(tool_id)
 
     def _on_color_changed(self, color: tuple, sender: QtWidgets.QPushButton, kind: str):
         """Update the color swatch, the color of future strokes and/or the color of the currently

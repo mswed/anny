@@ -5,9 +5,9 @@ from pathlib import Path
 import logging
 from rv.rvtypes import MinorMode
 import rv.commands as crv
-import rv.extra_commands as erv
 from rv.qtutils import sessionWindow
-from typing import Any, Optional, TYPE_CHECKING
+from PySide6 import QtCore
+from typing import Optional, TYPE_CHECKING
 from utils import ImagePoint, Note, Source, SGResult
 
 from sg_integration import ShotGrid
@@ -224,6 +224,10 @@ class AnnyMode(MinorMode):
             self._bind_draw_tool()
             self._update_ui_states(self.active_stroke_type.editable_properties)
 
+        # We always clear the text field on tool change
+        # TODO: Might want to keep the text and restore it for text tool
+        self.inspector.ui.textField.clear()
+
     def _bind_draw_tool(self):
         """
         Bind the mouse actions to the draw tool
@@ -344,12 +348,27 @@ class AnnyMode(MinorMode):
             The mouse click is released
 
         """
+        if not self.current_stroke:
+            # In the unlikely event we don't have a stroke just return
+            return
+
         if self.current_stroke:
             if not self.current_stroke.is_valid:
+                # Invalid strokes get deleted
                 frame = crv.frame()
                 source = self.current_stroke.source
                 self.annotations.delete_stroke(source, frame, self.current_stroke)
+                self.current_stroke = None
+                return
 
+            if isinstance(self.current_stroke, TextStroke):
+                # When we're done drawing a text rectangle we switch into the select
+                # tool and enter the text field
+                self._enter_text_editing(self.current_stroke)
+                # We do not clear to current stroke so we can keep editing it
+                return
+
+        # Valid none text stroke has finished. Clear it.
         self.current_stroke = None
 
     # --- Selection and Editing ---
@@ -469,6 +488,21 @@ class AnnyMode(MinorMode):
 
         self.current_stroke = None
         crv.redraw()
+
+    def _enter_text_editing(self, stroke):
+        # Update the tools UI to trigger the bindings
+        self.inspector.select_tool(0)
+
+        # We need to restore the stroke, since tool selection clears it
+        self.current_stroke = stroke
+        self.current_stroke.selected = True
+
+        # Update the UI
+        self._update_ui_states(self.current_stroke.editable_properties)
+        self._update_ui_values()
+
+        # Bring the window to the front and select the text field
+        self.inspector.focus_text_field()
 
     # --- Navigation ---
     def next_annotation(self, event: Event):
