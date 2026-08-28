@@ -260,6 +260,7 @@ class Inspector(QtWidgets.QDialog):
         self.sg_ui.textField.clear()
         self.sg_ui.toMs.clear()
         self.sg_ui.ccMs.clear()
+        self.sg_ui.tagsMs.clear()
 
     def _update_note_subject(self, user_first_name, version_name):
         subject = f"{user_first_name}'s note on {version_name}"

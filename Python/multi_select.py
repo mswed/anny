@@ -37,10 +37,15 @@ class MultiSelect(QWidget):
 
     def clear(self):
         self._completer_model.clear()
+        pills = []
         for i in range(self.main_layout.count()):
-            w = self.main_layout.itemAt(i).widget()
-            if isinstance(w, PillBadge):
-                self._remove_pill(w)
+            item = self.main_layout.itemAt(i)
+            if item is not None:
+                w = item.widget()
+                if isinstance(w, PillBadge):
+                    pills.append(w)
+        for pill in pills:
+            self._remove_pill(pill)
 
     def selected_data(self) -> list:
         result = []
