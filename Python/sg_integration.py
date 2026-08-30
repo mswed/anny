@@ -9,6 +9,21 @@ except ImportError:
 
 
 class ShotGrid:
+    """[TODO:description]
+
+    Attributes
+    ----------
+    engine : [TODO:attribute]
+    sg : [TODO:attribute]
+    users : [TODO:attribute]
+    groups : [TODO:attribute]
+    tags : [TODO:attribute]
+
+    """
+
+    """ShotGrid connection class 
+    """
+
     def __init__(self) -> None:
         self.engine = None
         self.sg = None
@@ -19,11 +34,27 @@ class ShotGrid:
 
     @property
     def user(self) -> dict:
+        """Get the currect shotgrid user if we can find one
+
+        Returns
+        -------
+        dict
+            The user info or an empty dict
+
+        """
         if self.engine:
             return self.engine.context.user
         return {}
 
-    def has_sgtk(self):
+    def has_sgtk(self) -> bool:
+        """Checks to see if we have sgtk in our path
+
+        Returns
+        -------
+        bool
+            True if we have SGTK else False
+        """
+
         spec = find_spec("sgtk")
         if spec:
             return True
@@ -35,10 +66,20 @@ class ShotGrid:
             self._sgtk_warning = False
         return False
 
-    def is_initialized(self):
+    def is_initialized(self) -> bool:
+        """Check to see if we have a ShotGrid connection
+
+        Returns
+        -------
+        bool
+            True if we succesfully initialized the connection, else False
+
+        """
         return self.engine is not None and self.sg is not None
 
     def initialize(self):
+        """Initialize a ShotGrid connection"""
+
         if self.is_initialized():
             return
         try:
@@ -59,6 +100,16 @@ class ShotGrid:
             return
 
     def get_active_users(self) -> SGResult:
+        """Get a list of all active ShotGrid users
+
+        Returns
+        -------
+        SGResult
+            ok: True if we got the users, else False
+            message: empty if we got the users, else error message
+            data: list of active users if any were found, else empty list
+        """
+
         if self.sg is None:
             return {"ok": False, "message": "No ShotGrid connection found", "data": []}
 
@@ -72,6 +123,15 @@ class ShotGrid:
         return {"ok": True, "message": "", "data": users}
 
     def get_groups(self) -> SGResult:
+        """Get a list of all ShotGrid groups
+
+        Returns
+        -------
+        SGResult
+            ok: True if we got the groups, else False
+            message: empty if we got the groups, else error message
+            data: list of groups if any were found, else empty list
+        """
         if self.sg is None:
             return {"ok": False, "message": "No ShotGrid connection found", "data": []}
 
@@ -83,6 +143,15 @@ class ShotGrid:
         return {"ok": True, "message": "", "data": groups}
 
     def get_tags(self) -> SGResult:
+        """Get a list of all ShotGrid tags
+
+        Returns
+        -------
+        SGResult
+            ok: True if we got the tags, else False
+            message: empty if we got the tags, else error message
+            data: list of tags if any were found, else empty list
+        """
         if self.sg is None:
             return {"ok": False, "message": "No ShotGrid connection found", "data": []}
 
@@ -94,6 +163,23 @@ class ShotGrid:
         return {"ok": True, "message": "", "data": tags}
 
     def get_active_status_list(self, entity_type: str, project_id: int) -> SGResult:
+        """Get a list of active status lists per entity, per project
+
+        Parameters
+        ----------
+        entity_type : str
+            The type of entity the status is set on
+        project_id : int
+            The project we are working on
+
+        Returns
+        -------
+        SGResult
+            ok: True if we got status values, else False
+            message: empty if we got status values, else error message
+            data: list of status values if any were found, else empty list
+
+        """
         if self.sg is None:
             return {"ok": False, "message": "No ShotGrid connection found", "data": []}
 
@@ -155,7 +241,24 @@ class ShotGrid:
         except ShotgunError as e:
             return {"ok": False, "message": str(e), "data": []}
 
-    def set_version_status(self, version_id: int, status: str):
+    def set_version_status(self, version_id: int, status: str) -> SGResult:
+        """Set the current version status
+
+        Parameters
+        ----------
+        version_id : int
+            The version id to set the status on
+        status : str
+            The status code to set
+
+        Returns
+        -------
+        SGResult
+            ok: True if the status was set, else False
+            message: empty if we set the status, else error message
+            data: version object with updated status is we updated the version, else empty list
+
+        """
         if self.sg is None:
             return {"ok": False, "message": "No ShotGrid connection found", "data": []}
 
@@ -166,6 +269,21 @@ class ShotGrid:
             return {"ok": False, "message": str(e), "data": []}
 
     def create_note(self, note: Note) -> SGResult:
+        """Create a note in ShotGrid
+
+        Parameters
+        ----------
+        note : Note
+            The note fields and their values
+
+        Returns
+        -------
+        SGResult
+            ok: True if the note was created, else False
+            message: empty if created the note, else error message
+            data: note object is we created the note, else empty list
+        """
+
         if self.sg is None:
             return {"ok": False, "message": "No ShotGrid connection found", "data": []}
 
@@ -176,6 +294,23 @@ class ShotGrid:
             return {"ok": False, "message": str(e), "data": []}
 
     def upload_annotation(self, note_id: int, path: str) -> SGResult:
+        """Upload an annotated frame to ShotGrid
+
+        Parameters
+        ----------
+        note_id : int
+            The note to put the annotation against
+        path : str
+            The path to the annotated frame on disk
+
+        Returns
+        -------
+        SGResult
+            ok: True if the annotation was created, else False
+            message: empty if created the annotation, else error message
+            data: note object is we created the annotation, else empty list
+
+        """
         if not self.sg:
             return {"ok": False, "message": "No ShotGrid connection found", "data": []}
 

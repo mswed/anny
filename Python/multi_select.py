@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Callable, Optional, Any
 from PySide6.QtCore import QEvent, QModelIndex, QTimer, Qt, QObject
 from PySide6.QtGui import QStandardItem, QStandardItemModel, QResizeEvent
 from PySide6.QtWidgets import QCompleter, QLineEdit, QSizePolicy, QWidget
@@ -7,6 +7,12 @@ from pill_badge import PillBadge
 
 
 class MultiSelect(QWidget):
+    """Multiselect widget that allows us to search a dropdown list of records, then create and
+    remove the selection in form of a pill. To create multiselect we first need to call the class
+    then run its configure function to pass it all the data it needs
+
+    """
+
     def __init__(
         self,
         parent=None,
@@ -25,8 +31,26 @@ class MultiSelect(QWidget):
         record_id: str | Callable,
         record_type: str | Callable,
         icons: Optional[dict] = None,
-        placeholder="Search people and groups",
+        placeholder: str = "Search people and groups",
     ):
+        """Configure the widget
+
+        Parameters
+        ----------
+        model : list
+            The model containing the records
+        record_name : str | Callable
+            The callback that grabs the record name from the model, can be either a function of just the key if data is a dict
+        record_id : str | Callable
+            The callback that grabs the record id from the model, can be either a function of just the key if data is a dict
+        record_type : str | Callable
+            The callback that grabs the record type from the model, can be either a function of just the key if data is a dict
+        icons : Optional[dict]
+            Optional icon mapping between the record type and its icon
+        placeholder : str
+            The placeholder text for the search field
+
+        """
         self._record_name_fn = self._as_accessor(record_name)
         self._record_id_fn = self._as_accessor(record_id)
         self._record_type_fn = self._as_accessor(record_type)
@@ -36,6 +60,7 @@ class MultiSelect(QWidget):
         self._populate_model(model)
 
     def clear(self):
+        """Clear the widget from all selection"""
         self._completer_model.clear()
         pills = []
         for i in range(self.main_layout.count()):
@@ -48,21 +73,40 @@ class MultiSelect(QWidget):
             self._remove_pill(pill)
 
     def selected_data(self) -> list:
+        """Grab the current pill data from the widget
+
+        Returns
+        -------
+        list
+            list of pill data
+        """
         result = []
         for i in range(self.main_layout.count()):
-            w = self.main_layout.itemAt(i).widget()
-            if isinstance(w, PillBadge):
-                result.append(w.pill_data)
+            item = self.main_layout.itemAt(i)
+            if item is not None:
+                w = item.widget()
+                if isinstance(w, PillBadge):
+                    result.append(w.pill_data)
 
         return result
 
-    def _populate_model(self, model):
+    def _populate_model(self, model: list):
+        """Put our model inside the completer model so we can auto complete
+
+        Parameters
+        ----------
+        model : list
+            The widgets original model
+
+        """
         self._completer_model.clear()
         for record in model:
             item = self._create_record(record)
             self._completer_model.appendRow(item)
 
     def _build_ui(self):
+        """Create the UI layout"""
+
         self.setObjectName("MultiSelect")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setStyleSheet("""
@@ -94,6 +138,21 @@ class MultiSelect(QWidget):
         self.main_layout.stretch_widget = self.text_field
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Place the dropdown on the text field (which changes size as pills are added)
+
+        Parameters
+        ----------
+        watched : QObject
+            The object that was clicked
+        event : QEvent
+            The type of the event (we are looking for Show)
+
+        Returns
+        -------
+        bool
+            I'm.... not sure?
+
+        """
         # An event filter to snap the drowpdown menu into place
         if watched is self.completer.popup() and event.type() == QEvent.Type.Show:
             # We are showing the drop down, reposition
@@ -107,16 +166,44 @@ class MultiSelect(QWidget):
         return super().eventFilter(watched, event)
 
     def _create_record(self, data: dict) -> QStandardItem:
+        """Create a record in our completer model
+
+        Parameters
+        ----------
+        data : dict
+            The record data
+
+        Returns
+        -------
+        QStandardItem
+            The item to add to the model
+        """
         display = self._record_name_fn(data)
         item = QStandardItem(display)
         item.setData(data, Qt.UserRole)
         return item
 
     def _restore_record(self, data: dict):
+        """Records are removed from the completer model when a pill is created, so we need a way to bring them back
+        when a pill is removed
+
+        Parameters
+        ----------
+        data : dict
+            The record data
+
+        """
         item = self._create_record(data)
         self._completer_model.appendRow(item)
 
-    def _on_selected(self, index):
+    def _on_selected(self, index: int):
+        """When we select an item from the dropdown, create a pill, and remove the item fromt the model
+
+        Parameters
+        ----------
+        index : int
+            The index of the selected item in the completer model
+        """
         # Map back to the unfiltered model
         source_idx = self.completer.completionModel().mapToSource(index)
 
@@ -129,19 +216,39 @@ class MultiSelect(QWidget):
         pill = self._create_pill(record, record_data)
         position = self.main_layout.count() - 1
         self.main_layout.insertWidget(position, pill)
+
+        # Remove the record from the model
         self._remove_record(record_id)
 
         # Use a timer to clear the field once we're done
         QTimer.singleShot(0, self._set_placeholder)
 
     def _set_placeholder(self):
+        """Set the text field placeholder"""
+
         self.text_field.clear()
         if self.main_layout.count() == 1:
             self.text_field.setPlaceholderText(self.placeholder)
         else:
             self.text_field.setPlaceholderText("")
 
-    def _create_pill(self, text, data):
+    def _create_pill(self, text: str, data: Any) -> PillBadge:
+        """Create a pill
+
+        Parameters
+        ----------
+        text : str
+            The pill's text
+        data : Any
+            The record data, this can be anything, which is why we need to register the record type
+            callback
+
+        Returns
+        -------
+        PillBadge
+            The pill class
+        """
+
         record_type = self._record_type_fn(data)
 
         icon = None
@@ -153,7 +260,15 @@ class MultiSelect(QWidget):
 
         return pill
 
-    def _remove_record(self, target_id):
+    def _remove_record(self, target_id: Any):
+        """Remove a record from the completer model
+
+        Parameters
+        ----------
+        target_id : Any
+            The target id to remove (this is supplied by the record_id callback)
+        """
+
         for row in range(self._completer_model.rowCount()):
             data = self._completer_model.item(row).data(Qt.UserRole)
             record_id = self._record_id_fn(data)
@@ -162,6 +277,14 @@ class MultiSelect(QWidget):
                 break
 
     def _remove_pill(self, pill: PillBadge):
+        """Remove a pill
+
+        Parameters
+        ----------
+        pill : PillBadge
+            The pill to remove
+        """
+
         if self.main_layout.indexOf(pill) == -1:
             # The pill was already removed ignore the call
             return
@@ -175,6 +298,8 @@ class MultiSelect(QWidget):
         self._set_placeholder()
 
     def _setup_selection_box(self):
+        """Setup the dropdown menu"""
+
         self.completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
         self.completer.setFilterMode(Qt.MatchFlag.MatchContains)
         self.completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
@@ -184,7 +309,26 @@ class MultiSelect(QWidget):
         self.completer.activated[QModelIndex].connect(self._on_selected)
 
     @staticmethod
-    def _as_accessor(key_or_fn):
+    def _as_accessor(key_or_fn: str | Callable) -> Any:
+        """The function used to access the model. Since we don't know what our model's format is
+        it can be either a function, or a str if the model is a dict
+
+        Parameters
+        ----------
+        key_or_fn : str | Callable
+            Either a function of a dict key to grab some information out of the model
+
+        Raises
+        ------
+        TypeError
+            if the provided key_or_fn is not a str or a callable
+
+        Returns
+        -------
+        Any
+            The result of the callback (usually str or int)
+        """
+
         if callable(key_or_fn):
             return key_or_fn
         if isinstance(key_or_fn, str):

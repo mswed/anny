@@ -13,6 +13,10 @@ from color_picker import ColorPickerDrowpdown
 
 
 class BusyOverlay(QtWidgets.QWidget):
+    """A UI class to show that Anny is working on something and stop the
+    user from changing things
+    """
+
     def __init__(self, parent: QtWidgets.QWidget):
         super().__init__(parent)
 
@@ -26,7 +30,15 @@ class BusyOverlay(QtWidgets.QWidget):
         layout.addWidget(self.label)
         self.hide
 
-    def show_over(self, text=None):
+    def show_over(self, text: Optional[str] = None):
+        """Show the UI
+
+        Parameters
+        ----------
+        text : Optional[str]
+            The text to show while busy
+
+        """
         self.resize(self.parent().size())
         self.raise_()
         if text is not None:
@@ -170,6 +182,14 @@ class Inspector(QtWidgets.QDialog):
     # --- PUBLIC API ---
 
     def select_tool(self, tool_id: int):
+        """Select a tool and change the cursor shape accordingly
+
+        Parameters
+        ----------
+        tool_id : int
+            The id of the tool we are selecting
+
+        """
         # Get the current button and check it
         button = self.tool_group.button(tool_id)
         if button:
@@ -185,11 +205,25 @@ class Inspector(QtWidgets.QDialog):
         self.mode.set_active_tool(tool_id)
 
     def focus_text_field(self):
+        """Enter the annotation text field"""
         self.raise_()
         self.activateWindow()
         self.ui.textField.setFocus()
 
-    def get_save_path(self, save_type="file") -> Optional[Path]:
+    def get_save_path(self, save_type: str = "file") -> Optional[Path]:
+        """Ask the user where they would like to save the annotations
+
+        Parameters
+        ----------
+        save_type : str
+            Save type defaults to files, but can be switched to dir when exporting all annotations
+
+        Returns
+        -------
+        Optional[Path]
+            The path the user selected (either a file or a directory) or None
+
+        """
         dialog = QtWidgets.QFileDialog(self, "Export Annotation", str(Path.home()))
         dialog.setOption(QtWidgets.QFileDialog.DontUseNativeDialog, True)
         if save_type == "file":
@@ -203,7 +237,17 @@ class Inspector(QtWidgets.QDialog):
             files = dialog.selectedFiles()
             return Path(files[0]) if files else None
 
-    def show_message(self, message, message_type="information"):
+    def show_message(self, message: str, message_type: str = "information"):
+        """Show a message to the user
+
+        Parameters
+        ----------
+        message : str
+            The message to display
+        message_type : str
+            The level of the message: information, warning or critical
+
+        """
         if message_type == "information":
             QtWidgets.QMessageBox.information(self, "Info!", message)
         if message_type == "warning":
@@ -211,7 +255,20 @@ class Inspector(QtWidgets.QDialog):
         elif message_type == "critical":
             QtWidgets.QMessageBox.critical(self, "Error!", message)
 
-    def ask_for_confirmation(self, message):
+    def ask_for_confirmation(self, message: str) -> bool:
+        """Show a message asking the user to confirm an action
+
+        Parameters
+        ----------
+        message : str
+            The message to the user
+
+        Returns
+        -------
+        bool
+            True if the user confirmed the message, else False
+
+        """
         reply = QtWidgets.QMessageBox.question(
             self,
             "Question!",
@@ -237,7 +294,17 @@ class Inspector(QtWidgets.QDialog):
     def show_sg_unavailable(self):
         self.sg_ui.sgStackedWidget.setCurrentIndex(1)
 
-    def update_sg_data(self, data):
+    def update_sg_data(self, data: dict):
+        """Update the UI with data from shotgrid
+
+        Parameters
+        ----------
+        data : dict
+            The Shotgrid data we got from Anny. There are three levels of update:
+            the main data (version name and such), the subject line of the note,
+            and the dropdown menus/multiselect fields
+
+        """
         self._update_version_data(
             data["entity_name"],
             data["version_name"],
@@ -256,13 +323,23 @@ class Inspector(QtWidgets.QDialog):
         )
 
     def clear_note(self):
+        """Clear the SG note data"""
         self.sg_ui.subjectField.clear()
         self.sg_ui.textField.clear()
         self.sg_ui.toMs.clear()
         self.sg_ui.ccMs.clear()
         self.sg_ui.tagsMs.clear()
 
-    def _update_note_subject(self, user_first_name, version_name):
+    def _update_note_subject(self, user_first_name: str, version_name: str):
+        """Update the note's subject
+
+        Parameters
+        ----------
+        user_first_name : str
+            The name of the user creating the note
+        version_name : str
+            The name of the version being updated
+        """
         subject = f"{user_first_name}'s note on {version_name}"
         self.sg_ui.subjectField.setText(subject)
 
@@ -533,12 +610,38 @@ class Inspector(QtWidgets.QDialog):
 
     # --- HELPERS ---
     @staticmethod
-    def display_name(data):
+    def display_name(data: dict) -> str:
+        """Display name callback for the users/group multiselect
+
+        Parameters
+        ----------
+        data : dict
+            The shotgrid entity data to put into the multiselect
+
+        Returns
+        -------
+        str
+            The user name and their email if we have user data, else the group code
+
+        """
         if data.get("type") == "HumanUser":
             return f"{data['name']} ({data['login']})"
         else:
             return data["code"]
 
     @staticmethod
-    def record_id(data):
+    def record_id(data: dict) -> str:
+        """Record ID callback for the users/groups multiselect
+
+        Parameters
+        ----------
+        data : dict
+            The SG data to build from
+
+        Returns
+        -------
+        str
+            The record id, which is both the SG id and the record type (user or group)
+
+        """
         return f"{data['id']}-{data['type']}"

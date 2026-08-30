@@ -45,6 +45,16 @@ class FlowLayout(QLayout):
         self._items_list.append(item)
 
     def insertWidget(self, index: int, widget: QWidget) -> None:
+        """Insert a widget at a specific position (so we can control their order)
+
+        Parameters
+        ----------
+        index : int
+            The index to insert the widget at
+        widget : QWidget
+            The widget we're inserting
+
+        """
         # The widget needs to be a child of the layout
         self.addChildWidget(widget)
 
@@ -143,10 +153,26 @@ class FlowLayout(QLayout):
         return height
 
     def setGeometry(self, rect: QRect) -> None:
+        """Set the layout size based on ints content
+
+        Parameters
+        ----------
+        rect : QRect
+            The QT rect from the parent?
+
+        """
         super(FlowLayout, self).setGeometry(rect)
         self._do_layout(rect, False)
 
     def sizeHint(self) -> QSize:
+        """Grab the layout's minimum size
+
+        Returns
+        -------
+        QSize
+            Minimum size of layout
+
+        """
         return self.minimumSize()
 
     def minimumSize(self) -> QSize:

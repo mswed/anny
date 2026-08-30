@@ -4,6 +4,8 @@ from PySide6.QtCore import Qt, QSize, QEvent, Signal
 
 
 class PillBadge(QFrame):
+    """A pill widget for multiselects. Has an icon, pill text, pill data, and a remove button"""
+
     deleteRequested = Signal(object)
 
     def __init__(self, text, icon, data=None, color="#e0922f", parent=None) -> None:
@@ -64,17 +66,47 @@ class PillBadge(QFrame):
         layout.addWidget(self.delete_btn)
 
     def enterEvent(self, event: QEnterEvent) -> None:
+        """Enable and display the remove button when we hover over the pill
+
+        Parameters
+        ----------
+        event : QEnterEvent
+            The Qt enter event
+
+        """
         self.delete_btn.setEnabled(True)
         self.delete_btn.setIcon(self.close_icon)
 
-    def leaveEvent(self, event: QEvent, /) -> None:
+    def leaveEvent(self, event: QEvent) -> None:
+        """Disable and hide the remove button when we are no longer over the pill
+
+        Parameters
+        ----------
+        event : QEvent
+            The Qt leave event
+
+        """
         self.delete_btn.setEnabled(False)
         self.delete_btn.setIcon(QIcon())
 
     def _on_delete_clicked(self):
+        """Mark the pill for deletion when we click the remove button"""
         self.deleteRequested.emit(self)
 
-    def _build_icon(self, path):
+    def _build_icon(self, path: str) -> QIcon:
+        """Build the icon and color it
+
+        Parameters
+        ----------
+        path : str
+            The path to the icon
+
+        Returns
+        -------
+        QIcon
+            The icon with the coor applied to it
+
+        """
         icon = QIcon(path)
         icon_size = QSize(16, 16)
         pixmap = icon.pixmap(icon_size)
@@ -86,6 +118,21 @@ class PillBadge(QFrame):
 
     @staticmethod
     def _tint(pixmap: QPixmap, color: str) -> QPixmap:
+        """Coor an icon
+
+        Parameters
+        ----------
+        pixmap : QPixmap
+            The icon pixmap
+        color : str
+            The color of the tint
+
+        Returns
+        -------
+        QPixmap
+            Tinted pixmap
+
+        """
         # Create a transparent image the size of the icon
         canvas = QPixmap(pixmap.size())
         canvas.fill(Qt.transparent)

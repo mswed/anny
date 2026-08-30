@@ -6,8 +6,7 @@ import logging
 from rv.rvtypes import MinorMode
 import rv.commands as crv
 from rv.qtutils import sessionWindow
-from PySide6 import QtCore
-from typing import Optional, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING
 from utils import ImagePoint, Note, Source, SGResult
 
 from sg_integration import ShotGrid
@@ -490,6 +489,15 @@ class AnnyMode(MinorMode):
         crv.redraw()
 
     def _enter_text_editing(self, stroke: TextStroke):
+        """Enter text edit mode after a text annotation has
+        been drawn
+
+        Parameters
+        ----------
+        stroke : TextStroke
+            The selected text stroke
+
+        """
         # Update the tools UI to trigger the bindings
         self.inspector.select_tool(0)
 
@@ -637,7 +645,16 @@ class AnnyMode(MinorMode):
             if self.inspector.tabs.currentIndex() == self.inspector.SG_TAB:
                 self._sg_refresh_pending = True
 
-    def _collect_sg_data(self):
+    def _collect_sg_data(self) -> Optional[dict[str, Any]]:
+        """Collect the shotgrid information from the version and the server
+        so we can feed it to the UI
+
+        Returns
+        -------
+        Optional[dict[str, Any]]
+            Shotgrid data if this is a SG version and SG is available else None
+
+        """
         try:
             source = self._get_source_from_render()
         except NoSourceError:
@@ -750,7 +767,8 @@ class AnnyMode(MinorMode):
             self.inspector.show_message("Note created (without annotations)")
             self.inspector.busy_overlay.hide()
 
-    def try_sg_refresh(self):
+    def _try_sg_refresh(self):
+        """Check if we have SG data if we do and it's ready, we update the UI else we show the no SG UI"""
         try:
             source = self._get_source_from_render()
         except NoSourceError:
@@ -940,19 +958,29 @@ class AnnyMode(MinorMode):
         return Source(node=source["node"], name=source["name"])
 
     def _show_no_source_warning(self):
+        """Show a message warnign the user that we did not find a source"""
         self.inspector.show_message(
             "No source was found!",
             message_type="critical",
         )
 
     def on_render_idle(self, event: Event):
+        """Process events between renders. For now we only do SG updates
+
+        Parameters
+        ----------
+        event : Event
+            The RV per-render-event-processing event
+
+        """
+        # TODO: Export probably should live here, removing the need for a two step render save process
         if self.shotgrid.has_sgtk() and not self.shotgrid.is_initialized():
             self.shotgrid.initialize()
             if self.inspector.tabs.currentIndex() == self.inspector.SG_TAB:
-                self.try_sg_refresh()
+                self._try_sg_refresh()
 
         if self._sg_refresh_pending:
-            self.try_sg_refresh()
+            self._try_sg_refresh()
 
     # --- Rendering ---
     def render(self, event: Event):
