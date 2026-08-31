@@ -24,7 +24,7 @@ class ShotGrid:
 
     @property
     def user(self) -> dict:
-        """Get the current shotgrid user if we can find one
+        """Get the current ShotGrid user if we can find one
 
         Returns
         -------
@@ -85,7 +85,7 @@ class ShotGrid:
             return
 
     def refresh_cached_data(self):
-        """Fetch fresh users/groups/tags data from shotgrid"""
+        """Fetch fresh users/groups/tags data from ShotGrid"""
 
         users = self.get_active_users()
         if users["ok"]:

@@ -88,7 +88,7 @@ class Inspector(QtWidgets.QDialog):
         self.start_cap = None
         self.end_cap = None
 
-        # --- Shotgrid Tab ---
+        # --- ShotGrid Tab ---
         sg_widget = QtWidgets.QWidget()
         self.sg_ui = Ui_Shotgrid()
         self.sg_ui.setupUi(sg_widget)
@@ -287,7 +287,7 @@ class Inspector(QtWidgets.QDialog):
         return reply == QtWidgets.QMessageBox.StandardButton.Yes
 
     def set_sg_tab_visibility(self, status: bool) -> None:
-        """Hide or show the Shotgrid tab
+        """Hide or show the ShotGrid tab
 
         Parameters
         ----------
@@ -301,12 +301,12 @@ class Inspector(QtWidgets.QDialog):
         self.sg_ui.sgStackedWidget.setCurrentIndex(1)
 
     def update_sg_data(self, data: dict):
-        """Update the UI with data from shotgrid
+        """Update the UI with data from ShotGrid
 
         Parameters
         ----------
         data : dict
-            The Shotgrid data we got from Anny. There are three levels of update:
+            The ShotGrid data we got from Anny. There are three levels of update:
             the main data (version name and such), the subject line of the note,
             and the dropdown menus/multiselect fields
 
@@ -365,7 +365,7 @@ class Inspector(QtWidgets.QDialog):
         entity_name : str
             The type of the entity the version was created against (Shot or Asset for now)
         version_name : str
-            The namge of the SG version
+            The name of the SG version
         artist_name : str
             The name of the artist who created the version
         status : str
@@ -464,7 +464,7 @@ class Inspector(QtWidgets.QDialog):
     # --- EVENT HANDLERS ---
 
     def _on_tab_changed(self, tab: int) -> None:
-        """If we switch to the Shotgrid tab we update the UI with the version data
+        """If we switch to the ShotGrid tab we update the UI with the version data
 
         Parameters
         ----------
@@ -632,7 +632,7 @@ class Inspector(QtWidgets.QDialog):
         Parameters
         ----------
         data : dict
-            The shotgrid entity data to put into the multiselect
+            The ShotGrid entity data to put into the multiselect
 
         Returns
         -------

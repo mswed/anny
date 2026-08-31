@@ -120,7 +120,7 @@ class MultiSelect(QWidget):
             }
         """)
         # To avoid a changing field height we set the minimum
-        # height to the height of a single pill + the margines
+        # height to the height of a single pill + the margins
         self.setMinimumHeight(24 + 8)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.main_layout = FlowLayout(self)
@@ -155,9 +155,9 @@ class MultiSelect(QWidget):
             Returns the base result so the event continues to process normally
 
         """
-        # An event filter to snap the drowpdown menu into place
+        # An event filter to snap the dropdown menu into place
         if watched is self.completer.popup() and event.type() == QEvent.Type.Show:
-            # We are showing the drop down, reposition
+            # We are showing the drop down, re-position
             global_pos = self.mapToGlobal(self.rect().bottomLeft())
             dropdown = self.completer.popup()
             if dropdown:
@@ -199,7 +199,7 @@ class MultiSelect(QWidget):
         self._completer_model.appendRow(item)
 
     def _on_selected(self, index: int):
-        """When we select an item from the dropdown, create a pill, and remove the item fromt the model
+        """When we select an item from the dropdown, create a pill, and remove the item from the model
 
         Parameters
         ----------

@@ -294,7 +294,7 @@ class AnnyMode(MinorMode):
         x, y = crv.eventToImageSpace(source.name, event.pointer())
         start_pos = ImagePoint(x, y, source=source)
 
-        # End pose (we need a seperate point so we don't point to the same object)
+        # End pose (we need a separate point so we don't point to the same object)
         end_pos = ImagePoint(x, y, source=source)
 
         if not self.current_stroke:
@@ -420,7 +420,7 @@ class AnnyMode(MinorMode):
                 break
 
     def select_update(self, event: Event):
-        """Draging after a stroke selection moves the stroke
+        """Dragging after a stroke selection moves the stroke
 
         Parameters
         ----------
@@ -529,7 +529,7 @@ class AnnyMode(MinorMode):
         crv.setFrame(next_frame)
 
     def previous_annotation(self, event: Event):
-        """Go to the prvious annotated frame
+        """Go to the previous annotated frame
 
         Parameters
         ----------
@@ -609,7 +609,7 @@ class AnnyMode(MinorMode):
         Returns
         -------
         str
-            any_annotation if we don't have a shotgrid source or anny_shotgrid_version_name
+            any_annotation if we don't have a ShotGrid source or anny_shotgrid_version_name
 
         """
         if self.shotgrid.is_initialized() and source is not None:
@@ -646,17 +646,17 @@ class AnnyMode(MinorMode):
                 self._sg_refresh_pending = True
 
     def refresh_sg_cached_data(self):
-        """Grab the latest users/groups and tags from shotgrid"""
+        """Grab the latest users/groups and tags from ShotGrid"""
         self.shotgrid.refresh_cached_data()
 
     def _collect_sg_data(self) -> Optional[dict[str, Any]]:
-        """Collect the shotgrid information from the version and the server
+        """Collect the ShotGrid information from the version and the server
         so we can feed it to the UI
 
         Returns
         -------
         Optional[dict[str, Any]]
-            Shotgrid data if this is a SG version and SG is available else None
+            ShotGrid data if this is a SG version and SG is available else None
 
         """
         try:
@@ -667,7 +667,7 @@ class AnnyMode(MinorMode):
             return
 
         if not source.has_full_sg_data:
-            # We are missing the needed fields (even if we somehow have SOME sg daa)
+            # We are missing the needed fields (even if we somehow have some sg data)
             self.inspector.show_sg_unavailable()
             return
 
@@ -714,8 +714,8 @@ class AnnyMode(MinorMode):
         1. Create the note in SG so we can get its ID
         2. Update the version status (if the user changed it)
         3. Export the note's annotations
-        4. Upload the annotations agains the note
-        5. Report success or faliure
+        4. Upload the annotations against the note
+        5. Report success or failure
         """
 
         # Grab the source
@@ -747,7 +747,6 @@ class AnnyMode(MinorMode):
 
             if not created_note["ok"]:
                 # Creation failed. Warn and abort
-                self.inspector.busy_overlay.hide()
                 self.inspector.show_message(
                     f"Failed to create note\n\n{self._format_errors([created_note])}",
                     message_type="critical",
@@ -810,7 +809,7 @@ class AnnyMode(MinorMode):
         """
         if not source.has_full_sg_data:
             self.inspector.show_message(
-                "This version does not have all the necessary Shotgird data. Can not create note",
+                "This version does not have all the necessary ShotGrid data. Can not create note",
                 message_type="critical",
             )
             return
@@ -902,7 +901,7 @@ class AnnyMode(MinorMode):
                 message_type="critical",
             )
         elif failed:
-            # Some of the uploads failes
+            # Some of the uploads failed
             self.inspector.show_message(
                 f"Note created. {uploaded} out of {len(files)} annotations uploaded\n\n{self._format_errors(failed)}",
                 message_type="warning",
@@ -977,7 +976,7 @@ class AnnyMode(MinorMode):
         return Source(node=source["node"], name=source["name"])
 
     def _show_no_source_warning(self):
-        """Show a message warnign the user that we did not find a source"""
+        """Show a message warning the user that we did not find a source"""
         self.inspector.show_message(
             "No source was found!",
             message_type="critical",
@@ -1020,7 +1019,7 @@ class AnnyMode(MinorMode):
         if self.exporter.capture_pending:
             # A capture was requested
             if self.exporter.capture_armed:
-                # We have armed the capture. I.e. we gave RV
+                # We have armed the capture. I.e. We gave RV
                 # a chance to render the frame
                 image = self.annotations.capture_frame_buffer(event)
                 self.exporter.save_annotated_frame(image)

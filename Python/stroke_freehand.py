@@ -32,7 +32,7 @@ class FreehandStroke(Stroke):
         start : ImagePoint
             The first point in the stroke
         end : ImagePoint
-            The last point in the storke. On init this should match start
+            The last point in the stroke. On init this should match start
         source : Source
             The source the stroke is attached to
         width : float
@@ -42,7 +42,7 @@ class FreehandStroke(Stroke):
         opacity : float
             The line opacity
         smoothing : int
-           The amount of smothing to apply to the line
+           The amount of smoothing to apply to the line
         **kwargs
             Any additional kwargs the caller might pass (at the moment all are ignored)
 
@@ -153,7 +153,7 @@ class FreehandStroke(Stroke):
         points : list[ImagePoint]
             Points to smooth
         iterations : int
-            Number of smothing iterations the higher the number the smoother the line (and the slower the render)
+            Number of smoothing iterations the higher the number the smoother the line (and the slower the render)
 
         Returns
         -------
@@ -228,7 +228,7 @@ class FreehandStroke(Stroke):
         return RectEdges(left, right, top, bottom)
 
     def _move(self, dx: float, dy: float, move_type=None):
-        """Move the annotation or one of its points. All movement is calcualted in image space
+        """Move the annotation or one of its points. All movement is calculated in image space
 
         Parameters
         ----------
@@ -250,7 +250,7 @@ class FreehandStroke(Stroke):
         self, start: ScreenPoint, end: ScreenPoint
     ) -> Optional[QuadCorners]:
         """Get the corner verts of a line segment. We get corners instead of edges
-        since the segment is not axis aligned (i.e. rotated)
+        since the segment is not axis aligned (i.e. Rotated)
 
         Parameters
         ----------
@@ -307,7 +307,7 @@ class FreehandStroke(Stroke):
         Parameters
         ----------
         center : ScreenPoint
-            The point to draw the circle around. It shoud match the end or start of the segment
+            The point to draw the circle around. It should match the end or start of the segment
         """
         segments = 12
         radius = self.width / 2
@@ -322,7 +322,7 @@ class FreehandStroke(Stroke):
         GL.glEnd()
 
     def render(self):
-        # Antialiasing
+        # Anti aliasing
         GL.glEnable(GL.GL_POLYGON_SMOOTH)
         GL.glEnable(GL.GL_BLEND)
         GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)

@@ -8,7 +8,7 @@ from PySide6 import QtGui
 class Exporter:
     """
     Class for Anny export operations. Can queue the export of a single or multiple annotated frames. The workflow is this:
-    Anny calles for export -> Exporter queues frames -> requestes a frame capture for the first frame -> Anny captures the frame buffer ->
+    Anny calls for export -> Exporter queues frames -> requests a frame capture for the first frame -> Anny captures the frame buffer ->
     exporter saves the frame and moves to the next frame or calls a callback if the export is finished
     """
 
@@ -52,8 +52,8 @@ class Exporter:
         frames: list[int],
         callback: Optional[Callable[[list[str]], None]] = None,
     ):
-        """Queue all annotated frames. Because of the way RV loop works we can't simpley iterate over the frames.
-        instead we process one frame at a time and then move to the next one
+        """Queue all annotated frames. Because of the way RV loop works we can't simply iterate over the frames.
+        Instead we process one frame at a time and then move to the next one
 
         Parameters
         ----------
@@ -108,7 +108,7 @@ class Exporter:
         When the frame changes check if we need to capture it. This is called by Anny on frame change.
         """
         if self._export_queue and crv.frame() == self._export_queue[0]:
-            # We are expporting a frame AND the current frame matches the one we want to export
+            # We are exporting a frame AND the current frame matches the one we want to export
             self._request_capture()
 
     def _process_next(self):
@@ -145,7 +145,7 @@ class Exporter:
         Parameters
         ----------
         save_dir : Path
-            The save direcotry
+            The save directory
         name : str
             The base name for the image as provided by Any
 
@@ -158,7 +158,7 @@ class Exporter:
         return save_dir / f"annotation_{name}.{crv.frame()}.png"
 
     def _finish(self):
-        """Finish the export by calling the optional call back and reseting the Exporter's state"""
+        """Finish the export by calling the optional call back and resetting the Exporter's state"""
         if self._on_export_complete:
             self._on_export_complete(self._exported_files)
 

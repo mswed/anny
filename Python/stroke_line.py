@@ -74,7 +74,7 @@ class LineStroke(Stroke):
         end_cap : str
             The type of the end cap can be empty, arrow, circle or tick
         text : str
-            Optinal text to show on at the center of the line
+            Optional text to show on at the center of the line
         font : QtGui.QFont
             The font to draw the text in
         **kwargs
@@ -202,7 +202,7 @@ class LineStroke(Stroke):
         Parameters
         ----------
         position : str
-            Where shold we draw the tick? Start or end
+            Where should we draw the tick? Start or end
         line : LineVerts
             The line's verts including all the data needed to position the tick
 
@@ -212,7 +212,7 @@ class LineStroke(Stroke):
             The verts needed to draw the tick
 
         """
-        # Create a direction vecto
+        # Create a direction vector
         tick_width = max(self.width * 2, 1)
 
         # Calculate points
@@ -394,7 +394,7 @@ class LineStroke(Stroke):
     def _draw_cap(
         self, cap_type: Optional[str], position: str, line: LineVerts
     ) -> None:
-        """Draw the a specicifc cap type at the start or end of the line
+        """Draw the specified cap type at the start or end of the line
 
         Parameters
         ----------
@@ -423,9 +423,9 @@ class LineStroke(Stroke):
         Parameters
         ----------
         line : LineVerts
-            The line verts so we can calcualte the tick
+            The line verts so we can calculate the tick
         position : str
-            Where whould we draw the tick? Start or end.
+            Where should we draw the tick? Start or end.
 
         """
         verts = self._get_tick_verts(line, position)
@@ -481,7 +481,7 @@ class LineStroke(Stroke):
         line : LineVerts
             The drawn line points
         position : str
-            Where should we draw the circle? start or end?
+            Where should we draw the circle? Start or end?
 
         """
         segments = 16
@@ -531,7 +531,7 @@ class LineStroke(Stroke):
         elif angle < -math.pi / 2:
             angle += math.pi
 
-        # Temporeratly move the drawing to relative mode around 0, 0 so we can rotate
+        # Temporarily move the drawing to relative mode around 0, 0 so we can rotate
         GL.glPushMatrix()
         GL.glTranslatef(midpoint.x, midpoint.y, 0)
         GL.glRotatef(math.degrees(angle), 0, 0, 1)
@@ -554,7 +554,7 @@ class LineStroke(Stroke):
         GL.glDisable(GL.GL_TEXTURE_2D)
 
     def render(self):
-        # Antialiasing
+        # Anti aliasing
         GL.glEnable(GL.GL_LINE_SMOOTH)
         GL.glEnable(GL.GL_BLEND)
         GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)

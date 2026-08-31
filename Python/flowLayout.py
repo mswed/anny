@@ -114,18 +114,18 @@ class FlowLayout(QLayout):
         return None
 
     def expandingDirections(self) -> Qt.Orientation:
-        """Our layout only expands horizontaly
+        """Our layout only expands horizontally
 
         Returns
         -------
         Qt.Orientation
-            Horizontal oriantation
+            Horizontal orientation
 
         """
         return Qt.Orientation(0)
 
     def hasHeightForWidth(self) -> bool:
-        """Our layout's prefered height depends on its width
+        """Our layout's preferred height depends on its width
 
         Returns
         -------
@@ -136,7 +136,7 @@ class FlowLayout(QLayout):
         return True
 
     def heightForWidth(self, width: int) -> int:
-        """Calculate the layout's prefered height based on its width
+        """Calculate the layout's preferred height based on its width
 
         Parameters
         ----------
@@ -146,14 +146,14 @@ class FlowLayout(QLayout):
         Returns
         -------
         int
-            The layout's prefered height
+            The layout's preferred height
 
         """
         height = self._do_layout(QRect(0, 0, width, 0), True)
         return height
 
     def setGeometry(self, rect: QRect) -> None:
-        """Set the layout size based on ints content
+        """Set the layout size based on its content
 
         Parameters
         ----------
@@ -176,12 +176,12 @@ class FlowLayout(QLayout):
         return self.minimumSize()
 
     def minimumSize(self) -> QSize:
-        """Calculate the layout's minimum size based on its wigets
+        """Calculate the layout's minimum size based on its widgets
 
         Returns
         -------
         QSize
-            The minumal size of the layout
+            The minimal size of the layout
 
         """
         size = QSize()
@@ -190,7 +190,7 @@ class FlowLayout(QLayout):
             # Expand the items to their minimum size
             size = size.expandedTo(item.minimumSize())
 
-        # Add margins (in an asymetric way unlike the original Qt referene code)
+        # Add margins (in an asymmetric way unlike the original Qt reference code)
         margins = self.contentsMargins()
         size += QSize(
             (margins.left() + margins.right()), (margins.top() + margins.bottom())
@@ -250,7 +250,7 @@ class FlowLayout(QLayout):
             # We first grab the widget's actual width
             if item.widget() is self.stretch_widget:
                 # This is our stretch widget which we want to fit
-                # at the end of the layout based on its minumal size (for now)
+                # at the end of the layout based on its minimal size (for now)
                 natural_width = item.minimumSize().width()
             else:
                 natural_width = hint.width()

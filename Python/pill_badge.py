@@ -104,7 +104,7 @@ class PillBadge(QFrame):
         Returns
         -------
         QIcon
-            The icon with the coor applied to it
+            The icon with the color applied to it
 
         """
         icon = QIcon(path)

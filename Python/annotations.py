@@ -31,7 +31,7 @@ class SourceAnnotations:
         return sorted(list(self.frames.keys())) if self.frames else []
 
     def add(self, frame: int, stroke: Stroke):
-        """Add a a stroke to the specified frame
+        """Add a stroke to the specified frame
 
         Parameters
         ----------
@@ -246,7 +246,7 @@ class AnnotationLayer:
     def get_image_boundries(
         self, source_node: str
     ) -> Optional[tuple[int, int, int, int]]:
-        """Get the image boundries so we can capture just the image and not the
+        """Get the image boundaries so we can capture just the image and not the
         entire viewport
 
         Parameters
@@ -380,11 +380,11 @@ class Stroke:
         width : float
             Stroke width
         color : tuple
-            Storke color in normalized rgba values
+            Stroke color in normalized rgba values
         opacity : float
             Stroke opacity
         fill_color : tuple
-            Storke fill color in normalized rgba values
+            Stroke fill color in normalized rgba values
         fill_opacity : float
             Stroke fill opacity
 
@@ -406,7 +406,7 @@ class Stroke:
 
     @property
     def is_valid(self) -> bool:
-        """Checks if the storke is valid so we can delete it if not
+        """Checks if the stroke is valid so we can delete it if not
 
         Returns
         -------
@@ -471,7 +471,7 @@ class Stroke:
         self._fill_color = value
 
     def move(self, dx: float, dy: float, move_type: str = "stroke"):
-        """Move the annotation or one of its points. All movement is calcualted in image space
+        """Move the annotation or one of its points. All movement is calculated in image space
 
         Parameters
         ----------
@@ -480,7 +480,7 @@ class Stroke:
         dy : float
             Delta between original point and new point
         move_type : str
-            What are we moving? stroke, start or end?
+            What are we moving? Stroke, start or end?
         """
 
         self._move(dx, dy, move_type)
@@ -593,7 +593,7 @@ class Stroke:
         return point.distance_to(nearest)
 
     def _move(self, dx: float, dy: float, move_type: str = "stroke"):
-        """Move the annotation or one of its points. All movement is calcualted in image space
+        """Move the annotation or one of its points. All movement is calculated in image space
 
         Parameters
         ----------
@@ -602,7 +602,7 @@ class Stroke:
         dy : float
             Delta between original point and new point
         move_type : str
-            What are we moving? stroke, start or end?
+            What are we moving? Stroke, start or end?
         """
 
         if move_type == "stroke" or move_type == "start":
@@ -641,7 +641,7 @@ class Stroke:
         Returns
         -------
         Optional[RectEdges]
-            The edges of the bounding box if we are able to calcualte them else None
+            The edges of the bounding box if we are able to calculate them else None
 
         """
         start = self.start.to_screenspace()
