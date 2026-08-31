@@ -31,11 +31,11 @@ class PillBadge(QFrame):
         )
 
         # Set the icon
+        left = QLabel()
         if self.pill_icon:
             icon = QIcon(self.pill_icon)
             icon_size = QSize(16, 16)
             pixmap = icon.pixmap(icon_size)
-            left = QLabel()
             left.setStyleSheet("background: transparent;")
             tinted_icon = self._tint(pixmap, "white")
             left.setPixmap(tinted_icon)
@@ -118,7 +118,7 @@ class PillBadge(QFrame):
 
     @staticmethod
     def _tint(pixmap: QPixmap, color: str) -> QPixmap:
-        """Coor an icon
+        """Color an icon
 
         Parameters
         ----------

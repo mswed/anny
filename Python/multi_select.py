@@ -100,6 +100,8 @@ class MultiSelect(QWidget):
 
         """
         self._completer_model.clear()
+        # Guard against an empty model
+        model = model or []
         for record in model:
             item = self._create_record(record)
             self._completer_model.appendRow(item)
@@ -150,7 +152,7 @@ class MultiSelect(QWidget):
         Returns
         -------
         bool
-            I'm.... not sure?
+            Returns the base result so the event continues to process normally
 
         """
         # An event filter to snap the drowpdown menu into place
