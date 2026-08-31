@@ -28,7 +28,7 @@ class BusyOverlay(QtWidgets.QWidget):
         self.label.setAlignment(QtCore.Qt.AlignCenter)
         self.label.setFont(font)
         layout.addWidget(self.label)
-        self.hide
+        self.hide()
 
     def show_over(self, text: Optional[str] = None):
         """Show the UI
@@ -329,6 +329,7 @@ class Inspector(QtWidgets.QDialog):
         self.sg_ui.toMs.clear()
         self.sg_ui.ccMs.clear()
         self.sg_ui.tagsMs.clear()
+        self.sg_ui.noteTypeCb.clear()
 
     def _update_note_subject(self, user_first_name: str, version_name: str):
         """Update the note's subject
@@ -391,7 +392,6 @@ class Inspector(QtWidgets.QDialog):
            List of SG tags
         note_types : list[str]
             List of SG node types
-
         """
         if not self.sg_update_requested:
             # We should be using the cached list

@@ -1,4 +1,5 @@
 from typing import Optional
+import logging
 import math
 from PySide6 import QtGui
 from PySide6.QtCore import Qt
@@ -14,6 +15,9 @@ from utils import (
     ArrowVerts,
     Color,
 )
+
+
+log = logging.getLogger(__name__)
 
 
 class LineStroke(Stroke):
@@ -411,7 +415,7 @@ class LineStroke(Stroke):
         elif cap_type == "circle":
             self._draw_circle(line, position)
         else:
-            print("Unknown cap type", cap_type)
+            log.warning("Unknown cap type", cap_type)
 
     def _draw_tick(self, line: LineVerts, position: str = "start"):
         """Draw a tick cap based on the provided verts

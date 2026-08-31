@@ -1,5 +1,6 @@
 from importlib.util import find_spec
 import time
+import logging
 from utils import Note, SGResult
 
 try:
@@ -7,22 +8,11 @@ try:
 except ImportError:
     ShotgunError = Exception
 
+log = logging.getLogger(__name__)
+
 
 class ShotGrid:
-    """[TODO:description]
-
-    Attributes
-    ----------
-    engine : [TODO:attribute]
-    sg : [TODO:attribute]
-    users : [TODO:attribute]
-    groups : [TODO:attribute]
-    tags : [TODO:attribute]
-
-    """
-
-    """ShotGrid connection class 
-    """
+    """ShotGrid connection class"""
 
     def __init__(self) -> None:
         self.engine = None
@@ -30,11 +20,11 @@ class ShotGrid:
         self.users = []
         self.groups = []
         self.tags = []
-        self._sgtk_warning = True
+        self._has_sgtk = None
 
     @property
     def user(self) -> dict:
-        """Get the currect shotgrid user if we can find one
+        """Get the current shotgrid user if we can find one
 
         Returns
         -------
@@ -55,16 +45,14 @@ class ShotGrid:
             True if we have SGTK else False
         """
 
-        spec = find_spec("sgtk")
-        if spec:
-            return True
-
-        if self._sgtk_warning:
-            print(
-                "SGTK module not found. Make sure you've enabled the shotgrid mode under packages"
-            )
-            self._sgtk_warning = False
-        return False
+        # Cache our SGTK state
+        if self._has_sgtk is None:
+            self._has_sgtk = find_spec("sgtk") is not None
+            if not self._has_sgtk:
+                log.info(
+                    "SGTK module not found. Make sure you've enabled the shotgrid mode under packages"
+                )
+        return self._has_sgtk
 
     def is_initialized(self) -> bool:
         """Check to see if we have a ShotGrid connection
@@ -72,7 +60,7 @@ class ShotGrid:
         Returns
         -------
         bool
-            True if we succesfully initialized the connection, else False
+            True if we successfully initialized the connection, else False
 
         """
         return self.engine is not None and self.sg is not None
@@ -192,7 +180,7 @@ class ShotGrid:
             active_values = properties.get("display_values", {}).get("value", {})
             hidden_values = properties.get("hidden_values", {}).get("value", [])
             for v in hidden_values:
-                active_values.pop(v)
+                active_values.pop(v, None)
 
             # Convert the dict to a list so we maintain our standard SG Result dict
             active_values = sorted(active_values.items(), key=lambda s: s[1])
@@ -234,8 +222,9 @@ class ShotGrid:
                     "data": [],
                 }
 
-            properties = field.get("properties")
-            valid_values = properties.get("valid_values", {}).get("value", [])
+            valid_values = (
+                field.get("properties", {}).get("valid_values", {}).get("value", [])
+            )
             return {"ok": True, "message": "", "data": valid_values}
 
         except ShotgunError as e:
@@ -256,7 +245,7 @@ class ShotGrid:
         SGResult
             ok: True if the status was set, else False
             message: empty if we set the status, else error message
-            data: version object with updated status is we updated the version, else empty list
+            data: version object with updated status if we updated the version, else empty list
 
         """
         if self.sg is None:
@@ -281,7 +270,7 @@ class ShotGrid:
         SGResult
             ok: True if the note was created, else False
             message: empty if created the note, else error message
-            data: note object is we created the note, else empty list
+            data: note object if we created the note, else empty list
         """
 
         if self.sg is None:
@@ -308,7 +297,7 @@ class ShotGrid:
         SGResult
             ok: True if the annotation was created, else False
             message: empty if created the annotation, else error message
-            data: note object is we created the annotation, else empty list
+            data: note object if we created the annotation, else empty list
 
         """
         if not self.sg:
@@ -328,7 +317,7 @@ class ShotGrid:
                     "message": f"{path} uploaded succesfully",
                     "data": [],
                 }
-            except ShotgunError as e:
+            except (ShotgunError, OSError) as e:
                 errors.append(str(e))
                 if attempt < 3:
                     time.sleep(2**attempt)

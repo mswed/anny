@@ -25,7 +25,6 @@ if TYPE_CHECKING:
 
 
 log = logging.getLogger(__name__)
-log.setLevel("DEBUG")
 
 
 class AnnyMode(MinorMode):
@@ -100,6 +99,7 @@ class AnnyMode(MinorMode):
                             None,
                             None,
                         ),
+                        ("_", None),
                     ],
                 )
             ],
@@ -735,39 +735,47 @@ class AnnyMode(MinorMode):
             "Exporting annotations and uploading to ShotGrid"
         )
 
-        # Build the note dictionary  and create the note
-        note = self._build_sg_note(source)
-        created_note = self.shotgrid.create_note(note)
+        handed_off = False  # At first we assume we'll be doing a synchronous operation and it will hide  the busy overlay
+        try:
+            # Build the note dictionary  and create the note
+            note = self._build_sg_note(source)
+            created_note = self.shotgrid.create_note(note)
 
-        if not created_note["ok"]:
-            # Creation failed. Warn and abort
-            self.inspector.show_message(
-                f"Failed to create note\n\n{self._format_errors([created_note])}",
-                message_type="critical",
-            )
-            return
-
-        # Update the version status if needed
-        selected_status = self.inspector.sg_ui.statusCb.currentData()
-        if source.version_status != selected_status:
-            update = self.shotgrid.set_version_status(
-                source.version_id, selected_status
-            )
-            if not update["ok"]:
+            if not created_note["ok"]:
+                # Creation failed. Warn and abort
+                self.inspector.busy_overlay.hide()
                 self.inspector.show_message(
-                    "Failed to update version status",
-                    message_type="warning",
+                    f"Failed to create note\n\n{self._format_errors([created_note])}",
+                    message_type="critical",
                 )
+                return
 
-        if frames:
-            # Export the annotations
-            note_id = created_note["data"][0]["id"]
-            self._export_annotations_to_sg(source, note_id, frames)
-        else:
-            self.inspector.show_message("Note created (without annotations)")
-            self.inspector.busy_overlay.hide()
+            # Update the version status if needed
+            selected_status = self.inspector.sg_ui.statusCb.currentData()
+            if source.version_status != selected_status:
+                update = self.shotgrid.set_version_status(
+                    source.version_id, selected_status
+                )
+                if not update["ok"]:
+                    self.inspector.show_message(
+                        "Failed to update version status",
+                        message_type="warning",
+                    )
 
-    def _try_sg_refresh(self):
+            if frames:
+                # Export the annotations
+                note_id = created_note["data"][0]["id"]
+                self._export_annotations_to_sg(source, note_id, frames)
+                handed_off = (
+                    True  # We are handing the hiding of the UI to the async operation
+                )
+            else:
+                self.inspector.show_message("Note created (without annotations)")
+        finally:
+            if not handed_off:
+                self.inspector.busy_overlay.hide()
+
+    def try_sg_refresh(self):
         """Check if we have SG data if we do and it's ready, we update the UI else we show the no SG UI"""
         try:
             source = self._get_source_from_render()
@@ -782,7 +790,7 @@ class AnnyMode(MinorMode):
             self._sg_refresh_pending = False
             self.inspector.show_sg_unavailable()
 
-    def _build_sg_note(self, source: Source) -> Note:
+    def _build_sg_note(self, source: Source) -> Optional[Note]:
         """Build the note dict in a format that SG understands
 
         Parameters
@@ -796,6 +804,13 @@ class AnnyMode(MinorMode):
             The note data in a SG friendly dict
 
         """
+        if not source.has_full_sg_data:
+            self.inspector.show_message(
+                "This version does not have all the necessary Shotgird data. Can not create note",
+                message_type="critical",
+            )
+            return
+
         note_links = [
             {"type": "Shot", "id": source.shot_id},
             {"type": "Version", "id": source.version_id},
@@ -899,7 +914,7 @@ class AnnyMode(MinorMode):
 
         Parameters
         ----------
-        results : list[dict[str, Any]]
+        results : list[SGResult]
             The results with the error
 
         Returns
@@ -977,10 +992,10 @@ class AnnyMode(MinorMode):
         if self.shotgrid.has_sgtk() and not self.shotgrid.is_initialized():
             self.shotgrid.initialize()
             if self.inspector.tabs.currentIndex() == self.inspector.SG_TAB:
-                self._try_sg_refresh()
+                self.try_sg_refresh()
 
         if self._sg_refresh_pending:
-            self._try_sg_refresh()
+            self.try_sg_refresh()
 
     # --- Rendering ---
     def render(self, event: Event):
