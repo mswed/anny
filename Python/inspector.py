@@ -1,7 +1,8 @@
+from __future__ import annotations
 from PySide6 import QtGui, QtWidgets
 from PySide6 import QtCore
 from PySide6.QtCore import Qt
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from pathlib import Path
 import rv.commands as crv
 
@@ -10,6 +11,9 @@ from ui_shotgrid import Ui_Shotgrid
 from style import ANNY_STYLESHEET
 import resources_rc
 from color_picker import ColorPickerDrowpdown
+
+if TYPE_CHECKING:
+    from anny import AnnyMode
 
 
 class BusyOverlay(QtWidgets.QWidget):
@@ -62,7 +66,7 @@ class Inspector(QtWidgets.QDialog):
     SG_FORM = 0
     NO_SG = 1
 
-    def __init__(self, mode, parent=None) -> None:
+    def __init__(self, mode: AnnyMode, parent=None) -> None:
         super().__init__(parent)
         self.mode = mode
         # We request an update on init (if sg is available)
@@ -158,6 +162,8 @@ class Inspector(QtWidgets.QDialog):
         self.ui.clearFrameBtn.clicked.connect(self._clear_frame)
 
         # SG integration
+        self.sg_ui.refreshBtn.clicked.connect(self._refresh_sg_data)
+        self.sg_ui.retryBtn.clicked.connect(self._refresh_sg_data)
         self.sg_ui.submitBtn.clicked.connect(self._submit_note_to_sg)
 
     # --- OVERRIDES ---
@@ -444,6 +450,16 @@ class Inspector(QtWidgets.QDialog):
 
         # Mark the cache as current
         self.sg_update_requested = False
+
+    def _refresh_sg_data(self):
+        """Refresh both cached sg data (users/groups/tags) and version data"""
+
+        # Mark that we are requesting an update so the multiselect fields will accept it
+        self.sg_update_requested = True
+        # Asked for users/group and tags refresh
+        self.mode.refresh_sg_cached_data()
+        # Refresh the UI
+        self.mode.try_sg_refresh()
 
     # --- EVENT HANDLERS ---
 

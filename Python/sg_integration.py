@@ -74,18 +74,28 @@ class ShotGrid:
             import sgtk
 
             self.engine = sgtk.platform.current_engine()
+            if self.engine is None:
+                # We did not get an engine, Anny will try again later
+                return
+
             self.sg = self.engine.shotgun
-            users = self.get_active_users()
-            if users["ok"]:
-                self.users = users["data"]
-            groups = self.get_groups()
-            if groups["ok"]:
-                self.groups = groups["data"]
-            tags = self.get_tags()
-            if tags["ok"]:
-                self.tags = tags["data"]
+            self.refresh_cached_data()
         except Exception as e:
+            log.error(str(e))
             return
+
+    def refresh_cached_data(self):
+        """Fetch fresh users/groups/tags data from shotgrid"""
+
+        users = self.get_active_users()
+        if users["ok"]:
+            self.users = users["data"]
+        groups = self.get_groups()
+        if groups["ok"]:
+            self.groups = groups["data"]
+        tags = self.get_tags()
+        if tags["ok"]:
+            self.tags = tags["data"]
 
     def get_active_users(self) -> SGResult:
         """Get a list of all active ShotGrid users

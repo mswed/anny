@@ -20,7 +20,7 @@
       <number>1</number>
      </property>
      <widget class="QWidget" name="versionInfoWidget">
-      <widget class="QWidget" name="">
+      <widget class="QWidget" name="layoutWidget">
        <property name="geometry">
         <rect>
          <x>0</x>
@@ -42,6 +42,38 @@
         <property name="bottomMargin">
          <number>8</number>
         </property>
+        <item>
+         <layout class="QHBoxLayout" name="headerLayout">
+          <item>
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="refreshBtn">
+            <property name="toolTip">
+             <string extracomment="Refresh SG data (includeing users and tags list)"/>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset>
+              <normalon>:/icons/arrow-rotate-left-solid-full.svg</normalon>
+             </iconset>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
         <item>
          <layout class="QGridLayout" name="infoLayout">
           <item row="2" column="1">
@@ -177,6 +209,19 @@
      <widget class="QWidget" name="noSGWidget">
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
         <widget class="QLabel" name="shotgridLabel">
          <property name="text">
           <string>ShotGrid Data Not Available</string>
@@ -185,6 +230,31 @@
           <set>Qt::AlignCenter</set>
          </property>
         </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="retryBtn">
+         <property name="text">
+          <string>Try Again</string>
+         </property>
+         <property name="icon">
+          <iconset>
+           <normalon>:/icons/arrow-rotate-left-solid-full.svg</normalon>
+          </iconset>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
        </item>
       </layout>
      </widget>

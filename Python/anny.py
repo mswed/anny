@@ -645,6 +645,10 @@ class AnnyMode(MinorMode):
             if self.inspector.tabs.currentIndex() == self.inspector.SG_TAB:
                 self._sg_refresh_pending = True
 
+    def refresh_sg_cached_data(self):
+        """Grab the latest users/groups and tags from shotgrid"""
+        self.shotgrid.refresh_cached_data()
+
     def _collect_sg_data(self) -> Optional[dict[str, Any]]:
         """Collect the shotgrid information from the version and the server
         so we can feed it to the UI
