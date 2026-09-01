@@ -7,7 +7,6 @@ requires: ""
 
 modes:
   - file: anny
-    menu: Anny Tools
     load: immediate
 
 description: |
