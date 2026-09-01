@@ -2,6 +2,7 @@ from __future__ import annotations
 import math
 from typing import Optional, NamedTuple, Self, TypedDict
 import rv.commands as crv
+from pprint import pprint
 
 
 class Vector:
@@ -582,7 +583,7 @@ class Source:
         """
         try:
             status = crv.getStringProperty(f"{self.node}.tracking.infoStatus")
-        except Exception as e:
+        except Exception:
             # We don't have this attribute at all. I.e. Not a SG version
             return "none"
         if not status:
@@ -607,6 +608,7 @@ class Source:
             for i in range(0, len(data) - 1, 2):
                 self._sg_data[data[i]] = data[i + 1]
 
+        pprint(self._sg_data)
         return self._sg_data
 
     @property
