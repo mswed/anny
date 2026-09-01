@@ -603,12 +603,14 @@ class Source:
             The SG data if available else empty dict
 
         """
+        print("cached sg data is", self._sg_data)
         if not self._sg_data:
             data = crv.getStringProperty(f"{self.node}.tracking.info")
             for i in range(0, len(data) - 1, 2):
-                self._sg_data[data[i]] = data[i + 1]
+                key = data[i]
+                value = data[i + 1]
+                self._sg_data[key] = None if value == "<nil>" else value
 
-        pprint(self._sg_data)
         return self._sg_data
 
     @property
@@ -653,33 +655,33 @@ class Source:
 
     @property
     def project_id(self) -> Optional[int]:
-        project_id = self.sg_data.get("project", None)
-        if project_id:
-            project_id = project_id.split("|")[0].split("_")[1]
-            return int(project_id)
+        project = self.sg_data.get("project", None)
+        if project:
+            return self.get_entity_id(project)
 
     @property
-    def shot_id(self) -> Optional[int]:
-        shot_id = self.sg_data.get("shot", None)
-        if shot_id:
-            shot_id = shot_id.split("|")[0].split("_")[1]
-            return int(shot_id)
+    def entity_id(self) -> Optional[int]:
+        # First we grab the actual entity
+        entity = self.get_linked_entity()
+        return self.get_entity_id(entity)
 
     @property
     def entity_name(self) -> Optional[str]:
-        shot_name = self.sg_data.get("shot", None)
-        if shot_name:
-            shot_name = shot_name.split("|")[1].partition("_")
-            if shot_name:
-                return shot_name[2]
+        # First we grab the actual entity
+        entity = self.get_linked_entity()
+        return self.get_entity_name(entity)
+
+    @property
+    def entity_type(self) -> Optional[str]:
+        # First we grab the actual entity
+        entity = self.get_linked_entity()
+        return self.get_entity_type(entity)
 
     @property
     def artist_name(self) -> Optional[str]:
         user_name = self.sg_data.get("humanUser", None)
         if user_name:
-            user_name = user_name.split("|")[1].partition("_")
-            if user_name:
-                return user_name[2]
+            return self.get_entity_name(user_name)
 
     @property
     def has_full_sg_data(self):
@@ -693,6 +695,40 @@ class Source:
                 self.project_id,
             )
         )
+
+    def get_linked_entity(self) -> Optional[str]:
+        shot = self.sg_data.get("shot", None)
+        asset = self.sg_data.get("asset", None)
+        if shot:
+            return shot
+        elif asset:
+            return asset
+        else:
+            return None
+
+    def get_entity_name(self, entity):
+        try:
+            entity_name = entity.split("|")[1].partition("_")[2]
+            return entity_name
+        except (IndexError, AttributeError):
+            return None
+
+    def get_entity_id(self, entity):
+        try:
+            entity_id = entity.split("|")[0].partition("_")[2]
+            return int(entity_id)
+        except (IndexError, AttributeError):
+            return None
+
+    def get_entity_type(self, entity):
+        try:
+            entity_type = entity.split("|")[-1].partition("_")[2]
+            return entity_type
+        except (IndexError, AttributeError):
+            return None
+
+    def update_cached_version_status(self, new_status):
+        self._sg_data["status"] = new_status
 
 
 class Note(TypedDict):

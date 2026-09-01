@@ -764,6 +764,9 @@ class AnnyMode(MinorMode):
                         "Failed to update version status",
                         message_type="warning",
                     )
+                else:
+                    source.update_cached_version_status(selected_status)
+                    print(source.version_status)
 
             if frames:
                 # Export the annotations
@@ -774,6 +777,7 @@ class AnnyMode(MinorMode):
                 )
             else:
                 self.inspector.show_message("Note created (without annotations)")
+                self.inspector.clear_note()
         finally:
             if not handed_off:
                 self.inspector.busy_overlay.hide()
@@ -815,7 +819,7 @@ class AnnyMode(MinorMode):
             return
 
         note_links = [
-            {"type": "Shot", "id": source.shot_id},
+            {"type": source.entity_type, "id": source.entity_id},
             {"type": "Version", "id": source.version_id},
         ]
 
