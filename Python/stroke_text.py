@@ -106,7 +106,7 @@ class TextStroke(Stroke):
         right = max(start.x, end.x)
         top = max(start.y, end.y)
 
-        # But the height is calcualted based on either the drag or the size
+        # But the height is calculated based on either the drag or the size
         # of the text
         height = self._get_rect_height()
         bottom = top - height
@@ -284,7 +284,7 @@ class TextStroke(Stroke):
 
     def render(self):
 
-        # Antialiasing
+        # Anti aliasing
         GL.glEnable(GL.GL_BLEND)
         GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
 

@@ -17,7 +17,7 @@ class RectStroke(Stroke):
         fill_opacity: float = 1,
         **kwargs,
     ) -> None:
-        """Create a rectangle storke
+        """Create a rectangle stroke
 
         Parameters
         ----------
@@ -155,7 +155,7 @@ class RectStroke(Stroke):
 
     def render(self):
 
-        # Antialiasing
+        # Anti aliasing
         GL.glEnable(GL.GL_BLEND)
         GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
 

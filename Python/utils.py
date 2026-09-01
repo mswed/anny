@@ -1,6 +1,6 @@
 from __future__ import annotations
 import math
-from typing import Optional, NamedTuple, NewType, Self
+from typing import Optional, NamedTuple, Self, TypedDict
 import rv.commands as crv
 
 
@@ -78,7 +78,7 @@ class Point:
     ----------
     x : x coordinate
     y : y coordinate
-    source : RV source name (includes frame number) for converstion between image and screen space
+    source : RV source name (includes frame number) for conversion between image and screen space
 
     """
 
@@ -124,8 +124,8 @@ class Point:
         return math.sqrt(self.distance_to_squared(target))
 
     def distance_to_squared(self, target: Point) -> float:
-        """Distace squared between the current point and the target. Can be used on its own
-        to avoid the mildly expencive root operation
+        """Distance squared between the current point and the target. Can be used on its own
+        to avoid the mildly expensive root operation
 
         Parameters
         ----------
@@ -149,7 +149,7 @@ class Point:
         Parameters
         ----------
         target : Self
-            The point we are interlpolating toward
+            The point we are interpolating toward
         t : float
             Position along the line from self (0) to other (1).
 
@@ -173,7 +173,7 @@ class ImagePoint(Point):
     ----------
     x : x coordinate
     y : y coordinate
-    source : RV source name (includes frame number) for converstion between image and screen space
+    source : RV source name (includes frame number) for conversion between image and screen space
 
     """
 
@@ -195,7 +195,7 @@ class ImagePoint(Point):
 
     @property
     def screen_x(self) -> Optional[float]:
-        """Point x in screen space times the device pixel aspect so ratina displays also work
+        """Point x in screen space times the device pixel aspect so retina displays also work
 
         Returns
         -------
@@ -208,7 +208,7 @@ class ImagePoint(Point):
 
     @property
     def screen_y(self) -> Optional[float]:
-        """Point y in screen space times the device pixel aspect so ratina displays also work
+        """Point y in screen space times the device pixel aspect so retina displays also work
 
         Returns
         -------
@@ -225,7 +225,7 @@ class ImagePoint(Point):
         Returns
         -------
         ScreenPoint
-            The point in screen space if we are able to calcualte. None otherwise
+            The point in screen space if we are able to calculate. None otherwise
 
         """
         if self.screen_x is not None and self.screen_y is not None:
@@ -268,7 +268,7 @@ class ScreenPoint(Point):
     ----------
     x : x coordinate
     y : y coordinate
-    source : RV source name (includes frame number) for converstion between image and screen space
+    source : RV source name (includes frame number) for conversion between image and screen space
 
     """
 
@@ -342,7 +342,7 @@ class ScreenPoint(Point):
 
 
 class RectEdges(NamedTuple):
-    """A class to store x axis aligned rectangle edges. Top should always be the hightest Y
+    """A class to store x axis aligned rectangle edges. Top should always be the highest Y
     all values are stored and returned in screen space
 
     Attributes
@@ -437,7 +437,7 @@ class RectEdges(NamedTuple):
         Parameters
         ----------
         margin : int
-            The amount of margine to remove from the rectangle
+            The amount of margin to remove from the rectangle
 
         Returns
         -------
@@ -478,7 +478,7 @@ class ArrowVerts(NamedTuple):
 
     Attributes
     ----------
-    tip : The tip of the arrrow
+    tip : The tip of the arrow
     left_wing : The left wing of the arrow
     right_wing : The right wing of the arrow
     base : The base of the arrow
@@ -503,7 +503,7 @@ class LineVerts(NamedTuple):
     bottom_left : Bottom left corner of line's body
     bottom_right : Bottom right corner of line's body
     top_right : Top right corner of line's body
-    top_left : Top left forner of line's body
+    top_left : Top left corner of line's body
     mid_left : The middle point of the left edge (the start of the line)
     mid_right : The middle point of the right edge (the end of the line)
     start_anchor : The original start point of the line as drawn by the user (used to draw handles and move the point)
@@ -564,10 +564,148 @@ class Color(NamedTuple):
     a: float
 
 
-class Source(NamedTuple):
-    name: str
-    node: str
+class Source:
+    def __init__(self, node: str, name: Optional[str] = None) -> None:
+        self.node = node
+        self.name = name
+        self._sg_data = {}
+
+    @property
+    def sg_data_status(self) -> str:
+        """The ShotGrid node stores its state in tracking.infoStatus. We check this to see
+        if the source has any SG data that we can pull. The status can be good pending or none
+
+        Returns
+        -------
+        str
+            ready, pending or none, depending on the state
+        """
+        try:
+            status = crv.getStringProperty(f"{self.node}.tracking.infoStatus")
+        except Exception as e:
+            # We don't have this attribute at all. I.e. Not a SG version
+            return "none"
+        if not status:
+            # The status is empty
+            return "none"
+
+        return "ready" if status[-1].strip() == "good" else "pending"
+
+    @property
+    def sg_data(self) -> dict[str, str]:
+        """Get the source SG data as stored in source.tracking.info, stores it in the class
+        and returns it
+
+        Returns
+        -------
+        Dict[str, str]
+            The SG data if available else empty dict
+
+        """
+        if not self._sg_data:
+            data = crv.getStringProperty(f"{self.node}.tracking.info")
+            for i in range(0, len(data) - 1, 2):
+                self._sg_data[data[i]] = data[i + 1]
+
+        return self._sg_data
+
+    @property
+    def version_id(self) -> Optional[int]:
+        """Get the ShotGrid version id if available
+
+        Returns
+        -------
+        Optional[int]
+            The version number
+
+        """
+        vid = self.sg_data.get("id", None)
+        if vid:
+            return int(vid)
+
+    @property
+    def version_name(self) -> str:
+        """Get the ShotGrid version name if available, else 'annotation'
+
+        Returns
+        -------
+        str
+            The name of the SG version or 'annotation'
+
+        """
+        return self.sg_data.get("name", "annotation")
+
+    @property
+    def version_status(self) -> Optional[str]:
+        """Get the ShotGrid version status if available
+
+        Returns
+        -------
+        Optional[str]
+            The shot version status
+
+        """
+        status = self.sg_data.get("status", None)
+        if status:
+            return status
+
+    @property
+    def project_id(self) -> Optional[int]:
+        project_id = self.sg_data.get("project", None)
+        if project_id:
+            project_id = project_id.split("|")[0].split("_")[1]
+            return int(project_id)
+
+    @property
+    def shot_id(self) -> Optional[int]:
+        shot_id = self.sg_data.get("shot", None)
+        if shot_id:
+            shot_id = shot_id.split("|")[0].split("_")[1]
+            return int(shot_id)
+
+    @property
+    def entity_name(self) -> Optional[str]:
+        shot_name = self.sg_data.get("shot", None)
+        if shot_name:
+            shot_name = shot_name.split("|")[1].partition("_")
+            if shot_name:
+                return shot_name[2]
+
+    @property
+    def artist_name(self) -> Optional[str]:
+        user_name = self.sg_data.get("humanUser", None)
+        if user_name:
+            user_name = user_name.split("|")[1].partition("_")
+            if user_name:
+                return user_name[2]
+
+    @property
+    def has_full_sg_data(self):
+        return all(
+            x is not None
+            for x in (
+                self.entity_name,
+                self.version_name,
+                self.version_status,
+                self.artist_name,
+                self.project_id,
+            )
+        )
 
 
-SourceName = NewType("SourceName", str)
-SourceNode = NewType("SourceNode", str)
+class Note(TypedDict):
+    project: dict
+    subject: str
+    note_links: list
+    user: dict
+    content: str
+    addressings_to: list
+    addressings_cc: list
+    tags: list
+    sg_note_type: str
+
+
+class SGResult(TypedDict):
+    ok: bool
+    message: str
+    data: list

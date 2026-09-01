@@ -138,7 +138,7 @@ class EllipseStroke(Stroke):
         GL.glEnd()
 
     def render(self):
-        # Antialiasing
+        # Anti aliasing
         GL.glEnable(GL.GL_LINE_SMOOTH)
         GL.glEnable(GL.GL_BLEND)
         GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)

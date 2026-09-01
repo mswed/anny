@@ -162,4 +162,47 @@ ANNY_STYLESHEET = """
     QLabel:disabled {
         color: #6b645e;
     }
+
+    /* --- tabs --- */
+    QTabWidget::pane {
+        border: 1px solid #3c3633;
+        border-radius: 4px;
+        top: -1px;                        /* pull the pane up so tabs sit on its edge */
+    }
+
+    QTabBar::tab {
+        background-color: #2c2825;
+        color: #b3aaa2;
+        border: 1px solid #3c3633;
+        border-bottom: none;              /* tabs open into the content below */
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+        padding: 5px 14px;
+        margin-right: 2px;
+    }
+
+    QTabBar::tab:selected {
+        background-color: #262220;        /* matches the pane/dialog background */
+        color: #ece7e2;
+        border: 1px solid #3c3633;
+        border-bottom: none;
+    }
+
+    QTabBar::tab:!selected {
+        margin-top: 2px;                  /* unselected tabs sit slightly recessed */
+        background-color: #221e1c;
+    }
+
+    QTabBar::tab:!selected:hover {
+        background-color: #332e2b;
+        color: #d8d2cc;
+    }
+
+    /* --- MultiSelect override. This needs to live in the MultiSelect componennt, but does not seem to work --- */
+    MultiSelect {
+        background-color: #262220;
+        border: 1px solid #555;
+        border-radius: 4px;
+        padding: 2px;
+    }
 """

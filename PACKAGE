@@ -1,13 +1,13 @@
 package: Anny
 author: Moshe Swed
-version: 1.2
+version: 1.4
 rv: 2025
 openrv: 4.0.0
 requires: ""
 
 modes:
   - file: anny
-    menu: Anny
+    menu: Anny Tools
     load: immediate
 
 description: |
