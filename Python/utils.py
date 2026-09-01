@@ -192,7 +192,10 @@ class ImagePoint(Point):
 
         """
         if self.source:
-            return crv.imageToEventSpace(self.source.name, (self.x, self.y))
+            try:
+                return crv.imageToEventSpace(self.source.name, (self.x, self.y))
+            except Exception:
+                return
 
     @property
     def screen_x(self) -> Optional[float]:
@@ -287,7 +290,10 @@ class ScreenPoint(Point):
 
         """
         if self.source:
-            return crv.eventToImageSpace(self.source.name, (self.x, self.y))
+            try:
+                return crv.eventToImageSpace(self.source.name, (self.x, self.y))
+            except Exception:
+                return
 
     @property
     def image_x(self):
@@ -603,7 +609,6 @@ class Source:
             The SG data if available else empty dict
 
         """
-        print("cached sg data is", self._sg_data)
         if not self._sg_data:
             data = crv.getStringProperty(f"{self.node}.tracking.info")
             for i in range(0, len(data) - 1, 2):
