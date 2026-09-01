@@ -65,23 +65,6 @@ class Ui_Shotgrid(object):
 
         self.infoLayout.addWidget(self.artistNameLabel, 2, 1, 1, 1)
 
-        self.versionNameLabel = QLabel(self.layoutWidget)
-        self.versionNameLabel.setObjectName(u"versionNameLabel")
-        font = QFont()
-        font.setPointSize(12)
-        self.versionNameLabel.setFont(font)
-
-        self.infoLayout.addWidget(self.versionNameLabel, 1, 0, 1, 1)
-
-        self.entityNameLabel = QLabel(self.layoutWidget)
-        self.entityNameLabel.setObjectName(u"entityNameLabel")
-        font1 = QFont()
-        font1.setPointSize(14)
-        font1.setBold(True)
-        self.entityNameLabel.setFont(font1)
-
-        self.infoLayout.addWidget(self.entityNameLabel, 0, 0, 1, 1)
-
         self.artistLabel = QLabel(self.layoutWidget)
         self.artistLabel.setObjectName(u"artistLabel")
 
@@ -96,6 +79,28 @@ class Ui_Shotgrid(object):
         self.statusCb.setObjectName(u"statusCb")
 
         self.infoLayout.addWidget(self.statusCb, 3, 1, 1, 1)
+
+        self.entityNameLabel = QLabel(self.layoutWidget)
+        self.entityNameLabel.setObjectName(u"entityNameLabel")
+        font = QFont()
+        font.setPointSize(14)
+        font.setBold(True)
+        self.entityNameLabel.setFont(font)
+
+        self.infoLayout.addWidget(self.entityNameLabel, 0, 0, 1, 2)
+
+        self.versionNameLabel = QLabel(self.layoutWidget)
+        self.versionNameLabel.setObjectName(u"versionNameLabel")
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.versionNameLabel.sizePolicy().hasHeightForWidth())
+        self.versionNameLabel.setSizePolicy(sizePolicy)
+        font1 = QFont()
+        font1.setPointSize(12)
+        self.versionNameLabel.setFont(font1)
+
+        self.infoLayout.addWidget(self.versionNameLabel, 1, 0, 1, 2)
 
 
         self.versionMainLayout.addLayout(self.infoLayout)
@@ -203,7 +208,7 @@ class Ui_Shotgrid(object):
 
         self.retranslateUi(Shotgrid)
 
-        self.sgStackedWidget.setCurrentIndex(1)
+        self.sgStackedWidget.setCurrentIndex(0)
 
 
         QMetaObject.connectSlotsByName(Shotgrid)
@@ -212,14 +217,14 @@ class Ui_Shotgrid(object):
     def retranslateUi(self, Shotgrid):
         Shotgrid.setWindowTitle(QCoreApplication.translate("Shotgrid", u"Anny", None))
 #if QT_CONFIG(tooltip)
-        self.refreshBtn.setToolTip("")
+        self.refreshBtn.setToolTip(QCoreApplication.translate("Shotgrid", u"<html><head/><body><p>Refresh SG data, including users/groups and tags</p></body></html>", None))
 #endif // QT_CONFIG(tooltip)
         self.refreshBtn.setText("")
         self.artistNameLabel.setText(QCoreApplication.translate("Shotgrid", u"Artist Name", None))
-        self.versionNameLabel.setText(QCoreApplication.translate("Shotgrid", u"Version Name", None))
-        self.entityNameLabel.setText(QCoreApplication.translate("Shotgrid", u"Shot Name", None))
         self.artistLabel.setText(QCoreApplication.translate("Shotgrid", u"Artist", None))
         self.statusLabel.setText(QCoreApplication.translate("Shotgrid", u"Status", None))
+        self.entityNameLabel.setText(QCoreApplication.translate("Shotgrid", u"Entity Name", None))
+        self.versionNameLabel.setText(QCoreApplication.translate("Shotgrid", u"Version Name", None))
         self.subjectLabel.setText(QCoreApplication.translate("Shotgrid", u"Subject", None))
         self.textField.setPlaceholderText(QCoreApplication.translate("Shotgrid", u"Write your note here", None))
         self.toLabel.setText(QCoreApplication.translate("Shotgrid", u"To:", None))

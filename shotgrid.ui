@@ -17,7 +17,7 @@
    <item>
     <widget class="QStackedWidget" name="sgStackedWidget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="versionInfoWidget">
       <widget class="QWidget" name="layoutWidget">
@@ -60,7 +60,7 @@
           <item>
            <widget class="QPushButton" name="refreshBtn">
             <property name="toolTip">
-             <string extracomment="Refresh SG data (includeing users and tags list)"/>
+             <string extracomment="Refresh SG data (includeing users and tags list)">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Refresh SG data, including users/groups and tags&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string/>
@@ -83,32 +83,6 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="versionNameLabel">
-            <property name="font">
-             <font>
-              <pointsize>12</pointsize>
-             </font>
-            </property>
-            <property name="text">
-             <string>Version Name</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0">
-           <widget class="QLabel" name="entityNameLabel">
-            <property name="font">
-             <font>
-              <pointsize>14</pointsize>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Shot Name</string>
-            </property>
-           </widget>
-          </item>
           <item row="2" column="0">
            <widget class="QLabel" name="artistLabel">
             <property name="text">
@@ -125,6 +99,38 @@
           </item>
           <item row="3" column="1">
            <widget class="QComboBox" name="statusCb"/>
+          </item>
+          <item row="0" column="0" colspan="2">
+           <widget class="QLabel" name="entityNameLabel">
+            <property name="font">
+             <font>
+              <pointsize>14</pointsize>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Entity Name</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0" colspan="2">
+           <widget class="QLabel" name="versionNameLabel">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>12</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Version Name</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>

@@ -47,6 +47,10 @@ class AnnyMode(MinorMode):
         self._capture_armed = False
         self._sg_refresh_pending = False
 
+        # Temporary workaround for version status caching
+        self._current_sg_source = None
+        self._sg_sources = {}
+
         self.init(
             "py-anny-mode",
             [
@@ -86,7 +90,7 @@ class AnnyMode(MinorMode):
             None,
             [
                 (
-                    "Anny Tools",  # For some reason this shows up on MacOS
+                    "Anny",
                     [
                         ("Show UI", self.show_ui, "=", None),
                         ("Next Annotation", self.next_annotation, "'", None),
@@ -659,24 +663,22 @@ class AnnyMode(MinorMode):
             ShotGrid data if this is a SG version and SG is available else None
 
         """
-        try:
-            source = self._get_source_from_render()
-        except NoSourceError:
+        if not self._current_sg_source:
             self._show_no_source_warning()
             self.inspector.show_sg_unavailable()
             return
 
-        if not source.has_full_sg_data:
+        if not self._current_sg_source.has_full_sg_data:
             # We are missing the needed fields (even if we somehow have some sg data)
             self.inspector.show_sg_unavailable()
             return
 
         sg_data = {
-            "version_name": source.version_name,
-            "project_id": source.project_id,
-            "entity_name": source.entity_name,
-            "artist_name": source.artist_name,
-            "version_status": source.version_status,
+            "version_name": self._current_sg_source.version_name,
+            "project_id": self._current_sg_source.project_id,
+            "entity_name": self._current_sg_source.entity_name,
+            "artist_name": self._current_sg_source.artist_name,
+            "version_status": self._current_sg_source.version_status,
             "current_user": self.shotgrid.user,
             "users": self.shotgrid.users,
             "groups": self.shotgrid.groups,
@@ -684,9 +686,9 @@ class AnnyMode(MinorMode):
         }
 
         # Active status lists are project specific for some reason
-        if source.project_id:
+        if self._current_sg_source.project_id:
             status_list = self.shotgrid.get_active_status_list(
-                "Version", source.project_id
+                "Version", self._current_sg_source.project_id
             )
             status_list = status_list["data"]
         else:
@@ -719,14 +721,12 @@ class AnnyMode(MinorMode):
         """
 
         # Grab the source
-        try:
-            source = self._get_source_from_render()
-        except NoSourceError:
+        if not self._current_sg_source:
             self._show_no_source_warning()
             return
 
         # Check if have any annotated frames
-        frames = self.annotations.get_annotated_frames(source)
+        frames = self.annotations.get_annotated_frames(self._current_sg_source)
         if not frames:
             confirmed = self.inspector.ask_for_confirmation(
                 "No annotated frames were found. Do you wish to upload the note?"
@@ -742,7 +742,7 @@ class AnnyMode(MinorMode):
         handed_off = False  # At first we assume we'll be doing a synchronous operation and it will hide  the busy overlay
         try:
             # Build the note dictionary  and create the note
-            note = self._build_sg_note(source)
+            note = self._build_sg_note(self._current_sg_source)
             created_note = self.shotgrid.create_note(note)
 
             if not created_note["ok"]:
@@ -755,25 +755,30 @@ class AnnyMode(MinorMode):
 
             # Update the version status if needed
             selected_status = self.inspector.sg_ui.statusCb.currentData()
-            if source.version_status != selected_status:
+            if self._current_sg_source.version_status != selected_status:
                 update = self.shotgrid.set_version_status(
-                    source.version_id, selected_status
+                    self._current_sg_source.version_id, selected_status
                 )
                 if not update["ok"]:
                     self.inspector.show_message(
                         "Failed to update version status",
                         message_type="warning",
                     )
+                else:
+                    self._current_sg_source.update_cached_version_status(
+                        selected_status
+                    )
 
             if frames:
                 # Export the annotations
                 note_id = created_note["data"][0]["id"]
-                self._export_annotations_to_sg(source, note_id, frames)
+                self._export_annotations_to_sg(self._current_sg_source, note_id, frames)
                 handed_off = (
                     True  # We are handing the hiding of the UI to the async operation
                 )
             else:
                 self.inspector.show_message("Note created (without annotations)")
+                self.inspector.clear_note()
         finally:
             if not handed_off:
                 self.inspector.busy_overlay.hide()
@@ -785,7 +790,9 @@ class AnnyMode(MinorMode):
         except NoSourceError:
             return
 
-        state = source.sg_data_status
+        self._current_sg_source = self._get_or_create_sg_source(source)
+
+        state = self._current_sg_source.sg_data_status
         if state == "ready":
             self._sg_refresh_pending = False
             self._update_sg_ui()
@@ -815,7 +822,7 @@ class AnnyMode(MinorMode):
             return
 
         note_links = [
-            {"type": "Shot", "id": source.shot_id},
+            {"type": source.entity_type, "id": source.entity_id},
             {"type": "Version", "id": source.version_id},
         ]
 
@@ -981,6 +988,12 @@ class AnnyMode(MinorMode):
             "No source was found!",
             message_type="critical",
         )
+
+    def _get_or_create_sg_source(self, source: Source):
+        if source.node not in self._sg_sources:
+            self._sg_sources[source.node] = source
+
+        return self._sg_sources[source.node]
 
     def on_render_idle(self, event: Event):
         """Process events between renders. For now we only do SG updates
